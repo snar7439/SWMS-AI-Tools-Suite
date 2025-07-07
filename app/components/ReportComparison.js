@@ -2,19 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import NavigationPanel from './NavigationPanel';
-import ReportsViewer from './ReportsViewer';
+import ReportViewer from './ReportsViewer';
 import CompareControls from './CompareControls';
 import ComparisonResultsTab from './ComparisonResultsTab';
+import UserSession from './UserSession';
 
 // Sample reports data
 const sampleReports = [
+  // Sample PDF Reports
   {
     id: 1,
     name: 'Report_v1.0.pdf',
     type: 'PDF',
     size: '2.4 MB',
     lastModified: '2025-06-30',
-    pdfUrl: '/reports/SOS Configuration.pdf',
+    pdfUrl: '/reports/Report_v1.0.pdf',
     content: `# Financial Report Q2 2025
 
 ## Executive Summary
@@ -39,7 +41,7 @@ The market conditions have been favorable with increased demand...`
     type: 'PDF',
     size: '2.6 MB',
     lastModified: '2025-07-01',
-    pdfUrl: '/reports/Equipment Overview.pdf',
+    pdfUrl: '/reports/Report_v1.1.pdf',
     content: `# Financial Report Q2 2025 (Revised)
 
 ## Executive Summary
@@ -67,7 +69,7 @@ Based on current trends, we project continued growth...`
     type: 'PDF',
     size: '1.8 MB',
     lastModified: '2025-06-28',
-    pdfUrl: '/reports/Equipment Overview.pdf',
+    pdfUrl: '/reports/Monthly_Report_June.pdf',
     content: `# Monthly Report - June 2025
 
 ## Overview
@@ -92,7 +94,7 @@ Identified and resolved scalability issues...`
     type: 'PDF',
     size: '2.1 MB',
     lastModified: '2025-06-29',
-    pdfUrl: '/reports/SOS Configuration.pdf',
+    pdfUrl: '/reports/Quarterly_Analysis_Q2.pdf',
     content: `# Quarterly Analysis - Q2 2025
 
 ## Executive Summary
@@ -114,30 +116,65 @@ Market conditions have been favorable with strong demand...
 ## Future Projections
 Based on current trends, Q3 outlook is positive...`
   },
+  
+  // SWMS Reports (to be fetched dynamically)
   {
-    id: 5,
-    name: 'Policy_Document.pdf',
+    id: 'swms-equipment',
+    name: 'Equipment Overview (SWMS)',
     type: 'PDF',
-    size: '890 KB',
-    lastModified: '2025-06-25',
-    pdfUrl: null, // Will be replaced with actual PDF path later
-    content: `# Company Policy Manual
-
-## Code of Conduct
-All employees must adhere to the highest standards...
-
-## Work Hours
-- Standard hours: 9 AM - 5 PM
-- Flexible arrangements available
-- Remote work: 2 days per week maximum
-
-## Benefits
-- Health insurance
-- 401k matching
-- Paid time off: 15 days annually
-
-## Performance Reviews
-Conducted quarterly with direct supervisor.`
+    size: 'Dynamic',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/equipment-overview',
+    payload: {
+      reportValue: 'me1ra',
+      type: 'PDF',
+      equipId: null,
+      zoneId: null,
+      printerName: null,
+      // Add any other equipment-specific fields
+    },
+    content: 'Equipment overview report from SWMS'
+  },
+  {
+    id: 'swms-inventory',
+    name: 'Inventory Overview (SWMS)',
+    type: 'PDF',
+    size: 'Dynamic',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/inventory-overview',
+    payload: {
+      reportValue: 'mn1rb',
+      type: 'PDF',
+      parentpalletId: null,
+      plogiLoc: null,
+      printerName: null,
+      prodId: null,
+      prodSize:null,
+      prodSizeUnit: null,
+    },
+    content: 'Inventory overview report from SWMS'
+  },
+  {
+    id: 'swms-performance',
+    name: 'Performance Report (SWMS)',
+    type: 'PDF',
+    size: 'Dynamic',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/performance',
+    payload: {
+      reportValue: 'perf1ra',
+      type: 'PDF',
+      equipId: null,
+      zoneId: null,
+      printerName: null,
+      dateRange: '30days', // Performance-specific field
+      metricType: 'efficiency', // Performance-specific field
+      departmentId: 'DEPT001', // Performance-specific field
+    },
+    content: 'Performance metrics report from SWMS'
   }
 ];
 
@@ -149,11 +186,23 @@ export default function ReportComparison() {
   const [isNavPanelVisible, setIsNavPanelVisible] = useState(true); // Navigation panel visibility
 
   const handleReportSelect = (report, slot) => {
+    console.log('ReportComparison: handleReportSelect called with:', {
+      reportName: report?.name,
+      slot: slot,
+      hasPdfData: !!report?.pdfData,
+      pdfDataLength: report?.pdfData?.length
+    });
+    
     const newSelected = [...selectedReports];
     newSelected[slot] = report;
     setSelectedReports(newSelected);
     setComparisonResult(null);
     setIsComparing(false);
+    
+    console.log('ReportComparison: Updated selectedReports:', {
+      left: newSelected[0]?.name || 'None',
+      right: newSelected[1]?.name || 'None'
+    });
   };
 
   const handleCompare = () => {
@@ -208,7 +257,8 @@ export default function ReportComparison() {
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 relative">
       {/* Navigation Panel - Conditionally Rendered */}
       {isNavPanelVisible && (
-        <div className="w-60 flex-shrink-0 transition-all duration-300 ease-in-out">
+        <div className="w-60 flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col">
+          <UserSession />
           <NavigationPanel 
             reports={sampleReports}
             selectedReports={selectedReports}
@@ -247,10 +297,10 @@ export default function ReportComparison() {
             <div className="flex items-center justify-center">
               <div className="text-center">
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-                  PDF Report Test Automation Tool
+                  Report Testing Automation Tool
                 </h1>
                 <p className="text-gray-600 dark:text-gray-300 text-sm">
-                  Select two PDF reports to compare their content and identify differences
+                  Select two reports to compare their content and identify differences
                 </p>
               </div>
             </div>
@@ -308,7 +358,7 @@ export default function ReportComparison() {
             {/* Report Viewers - Fixed equal widths and height */}
             <div className="flex-1 flex gap-4 p-6 min-h-0">
               <div className="w-1/2 flex-shrink-0 h-full">
-                <ReportsViewer 
+                <ReportViewer 
                   report={selectedReports[0]}
                   slot={0}
                   title="Left Section"
@@ -317,7 +367,7 @@ export default function ReportComparison() {
                 />
               </div>
               <div className="w-1/2 flex-shrink-0 h-full">
-                <ReportsViewer 
+                <ReportViewer 
                   report={selectedReports[1]}
                   slot={1}
                   title="Right Section"
@@ -329,7 +379,7 @@ export default function ReportComparison() {
 
             {/* Compare Controls */}
             <CompareControls 
-              selectedReports={selectedReports}
+              selectedDocuments={selectedReports}
               isComparing={isComparing}
               comparisonResult={comparisonResult}
               onCompare={handleCompare}
@@ -339,9 +389,9 @@ export default function ReportComparison() {
           </>
         ) : (
           <ComparisonResultsTab
-            selectedReports={selectedReports}
+            selectedDocuments={selectedReports}
             comparisonResult={comparisonResult}
-            onBackToReports={handleBackToReports}
+            onBackToDocuments={handleBackToReports}
           />
         )}
       </div>

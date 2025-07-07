@@ -125,10 +125,23 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
   const pdfUrl = useMemo(() => {
     if (!report) return null;
     
-    // If report has a pdfUrl, use it
+    // FIRST: Check if report has base64 PDF data from SWMS API
+    if (report.pdfData) {
+      console.log('ReportsViewer: Using SWMS PDF data, length:', report.pdfData.length);
+      return `data:application/pdf;base64,${report.pdfData}`;
+    }
+    
+    // If report has a pdfUrl, use it (including blob URLs)
     if (report.pdfUrl) {
+      // Handle blob URLs directly
+      if (report.pdfUrl.startsWith('blob:')) {
+        console.log('ReportsViewer: Using blob URL:', report.pdfUrl);
+        return report.pdfUrl;
+      }
+      
       // Ensure the URL starts with / for public directory
       const url = report.pdfUrl.startsWith('/') ? report.pdfUrl : `/${report.pdfUrl}`;
+      console.log('ReportsViewer: Using static PDF URL:', url);
       return url;
     }
     
