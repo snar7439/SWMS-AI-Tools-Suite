@@ -264,9 +264,6 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
                           <span className="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
                             {report.type}
                           </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                            {report.size}
-                          </span>
                         </div>
                       </div>
                     </div>

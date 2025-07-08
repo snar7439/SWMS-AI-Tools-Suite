@@ -183,7 +183,6 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
               <span className="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded text-xs font-medium">
                 {report.type}
               </span>
-              <span className="text-xs">{report.size}</span>
             </div>
           )}
         </div>

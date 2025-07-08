@@ -202,9 +202,15 @@ export default function ComparisonResultsTab({
             </h3>
             <div className="space-y-2 text-sm">
               <div><span className="font-medium">Name:</span> {selectedDocuments[0].name}</div>
-              <div><span className="font-medium">Type:</span> {selectedDocuments[0].type}</div>
-              <div><span className="font-medium">Size:</span> {selectedDocuments[0].size}</div>
-              <div><span className="font-medium">Modified:</span> {selectedDocuments[0].lastModified}</div>
+              <div className="flex justify-between items-start">
+                <span className="font-medium">Type:</span> 
+                <div className="text-right">
+                  <div className="font-normal">{selectedDocuments[0].type}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Modified: {selectedDocuments[0].lastModified}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -214,9 +220,15 @@ export default function ComparisonResultsTab({
             </h3>
             <div className="space-y-2 text-sm">
               <div><span className="font-medium">Name:</span> {selectedDocuments[1].name}</div>
-              <div><span className="font-medium">Type:</span> {selectedDocuments[1].type}</div>
-              <div><span className="font-medium">Size:</span> {selectedDocuments[1].size}</div>
-              <div><span className="font-medium">Modified:</span> {selectedDocuments[1].lastModified}</div>
+              <div className="flex justify-between items-start">
+                <span className="font-medium">Type:</span>
+                <div className="text-right">
+                  <div className="font-normal">{selectedDocuments[1].type}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Modified: {selectedDocuments[1].lastModified}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

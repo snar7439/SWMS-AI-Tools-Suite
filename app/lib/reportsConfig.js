@@ -6,29 +6,57 @@
 
 export const swmsReports = [
   {
-    id: 'swms-equipment',
-    name: 'Equipment Overview (SWMS)',
+    id: 'equipment-overview',
+    name: 'Equipment Overview',
     type: 'PDF',
-    size: 'Dynamic',
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/equipment-overview',
-    payload: {"userId":"OPS$TEST0100","languageID":3,"opcoNumber":"swms","type":"PDF","equipId":null,"zoneId":null,"printerName":null,"reportValue":"me1ra"},
-    content: 'Equipment overview report from SWMS showing all equipment status, locations, and operational data.',
-    category: 'equipment',
-    description: 'Comprehensive overview of all equipment in the warehouse management system'
+    payload: {"userId":"OPS$TEST0100","languageID":3,"opcoNumber":"swms","type":"PDF","equipId":null,"zoneId":null,"printerName":null,"reportValue":"me1ra"}
   },
   {
-    id: 'swms-inventory',
-    name: 'Inventory Overview (SWMS)',
+    id: 'inventory-overview',
+    name: 'Inventory Overview',
     type: 'PDF',
-    size: 'Dynamic',
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/inventory-overview',
-    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageID":3,"prodId":null,"custPreferVendor":null,"brand":null,"recId":null,"descrip":null,"palletType":null,"plogiLoc":null,"logicLoc":null,"status":null,"msku":null,"rdcItem":null,"miniLoad":null,"parentpalletId":null,"mfgSku":null,"vendorId":null,"uom":null,"prodSize":null,"prodSizeUnit":null,"ti":null,"hi":null,"warehouseId":null,"lotId":null,"pack":null,"aisleSide":null,"mxEligible":null,"mxItemAssignFlag":null,"qtyExp":null,"qtyAlc":null,"printerName":null,"reportValue":"mn1rb"},
-    content: 'Inventory overview report from SWMS showing stock levels, locations, and product details.',
-    category: 'inventory',
-    description: 'Real-time inventory levels and product location tracking'
-  }
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageID":3,"prodId":null,"custPreferVendor":null,"brand":null,"recId":null,"descrip":null,"palletType":null,"plogiLoc":null,"logicLoc":null,"status":null,"msku":null,"rdcItem":null,"miniLoad":null,"parentpalletId":null,"mfgSku":null,"vendorId":null,"uom":null,"prodSize":null,"prodSizeUnit":null,"ti":null,"hi":null,"warehouseId":null,"lotId":null,"pack":null,"aisleSide":null,"mxEligible":null,"mxItemAssignFlag":null,"qtyExp":null,"qtyAlc":null,"printerName":null,"reportValue":"mn1rb"}
+  },
+  {
+    id: 'item-overview-item',
+    name: 'Item Overview by Item',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/item-overview-item',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","prodId":null,"palletType":null,"description":null,"cpv":null,"mfgId":null,"brand":null,"reportName":"Item Overview by Item","location":null,"rdcItem":null,"miniLoadItem":null,"ti":null,"hi":null,"printerName":null,"reportValue":"mi1ra","type":"PDF"}
+  },
+  {
+    id: 'replenishment-list',
+    name: 'Replenishment List',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/replenishment-list',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","areaCode":null,"expDate":null,"fromSlot":null,"languageId":3,"nbtGenDate":null,"nbtGenUid":null,"palletType":null,"perUsage":null,"pikAisleFrom":null,"pikAisleTo":null,"priority":null,"prodId":null,"splitOnly":null,"status":null,"toSlot":null,"printerName":null,"reportValue":"pn1ra"}
+  },
+  {
+    id: 'shortage-report',
+    name: 'Shortage',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/shortage-report',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"oo1ra"}
+  },
+  {
+    id: 'labor-monitor-by-user-report',
+    name: 'Monitor User Report',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/labor-monitor-by-user-report',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","printerName":null,"reportValue":"lb1rg","type":"PDF"}
+  },
 ];
