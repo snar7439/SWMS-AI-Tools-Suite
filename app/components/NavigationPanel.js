@@ -38,6 +38,9 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
       
       const currentUserId = sessionStorage.getItem('swms-user-id') || 'TEST0100';
       
+      // Ensure userID has OPS$ prefix format
+      const formattedUserId = currentUserId.startsWith('OPS$') ? currentUserId : `OPS$${currentUserId}`;
+      
       // Find the report in config to get the exact payload
       const configReport = swmsReports.find(r => r.id === report.id);
       if (!configReport) {
@@ -51,12 +54,13 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
         configPayload: configReport.payload
       });
       
-      // Send only the SWMS payload (no reportPath - API will look it up)
+      // Send the SWMS payload with user-entered userID override
       const requestPayload = {
-        ...configReport.payload // Send the actual SWMS payload from config only
+        ...configReport.payload, // Start with config payload
+        userId: formattedUserId    // Override with formatted user ID (OPS$...)
       };
 
-      console.log('Final request payload sent to API (pure SWMS payload):', requestPayload);
+      console.log('Final request payload sent to API (with formatted user ID):', requestPayload);
 
       const response = await fetch('/api/fetchReport', {
         method: 'POST',
@@ -207,7 +211,7 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
                       <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
-                      <span className="whitespace-nowrap text-xs">Load</span>
+                      <span className="whitespace-nowrap text-xs">Print to screen</span>
                     </button>
 
                     {/* Slot Selector Popup - Compact */}

@@ -17,7 +17,7 @@ export async function POST(request) {
     
     const swmsUrl = `${process.env.REPORTS_API_URL || 'https://lx739q60-swms-service-layer.swms-np.us-east-1.aws.sysco.net'}${reportConfig.reportPath}`;
 
-    console.log('Using config payload for SWMS:', reportConfig.payload);
+    console.log('Using received payload for SWMS (with user ID override):', receivedPayload);
     console.log('Fetching SWMS report from:', swmsUrl);
 
     const swmsRes = await fetch(swmsUrl, {
@@ -31,7 +31,7 @@ export async function POST(request) {
         'accept-language': 'en-US',
         'cookie': '_ga=GA1.1.1134090752.1749581339; _ga_ML9Z3SL0FP=GS2.1.s1751296511$o15$g1$t1751296678$j60$l0$h0; swmslx739q60=6752a52ec8b3658a1b8c7ef5ffc2e9002be4f61179e784263fc496b6d53e9ddc'
       },
-      body: JSON.stringify(reportConfig.payload), // Use the exact payload from config
+      body: JSON.stringify(receivedPayload), // Use the payload from browser (with user ID override)
     });
 
     if (!swmsRes.ok) {
