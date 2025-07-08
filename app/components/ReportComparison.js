@@ -5,7 +5,6 @@ import NavigationPanel from './NavigationPanel';
 import ReportViewer from './ReportsViewer';
 import CompareControls from './CompareControls';
 import ComparisonResultsTab from './ComparisonResultsTab';
-import UserSession from './UserSession';
 
 export default function ReportComparison() {
   const [selectedReports, setSelectedReports] = useState([null, null]);
@@ -87,7 +86,6 @@ export default function ReportComparison() {
       {/* Navigation Panel - Conditionally Rendered */}
       {isNavPanelVisible && (
         <div className="w-60 flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col">
-          <UserSession />
           <NavigationPanel 
             selectedReports={selectedReports}
             onReportSelect={handleReportSelect}

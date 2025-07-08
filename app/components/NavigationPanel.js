@@ -5,17 +5,48 @@ import { swmsReports } from '../lib/reportsConfig';
 
 export default function NavigationPanel({ selectedReports, onReportSelect }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all');
   const [showSlotSelector, setShowSlotSelector] = useState(null); // Track which report's selector is open
   const [loading, setLoading] = useState(false);
+  
+  // SWMS User ID state
+  const [userIdInput, setUserIdInput] = useState('TEST0100');
+  const [currentUserId, setCurrentUserId] = useState('TEST0100');
+  const [isEditingUserId, setIsEditingUserId] = useState(false);
 
   // Use reports directly from config file
   const reports = swmsReports;
 
+  // SWMS User ID handlers
+  const handleUserIdSubmit = (e) => {
+    e.preventDefault();
+    if (userIdInput.trim()) {
+      setCurrentUserId(userIdInput.trim());
+      setIsEditingUserId(false);
+      
+      // Store in sessionStorage for persistence
+      sessionStorage.setItem('swms-user-id', userIdInput.trim());
+    }
+  };
+
+  const handleUserIdEdit = () => {
+    setIsEditingUserId(true);
+    setUserIdInput(currentUserId);
+  };
+
+  const handleUserIdCancel = () => {
+    setIsEditingUserId(false);
+    setUserIdInput(currentUserId);
+  };
+
+  const handleUserIdKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      handleUserIdCancel();
+    }
+  };
+
   const filteredReports = (reports || []).filter(report => {
     const matchesSearch = report.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === 'all' || report.type.toLowerCase() === filterType.toLowerCase();
-    return matchesSearch && matchesFilter;
+    return matchesSearch;
   });
 
   const getFileIcon = (type) => {
@@ -129,10 +160,19 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
     }
   }, [showSlotSelector]);
 
+  // Load user ID from sessionStorage on component mount
+  useEffect(() => {
+    const stored = sessionStorage.getItem('swms-user-id');
+    if (stored) {
+      setCurrentUserId(stored);
+      setUserIdInput(stored);
+    }
+  }, []);
+
   return (
-    <div className="flex-1 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+    <div className="flex-1 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-full">
       {/* Panel Header - Compact */}
-      <div className="p-3 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
+      <div className="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
         <h2 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
           <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -142,9 +182,71 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
           )}
         </h2>
+
+        {/* SWMS User ID Section */}
+        <div className="mb-3 border border-gray-200 dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-800">
+          <div className="flex items-center gap-2 mb-1">
+            <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">SWMS User ID</span>
+          </div>
+          
+          {!isEditingUserId ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-center min-w-[32px]">
+                  OPS$
+                </span>
+                <span className="text-xs font-medium text-gray-900 dark:text-white bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-700">
+                  {currentUserId}
+                </span>
+              </div>
+              <button
+                onClick={handleUserIdEdit}
+                className="px-1.5 py-0.5 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+              >
+                Edit
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleUserIdSubmit} className="space-y-1.5">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-center min-w-[32px]">
+                  OPS$
+                </span>
+                <input
+                  type="text"
+                  value={userIdInput}
+                  onChange={(e) => setUserIdInput(e.target.value.toUpperCase())}
+                  onKeyDown={handleUserIdKeyDown}
+                  className="flex-1 px-2 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white h-6"
+                  placeholder="Enter User ID"
+                  autoFocus
+                  required
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="submit"
+                  className="px-2 py-0.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUserIdCancel}
+                  className="px-2 py-0.5 text-xs text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
         
         {/* Search - Compact */}
-        <div className="relative mb-2">
+        <div className="relative">
           <svg className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -156,20 +258,10 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
             className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
           />
         </div>
-
-        {/* Filter - Compact */}
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-        >
-          <option value="all">All Reports</option>
-          <option value="pdf">PDF Only</option>
-        </select>
       </div>
 
       {/* Report List - Compact */}
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white dark:bg-gray-800 min-h-0">
         <div className="p-1.5">
           {filteredReports.length === 0 ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">

@@ -59,4 +59,22 @@ export const swmsReports = [
     reportPath: '/report/labor-monitor-by-user-report',
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","printerName":null,"reportValue":"lb1rg","type":"PDF"}
   },
+  {
+    id: 'cool-item-cross-reference-all-item',
+    name: 'All cool items',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/cool-item-cross-reference-all-item',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"category":null,"custPrefVendor":null,"descrip":null,"prodId":null,"printerName":null,"reportValue":"mc1rc"}
+  },
+  {
+    id: 'item-overview-by-area',
+    name: 'Item Overview by Area',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/item-overview-by-area',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","prodId":null,"palletType":null,"description":null,"cpv":null,"mfgId":null,"brand":null,"reportName":"Item Overview by Area","location":null,"rdcItem":null,"miniLoadItem":null,"ti":null,"hi":null,"printerName":null,"reportValue":"mi1rd","type":"PDF"}
+  },
 ];
