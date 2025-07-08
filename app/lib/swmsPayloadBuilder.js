@@ -2,69 +2,40 @@
  * SWMS Report Payload Builder Utility
  * 
  * Helps build payloads for different types of SWMS reports
+ * Works with centralized report configuration
  */
 
+import { validateReportConfig } from './reportsConfig';
+
 export const buildSWMSPayload = (report, userId, additionalParams = {}) => {
+  // Validate report configuration
+  try {
+    validateReportConfig(report);
+  } catch (error) {
+    console.error('Invalid report configuration:', error);
+    throw error;
+  }
+
   const basePayload = {
     userId: `OPS$${userId}`,
     opcoNumber: 'swms',
     type: 'PDF',
-    reportPath: report.reportPath, // Include the report path
+    reportPath: report.reportPath,
   };
 
   // Merge base, report-specific, and additional parameters
-  return {
+  const completePayload = {
     ...basePayload,
     ...(report.payload || {}),
     ...additionalParams,
   };
-};
 
-export const getReportPayloadTemplate = (reportType) => {
-  const templates = {
-    'equipment-overview': {
-      reportValue: 'me1ra',
-      type: 'PDF',
-      equipId: null,
-      zoneId: null,
-      printerName: null,
-    },
-    'inventory-overview': {
-      reportValue: 'mn1rb',
-      type: 'PDF',
-    },
-    'performance': {
-      reportValue: 'perf1ra',
-      type: 'PDF',
-      equipId: null,
-      zoneId: null,
-      printerName: null,
-      dateRange: '30days',
-      metricType: 'efficiency',
-      departmentId: 'DEPT001',
-    },
-    'safety': {
-      reportValue: 'safety1ra',
-      type: 'PDF',
-      equipId: null,
-      zoneId: null,
-      printerName: null,
-      incidentLevel: 'ALL',
-      dateFrom: null,
-      dateTo: null,
-    },
-    'maintenance': {
-      reportValue: 'maint1ra',
-      type: 'PDF',
-      equipId: null,
-      zoneId: null,
-      printerName: null,
-      maintenanceType: 'SCHEDULED',
-      priorityLevel: 'ALL',
-    },
-  };
+  // Ensure reportValue is set (required field)
+  if (!completePayload.reportValue && report.payload?.reportValue) {
+    completePayload.reportValue = report.payload.reportValue;
+  }
 
-  return templates[reportType] || templates['equipment-overview'];
+  return completePayload;
 };
 
 export const validatePayload = (payload) => {

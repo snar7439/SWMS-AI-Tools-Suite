@@ -125,13 +125,13 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
   const pdfUrl = useMemo(() => {
     if (!report) return null;
     
-    // FIRST: Check if report has base64 PDF data from SWMS API
+    // Check if report has base64 PDF data from SWMS API
     if (report.pdfData) {
       console.log('ReportsViewer: Using SWMS PDF data, length:', report.pdfData.length);
       return `data:application/pdf;base64,${report.pdfData}`;
     }
     
-    // If report has a pdfUrl, use it (including blob URLs)
+    // If report has a pdfUrl (blob URL from SWMS API), use it
     if (report.pdfUrl) {
       // Handle blob URLs directly
       if (report.pdfUrl.startsWith('blob:')) {
@@ -139,26 +139,12 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
         return report.pdfUrl;
       }
       
-      // Ensure the URL starts with / for public directory
-      const url = report.pdfUrl.startsWith('/') ? report.pdfUrl : `/${report.pdfUrl}`;
-      console.log('ReportsViewer: Using static PDF URL:', url);
-      return url;
+      // For any other URL format
+      console.log('ReportsViewer: Using provided PDF URL:', report.pdfUrl);
+      return report.pdfUrl;
     }
     
-    // For demo purposes, try to match report names to available sample PDFs
-    if (report.name) {
-      const samplePdfMap = {
-        'Equipment Overview Report': '/reports/Equipment Overview.pdf',
-        'SOS Configuration Report': '/reports/SOS Configuration.pdf',
-        'Monthly_Report_June.pdf': '/reports/Equipment Overview.pdf',
-        'Report_v1.0.pdf': '/reports/SOS Configuration.pdf'
-      };
-      
-      if (samplePdfMap[report.name]) {
-        return samplePdfMap[report.name];
-      }
-    }
-    
+    console.log('ReportsViewer: No PDF data available for report');
     return null;
   }, [report]);
 

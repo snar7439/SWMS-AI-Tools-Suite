@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { buildSWMSPayload, validatePayload } from '../lib/swmsPayloadBuilder';
+import { swmsReports } from '../lib/reportsConfig';
 
-export default function NavigationPanel({ reports = [], selectedReports, onReportSelect }) {
+export default function NavigationPanel({ selectedReports, onReportSelect }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [showSlotSelector, setShowSlotSelector] = useState(null); // Track which report's selector is open
   const [loading, setLoading] = useState(false);
+
+  // Use reports directly from config file
+  const reports = swmsReports;
 
   const filteredReports = (reports || []).filter(report => {
     const matchesSearch = report.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -31,74 +34,74 @@ export default function NavigationPanel({ reports = [], selectedReports, onRepor
     try {
       setLoading(true);
       
-      // If it's a sample report (has pdfUrl), use it directly
-      if (report.pdfUrl) {
-        onReportSelect(report, slot);
-        return;
-      }
-
-      // For SWMS reports, try API first, then fallback to sample
-      console.log('Attempting to fetch SWMS report...');
+      console.log('Loading payload directly from report config...');
       
       const currentUserId = sessionStorage.getItem('swms-user-id') || 'TEST0100';
       
-      // Build payload using utility function
-      const payload = buildSWMSPayload(report, currentUserId);
+      // Find the report in config to get the exact payload
+      const configReport = swmsReports.find(r => r.id === report.id);
+      if (!configReport) {
+        throw new Error(`Report configuration not found for: ${report.id}`);
+      }
       
-      // Validate payload before sending
-      try {
-        validatePayload(payload);
-      } catch (validationError) {
-        throw new Error(`Payload validation failed: ${validationError.message}`);
-      }
+      console.log('Direct config payload:', {
+        reportName: configReport.name,
+        reportId: configReport.id,
+        reportPath: configReport.reportPath,
+        configPayload: configReport.payload
+      });
+      
+      // Send only the SWMS payload (no reportPath - API will look it up)
+      const requestPayload = {
+        ...configReport.payload // Send the actual SWMS payload from config only
+      };
 
-      console.log('Fetching SWMS report with payload:', payload);
+      console.log('Final request payload sent to API (pure SWMS payload):', requestPayload);
 
-      try {
-        const response = await fetch('/api/fetchReport', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
+      const response = await fetch('/api/fetchReport', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestPayload),
+      });
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch report: ${response.status}`);
+      if (!response.ok) {
+        // Try to get error details from the API response
+        let errorDetails = `${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.details) {
+            errorDetails += `: ${errorData.details}`;
+          }
+        } catch (e) {
+          // If we can't parse the error response, just use the status
         }
-
-        const blob = await response.blob();
-        const pdfUrl = window.URL.createObjectURL(blob);
-        
-        // Create the report object with the fetched PDF
-        const fetchedReport = {
-          ...report,
-          pdfUrl: pdfUrl,
-          fetchedFromSWMS: true
-        };
-        
-        console.log('Successfully fetched SWMS report');
-        onReportSelect(fetchedReport, slot);
-        
-      } catch (fetchError) {
-        console.warn('SWMS fetch failed, using sample data:', fetchError.message);
-        
-        // Fallback: Create a sample report with sample PDF
-        const fallbackReport = {
-          ...report,
-          name: `${report.name} (Sample)`,
-          pdfUrl: '/reports/Report_v1.0.pdf', // Use sample PDF
-          fetchedFromSWMS: false,
-          isFallback: true
-        };
-        
-        console.log('Using fallback sample data for:', report.name);
-        onReportSelect(fallbackReport, slot);
+        throw new Error(`Failed to fetch report: ${errorDetails}`);
       }
+
+      const blob = await response.blob();
+      const pdfUrl = window.URL.createObjectURL(blob);
+      
+      // Create the report object with the fetched PDF
+      const fetchedReport = {
+        ...report,
+        pdfUrl: pdfUrl,
+        fetchedFromSWMS: true
+      };
+      
+      console.log('Successfully fetched SWMS report');
+      onReportSelect(fetchedReport, slot);
       
     } catch (error) {
-      console.error('Error in report selection:', error);
-      alert(`Error loading report: ${error.message}`);
+      console.error('Error fetching SWMS report:', error);
+      
+      // Show detailed error message to user
+      const errorMessage = error.message.includes('Failed to fetch report') 
+        ? `SWMS API Error: ${error.message}. Please check SWMS connectivity and try again.`
+        : `Report fetch failed: ${error.message}`;
+        
+      alert(errorMessage);
     } finally {
       setLoading(false);
       setShowSlotSelector(null);
@@ -130,7 +133,7 @@ export default function NavigationPanel({ reports = [], selectedReports, onRepor
           <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
-          Reports
+          SWMS Reports
           {loading && (
             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
           )}
@@ -199,12 +202,12 @@ export default function NavigationPanel({ reports = [], selectedReports, onRepor
                               showSlotSelector === null ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'
                             }`
                       }`}
-                      title="Fetch Report"
+                      title="Load Report"
                     >
                       <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
-                      <span className="whitespace-nowrap text-xs">Print to screen</span>
+                      <span className="whitespace-nowrap text-xs">Load</span>
                     </button>
 
                     {/* Slot Selector Popup - Compact */}

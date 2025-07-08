@@ -7,177 +7,6 @@ import CompareControls from './CompareControls';
 import ComparisonResultsTab from './ComparisonResultsTab';
 import UserSession from './UserSession';
 
-// Sample reports data
-const sampleReports = [
-  // Sample PDF Reports
-  {
-    id: 1,
-    name: 'Report_v1.0.pdf',
-    type: 'PDF',
-    size: '2.4 MB',
-    lastModified: '2025-06-30',
-    pdfUrl: '/reports/Report_v1.0.pdf',
-    content: `# Financial Report Q2 2025
-
-## Executive Summary
-This quarter has shown significant growth in our key metrics...
-
-## Revenue Analysis
-- Total Revenue: $2.4M (+15% YoY)
-- Recurring Revenue: $1.8M (+22% YoY)
-- New Customer Acquisition: 245 customers
-
-## Key Metrics
-- Customer Satisfaction: 94%
-- Net Promoter Score: 67
-- Churn Rate: 3.2%
-
-## Market Analysis
-The market conditions have been favorable with increased demand...`
-  },
-  {
-    id: 2,
-    name: 'Report_v1.1.pdf',
-    type: 'PDF',
-    size: '2.6 MB',
-    lastModified: '2025-07-01',
-    pdfUrl: '/reports/Report_v1.1.pdf',
-    content: `# Financial Report Q2 2025 (Revised)
-
-## Executive Summary
-This quarter has shown exceptional growth in our key metrics...
-
-## Revenue Analysis
-- Total Revenue: $2.6M (+18% YoY)
-- Recurring Revenue: $1.9M (+25% YoY)
-- New Customer Acquisition: 267 customers
-
-## Key Metrics
-- Customer Satisfaction: 96%
-- Net Promoter Score: 71
-- Churn Rate: 2.8%
-
-## Market Analysis
-The market conditions have been highly favorable with increased demand...
-
-## Future Outlook
-Based on current trends, we project continued growth...`
-  },
-  {
-    id: 3,
-    name: 'Monthly_Report_June.pdf',
-    type: 'PDF',
-    size: '1.8 MB',
-    lastModified: '2025-06-28',
-    pdfUrl: '/reports/Monthly_Report_June.pdf',
-    content: `# Monthly Report - June 2025
-
-## Overview
-This monthly report summarizes our key activities and achievements...
-
-## Performance Metrics
-- Revenue Growth: 12% MoM
-- Customer Acquisition: 89 new customers
-- Customer Retention: 95.2%
-
-## Key Achievements
-- Launched new product feature
-- Expanded team by 3 members
-- Improved system performance by 25%
-
-## Challenges & Solutions
-Identified and resolved scalability issues...`
-  },
-  {
-    id: 4,
-    name: 'Quarterly_Analysis_Q2.pdf',
-    type: 'PDF',
-    size: '2.1 MB',
-    lastModified: '2025-06-29',
-    pdfUrl: '/reports/Quarterly_Analysis_Q2.pdf',
-    content: `# Quarterly Analysis - Q2 2025
-
-## Executive Summary
-Q2 has been a period of significant transformation...
-
-## Financial Performance
-- Revenue: $3.2M (+20% QoQ)
-- Profit Margin: 18.5%
-- Operating Costs: $2.6M
-
-## Market Analysis
-Market conditions have been favorable with strong demand...
-
-## Strategic Initiatives
-- Digital transformation project
-- Customer experience improvements
-- Supply chain optimization
-
-## Future Projections
-Based on current trends, Q3 outlook is positive...`
-  },
-  
-  // SWMS Reports (to be fetched dynamically)
-  {
-    id: 'swms-equipment',
-    name: 'Equipment Overview (SWMS)',
-    type: 'PDF',
-    size: 'Dynamic',
-    lastModified: 'Real-time',
-    pdfUrl: null, // Will be fetched from SWMS
-    reportPath: '/report/equipment-overview',
-    payload: {
-      reportValue: 'me1ra',
-      type: 'PDF',
-      equipId: null,
-      zoneId: null,
-      printerName: null,
-      // Add any other equipment-specific fields
-    },
-    content: 'Equipment overview report from SWMS'
-  },
-  {
-    id: 'swms-inventory',
-    name: 'Inventory Overview (SWMS)',
-    type: 'PDF',
-    size: 'Dynamic',
-    lastModified: 'Real-time',
-    pdfUrl: null, // Will be fetched from SWMS
-    reportPath: '/report/inventory-overview',
-    payload: {
-      reportValue: 'mn1rb',
-      type: 'PDF',
-      parentpalletId: null,
-      plogiLoc: null,
-      printerName: null,
-      prodId: null,
-      prodSize:null,
-      prodSizeUnit: null,
-    },
-    content: 'Inventory overview report from SWMS'
-  },
-  {
-    id: 'swms-performance',
-    name: 'Performance Report (SWMS)',
-    type: 'PDF',
-    size: 'Dynamic',
-    lastModified: 'Real-time',
-    pdfUrl: null, // Will be fetched from SWMS
-    reportPath: '/report/performance',
-    payload: {
-      reportValue: 'perf1ra',
-      type: 'PDF',
-      equipId: null,
-      zoneId: null,
-      printerName: null,
-      dateRange: '30days', // Performance-specific field
-      metricType: 'efficiency', // Performance-specific field
-      departmentId: 'DEPT001', // Performance-specific field
-    },
-    content: 'Performance metrics report from SWMS'
-  }
-];
-
 export default function ReportComparison() {
   const [selectedReports, setSelectedReports] = useState([null, null]);
   const [isComparing, setIsComparing] = useState(false);
@@ -260,7 +89,6 @@ export default function ReportComparison() {
         <div className="w-60 flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col">
           <UserSession />
           <NavigationPanel 
-            reports={sampleReports}
             selectedReports={selectedReports}
             onReportSelect={handleReportSelect}
           />
@@ -294,15 +122,14 @@ export default function ReportComparison() {
         {/* Header with Tabs */}
         <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="px-6 py-2">
-            <div className="flex items-center justify-center">
-              <div className="text-center">
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-                  Report Testing Automation Tool
-                </h1>
-                <p className="text-gray-600 dark:text-gray-300 text-sm">
-                  Select two reports to compare their content and identify differences
-                </p>
-              </div>
+            <div className="flex items-center justify-center">            <div className="text-center">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                SWMS Report Testing Automation Tool
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">
+                Select two SWMS reports to compare their content and identify differences
+              </p>
+            </div>
             </div>
           </div>
           
