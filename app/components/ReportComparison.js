@@ -103,7 +103,7 @@ export default function ReportComparison() {
           title={`${isNavPanelVisible ? "Hide" : "Show"} Navigation Panel (Ctrl+B)`}
         >
           <svg 
-            className={`w-3 h-3 text-gray-600 dark:text-gray-300 transition-transform duration-200 ${
+            className={`w-2.5 h-2.5 text-gray-600 dark:text-gray-300 transition-transform duration-200 ${
               isNavPanelVisible ? 'rotate-180' : ''
             }`} 
             fill="none" 

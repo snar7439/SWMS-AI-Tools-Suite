@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { configurePdfJs, getPdfDocumentOptions } from '../lib/pdfConfig';
 
 // Dynamically import react-pdf components to avoid SSR issues
 const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { ssr: false });
@@ -13,12 +12,16 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
   const [pageNumber, setPageNumber] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [scale, setScale] = useState(0.6);
+  const [scale, setScale] = useState(1.0);
   const [pdfjs, setPdfjs] = useState(null);
   const [showDiffOverlay, setShowDiffOverlay] = useState(showDifferences);
   
-  // Memoize PDF document options to prevent unnecessary reloads
-  const documentOptions = useMemo(() => getPdfDocumentOptions(), []);
+  // Simple PDF document options for react-pdf 10.x
+  const documentOptions = useMemo(() => ({
+    cMapUrl: `https://unpkg.com/pdfjs-dist@4.4.168/cmaps/`,
+    cMapPacked: true,
+    standardFontDataUrl: `https://unpkg.com/pdfjs-dist@4.4.168/standard_fonts/`,
+  }), []);
   
   // Initialize PDF.js worker on client side only
   useEffect(() => {
@@ -28,16 +31,20 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
       try {
         if (!mounted) return;
         
-        const pdfjs = await configurePdfJs();
+        // Simple PDF.js initialization for react-pdf 10.x
+        const { pdfjs } = await import('react-pdf');
         
-        if (mounted) {
+        if (mounted && typeof window !== 'undefined') {
+          // For react-pdf 10.x, use CDN worker
+          pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+          
           setPdfjs(pdfjs);
-          console.log('PDF.js initialized successfully');
+          console.log('PDF.js initialized successfully', pdfjs.version);
         }
       } catch (error) {
         console.error('PDF.js initialization failed:', error);
         if (mounted) {
-          setError('PDF viewer unavailable, showing text content');
+          setError('PDF viewer unavailable');
         }
       }
     };
@@ -77,7 +84,7 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
 
   const zoomIn = () => setScale(prev => Math.min(prev + 0.2, 2.0));
   const zoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.4));
-  const resetZoom = () => setScale(0.6);
+  const resetZoom = () => setScale(1.0);
   
   // Generate mock difference highlights for demonstration
   const getDifferenceHighlights = useMemo(() => {
@@ -178,22 +185,12 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
           <h3 className={`text-sm font-semibold ${labelColor}`}>
             {title}
           </h3>
-          {report && (
-            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-              <span className="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded text-xs font-medium">
-                {report.type}
-              </span>
-            </div>
-          )}
         </div>
         
         {report && (
           <div className="mt-0.5">
             <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
               {report.name}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Modified: {report.lastModified}
             </p>
           </div>
         )}
@@ -334,12 +331,11 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
                         <div className="flex flex-col items-center justify-center p-6 h-64 bg-white rounded-lg shadow-sm max-w-md mx-auto">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-3 border-blue-600 mb-2"></div>
                           <span className="text-sm text-gray-600 dark:text-gray-400">Loading PDF...</span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">{pdfUrl}</span>
                         </div>
                       }
                       options={documentOptions}
                     >
-                      {numPages && (
+                      {numPages && pdfjs && (
                         <Page
                           pageNumber={pageNumber}
                           scale={scale}

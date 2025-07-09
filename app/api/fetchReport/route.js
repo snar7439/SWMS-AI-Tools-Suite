@@ -29,7 +29,7 @@ export async function POST(request) {
         'x-session-user-id': 'OPS$TEST0100',
         'x-swms-version': '61.0.0',
         'accept-language': 'en-US',
-        'cookie': '_ga=GA1.1.1134090752.1749581339; _ga_ML9Z3SL0FP=GS2.1.s1751296511$o15$g1$t1751296678$j60$l0$h0; swmslx739q60=6752a52ec8b3658a1b8c7ef5ffc2e9002be4f61179e784263fc496b6d53e9ddc'
+        'cookie': '_ga=GA1.1.1134090752.1749581339; _ga_ML9Z3SL0FP=GS2.1.s1751296511$o15$g1$t1751296678$j60$l0$h0; swmslx739q60=3f5e993aab2c083be9cbb778523d9303f045bec9249d313513dec9e6bc7f4675'
       },
       body: JSON.stringify(receivedPayload), // Use the payload from browser (with user ID override)
     });

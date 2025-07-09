@@ -44,10 +44,12 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
     }
   };
 
-  const filteredReports = (reports || []).filter(report => {
-    const matchesSearch = report.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
+  const filteredReports = (reports || [])
+    .filter(report => {
+      const matchesSearch = report.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSearch;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically by name
 
   const getFileIcon = (type) => {
     return (

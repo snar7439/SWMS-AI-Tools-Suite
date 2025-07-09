@@ -77,4 +77,13 @@ export const swmsReports = [
     reportPath: '/report/item-overview-by-area',
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","prodId":null,"palletType":null,"description":null,"cpv":null,"mfgId":null,"brand":null,"reportName":"Item Overview by Area","location":null,"rdcItem":null,"miniLoadItem":null,"ti":null,"hi":null,"printerName":null,"reportValue":"mi1rd","type":"PDF"}
   },
+  {
+    id: 'packing-list-for-R042',
+    name: 'Packing List',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/packing-list-for-R042',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1rg"}
+  },
 ];
