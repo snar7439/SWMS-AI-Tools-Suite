@@ -11,40 +11,40 @@ export default function CompareControls({
   const canCompare = selectedDocuments?.[0] && selectedDocuments?.[1];
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3">
+    <div className="bg-gray-800 border-t border-gray-700 p-3">
       {/* Comparison Results Summary - Compact */}
       {comparisonResult && (
-            <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="mb-3 p-3 bg-blue-900/20 border border-blue-800 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-1">
+              <h3 className="text-base font-semibold text-blue-100 mb-1">
                 Comparison Complete
               </h3>
-              <p className="text-xs text-blue-800 dark:text-blue-200">
+              <p className="text-xs text-blue-200">
                 Found {comparisonResult.differences} differences with {comparisonResult.similarity}% similarity
               </p>
               <div className="mt-1 flex items-center gap-2">
-                <span className="text-xs text-blue-700 dark:text-blue-300">💡 Use the &quot;Diffs&quot; button in each viewer to highlight differences</span>
+                <span className="text-xs text-blue-300">💡 Use the &quot;Diffs&quot; button in each viewer to highlight differences</span>
               </div>
             </div>
             <div className="flex items-center gap-3 text-sm">
               <div className="text-center">
-                <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                <div className="text-lg font-bold text-green-400">
                   {comparisonResult.additions}
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Added</div>
+                <div className="text-xs text-gray-400">Added</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-red-600 dark:text-red-400">
+                <div className="text-lg font-bold text-red-400">
                   {comparisonResult.deletions}
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Deleted</div>
+                <div className="text-xs text-gray-400">Deleted</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                <div className="text-lg font-bold text-purple-400">
                   {comparisonResult.modifications}
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Modified</div>
+                <div className="text-xs text-gray-400">Modified</div>
               </div>
             </div>
           </div>
@@ -56,12 +56,12 @@ export default function CompareControls({
         <div className="flex items-center gap-3">
           {/* Status Indicator */}
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${
+            <div className="w-2 h-2 rounded-full ${
               canCompare 
                 ? 'bg-green-500' 
-                : 'bg-gray-300 dark:bg-gray-600'
-            }`}></div>
-            <span className="text-xs text-gray-600 dark:text-gray-400">
+                : 'bg-gray-600'
+            }"></div>
+            <span className="text-xs text-gray-400">
               {canCompare 
                 ? 'Ready to compare' 
                 : 'Select two reports'
@@ -71,14 +71,14 @@ export default function CompareControls({
 
           {/* Report Names - Smaller */}
           {canCompare && (
-            <div className="hidden md:flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs">
+            <div className="hidden md:flex items-center gap-2 text-xs text-gray-400">
+              <span className="px-2 py-1 bg-blue-900/30 text-blue-300 rounded text-xs">
                 {selectedDocuments[0]?.name}
               </span>
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
               </svg>
-              <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs">
+              <span className="px-2 py-1 bg-green-900/30 text-green-300 rounded text-xs">
                 {selectedDocuments[1]?.name}
               </span>
             </div>
@@ -90,7 +90,7 @@ export default function CompareControls({
           <button
             onClick={onClear}
             disabled={!canCompare && !comparisonResult}
-            className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-sm text-gray-300 border border-gray-600 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Clear
           </button>
@@ -172,10 +172,10 @@ export default function CompareControls({
       {/* Progress Bar - Compact */}
       {isComparing && (
         <div className="mt-2">
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+          <div className="w-full bg-gray-700 rounded-full h-1.5">
             <div className="bg-blue-600 h-1.5 rounded-full animate-pulse" style={{ width: '60%' }}></div>
           </div>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 text-center">
+          <p className="text-xs text-gray-400 mt-1 text-center">
             Analyzing reports...
           </p>
         </div>

@@ -82,7 +82,7 @@ export default function ReportComparison() {
   }, [isNavPanelVisible]);
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 relative">
+    <div className="flex h-screen bg-gray-900 relative">
       {/* Navigation Panel - Conditionally Rendered */}
       {isNavPanelVisible && (
         <div className="w-60 flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col">
@@ -99,11 +99,11 @@ export default function ReportComparison() {
       }`}>
         <button
           onClick={toggleNavPanel}
-          className="p-1 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-md transition-all duration-200 hover:scale-110"
+          className="p-1 rounded-full bg-gray-800 border-2 border-gray-600 hover:bg-gray-700 shadow-md transition-all duration-200 hover:scale-110"
           title={`${isNavPanelVisible ? "Hide" : "Show"} Navigation Panel (Ctrl+B)`}
         >
           <svg 
-            className={`w-2.5 h-2.5 text-gray-600 dark:text-gray-300 transition-transform duration-200 ${
+            className={`w-2.5 h-2.5 text-gray-300 transition-transform duration-200 ${
               isNavPanelVisible ? 'rotate-180' : ''
             }`} 
             fill="none" 
@@ -118,13 +118,13 @@ export default function ReportComparison() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col transition-all duration-300 ease-in-out">
         {/* Header with Tabs */}
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <header className="bg-gray-800 border-b border-gray-700">
           <div className="px-6 py-2">
             <div className="flex items-center justify-center">            <div className="text-center">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+              <h1 className="text-xl font-bold text-white mb-1">
                 SWMS Report Testing Automation Tool
               </h1>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">
+              <p className="text-gray-300 text-sm">
                 Select two SWMS reports to compare their content and identify differences
               </p>
             </div>
@@ -138,8 +138,8 @@ export default function ReportComparison() {
                 onClick={() => setActiveTab('reports')}
                 className={`py-1 px-2 border-b-2 font-medium text-xs transition-colors ${
                   activeTab === 'reports'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                    ? 'border-blue-500 text-blue-400'
+                    : 'border-transparent text-gray-400 hover:text-gray-300'
                 }`}
               >
                 <div className="flex items-center gap-1">
@@ -155,10 +155,10 @@ export default function ReportComparison() {
                 disabled={!comparisonResult}
                 className={`py-1 px-2 border-b-2 font-medium text-xs transition-colors ${
                   activeTab === 'results'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    ? 'border-blue-500 text-blue-400'
                     : comparisonResult 
-                      ? 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                      : 'border-transparent text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                      ? 'border-transparent text-gray-400 hover:text-gray-300'
+                      : 'border-transparent text-gray-600 cursor-not-allowed'
                 }`}
               >
                 <div className="flex items-center gap-1">
@@ -167,7 +167,7 @@ export default function ReportComparison() {
                   </svg>
                   Results
                   {comparisonResult && (
-                    <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-xs px-1 py-0.5 rounded-full ml-1">
+                    <span className="bg-blue-900/30 text-blue-300 text-xs px-1 py-0.5 rounded-full ml-1">
                       {comparisonResult.differences}
                     </span>
                   )}

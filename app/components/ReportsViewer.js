@@ -56,9 +56,9 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
     };
   }, []) // Empty dependency array - only run once
   
-  const borderColor = slot === 0 ? 'border-blue-200 dark:border-blue-800' : 'border-green-200 dark:border-green-800';
-  const headerColor = slot === 0 ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-green-50 dark:bg-green-900/20';
-  const labelColor = slot === 0 ? 'text-blue-700 dark:text-blue-300' : 'text-green-700 dark:text-green-300';
+  const borderColor = slot === 0 ? 'border-blue-800' : 'border-green-800';
+  const headerColor = slot === 0 ? 'bg-blue-900/20' : 'bg-green-900/20';
+  const labelColor = slot === 0 ? 'text-blue-300' : 'text-green-300';
 
   const onDocumentLoadSuccess = useCallback(({ numPages }) => {
     setNumPages(numPages);
@@ -178,9 +178,9 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
   };
 
   return (
-    <div className={`flex flex-col h-full max-h-screen border-2 rounded-lg ${borderColor} bg-white dark:bg-gray-800`}>
+    <div className={`flex flex-col h-full max-h-screen border-2 rounded-lg ${borderColor} bg-gray-800`}>
       {/* Header - Ultra Compact */}
-      <div className={`px-2 py-1 ${headerColor} border-b border-gray-200 dark:border-gray-600 rounded-t-lg`}>
+      <div className={`px-2 py-1 ${headerColor} border-b border-gray-600 rounded-t-lg`}>
         <div className="flex items-center justify-between">
           <h3 className={`text-sm font-semibold ${labelColor}`}>
             {title}
@@ -189,7 +189,7 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
         
         {report && (
           <div className="mt-0.5">
-            <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
+            <p className="text-xs font-medium text-white truncate">
               {report.name}
             </p>
           </div>
@@ -202,12 +202,12 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
           <div className="flex flex-col h-full">
             {/* PDF Navigation - Ultra Compact */}
             {numPages && (
-              <div className="flex items-center justify-between px-2 py-1 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+              <div className="flex items-center justify-between px-2 py-1 bg-gray-700 border-b border-gray-600">
                 <div className="flex items-center gap-1">
                   <button
                     onClick={previousPage}
                     disabled={pageNumber <= 1}
-                    className="flex items-center gap-1 px-2 py-0.5 bg-white hover:bg-gray-100 disabled:bg-gray-50 dark:bg-gray-600 dark:hover:bg-gray-500 dark:disabled:bg-gray-700 border border-gray-300 dark:border-gray-500 disabled:border-gray-200 dark:disabled:border-gray-600 rounded text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-1 px-2 py-0.5 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 border border-gray-500 disabled:border-gray-600 rounded text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -215,8 +215,8 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
                     Prev
                   </button>
                   
-                  <div className="flex items-center bg-white dark:bg-gray-600 rounded px-2 py-0.5 border border-gray-300 dark:border-gray-500">
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <div className="flex items-center bg-gray-600 rounded px-2 py-0.5 border border-gray-500">
+                    <span className="text-xs font-medium text-gray-300">
                       {pageNumber} / {numPages}
                     </span>
                   </div>
@@ -224,7 +224,7 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
                   <button
                     onClick={nextPage}
                     disabled={pageNumber >= numPages}
-                    className="flex items-center gap-1 px-2 py-0.5 bg-white hover:bg-gray-100 disabled:bg-gray-50 dark:bg-gray-600 dark:hover:bg-gray-500 dark:disabled:bg-gray-700 border border-gray-300 dark:border-gray-500 disabled:border-gray-200 dark:disabled:border-gray-600 rounded text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-1 px-2 py-0.5 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 border border-gray-500 disabled:border-gray-600 rounded text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Next
                     <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -234,25 +234,25 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
                 </div>
                 
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-600 dark:text-gray-400">Zoom:</span>
-                  <div className="flex items-center bg-white dark:bg-gray-600 rounded border border-gray-300 dark:border-gray-500">
+                  <span className="text-xs text-gray-400">Zoom:</span>
+                  <div className="flex items-center bg-gray-600 rounded border border-gray-500">
                     <button
                       onClick={zoomOut}
-                      className="p-0.5 hover:bg-gray-100 dark:hover:bg-gray-500 rounded-l transition-colors"
+                      className="p-0.5 hover:bg-gray-500 rounded-l transition-colors"
                       title="Zoom Out"
                     >
                       <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                       </svg>
                     </button>
-                    <div className="px-1.5 py-0.5 border-x border-gray-300 dark:border-gray-500 min-w-[2.5rem] text-center">
-                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <div className="px-1.5 py-0.5 border-x border-gray-500 min-w-[2.5rem] text-center">
+                      <span className="text-xs font-medium text-gray-300">
                         {Math.round(scale * 100)}%
                       </span>
                     </div>
                     <button
                       onClick={zoomIn}
-                      className="p-0.5 hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors"
+                      className="p-0.5 hover:bg-gray-500 transition-colors"
                       title="Zoom In"
                     >
                       <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -261,7 +261,7 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
                     </button>
                     <button
                       onClick={resetZoom}
-                      className="px-1.5 py-0.5 hover:bg-gray-100 dark:hover:bg-gray-500 rounded-r border-l border-gray-300 dark:border-gray-500 text-xs font-medium transition-colors"
+                      className="px-1.5 py-0.5 hover:bg-gray-500 rounded-r border-l border-gray-500 text-xs font-medium transition-colors"
                       title="Reset Zoom"
                     >
                       Reset
@@ -274,8 +274,8 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
                       onClick={toggleDifferenceOverlay}
                       className={`p-0.5 px-2 rounded transition-colors text-xs font-medium ${
                         showDiffOverlay
-                          ? 'bg-orange-100 text-orange-700 border border-orange-300 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-700'
-                          : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-300 dark:border-gray-500'
+                          ? 'bg-orange-900/30 text-orange-300 border border-orange-700'
+                          : 'bg-gray-600 hover:bg-gray-500 text-gray-300 border border-gray-500'
                       }`}
                       title={showDiffOverlay ? "Hide Differences" : "Show Differences"}
                     >
@@ -292,23 +292,23 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
             )}
 
             {/* PDF Display - Fixed dimensions with scrollable container */}
-            <div className="flex-1 min-h-0 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
+            <div className="flex-1 min-h-0 bg-gradient-to-br from-gray-900 to-gray-800 relative overflow-hidden">
               {/* Differences Legend */}
               {showDiffOverlay && comparisonResult && (
-                <div className="absolute top-2 right-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 p-2 z-20">
-                  <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Differences:</div>
+                <div className="absolute top-2 right-2 bg-gray-800 rounded-lg shadow-lg border border-gray-600 p-2 z-20">
+                  <div className="text-xs font-semibold text-gray-300 mb-1">Differences:</div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-1">
                       <div className="w-3 h-3 bg-green-200 border border-green-400 rounded-sm"></div>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">Added</span>
+                      <span className="text-xs text-gray-400">Added</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <div className="w-3 h-3 bg-red-200 border border-red-400 rounded-sm"></div>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">Removed</span>
+                      <span className="text-xs text-gray-400">Removed</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <div className="w-3 h-3 bg-orange-200 border border-orange-400 rounded-sm"></div>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">Modified</span>
+                      <span className="text-xs text-gray-400">Modified</span>
                     </div>
                   </div>
                 </div>
@@ -317,10 +317,10 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
               <div className="absolute inset-0 overflow-auto scrollbar-thin">
                 <div className="p-3 min-h-full min-w-full">
                   {!pdfjs && !error ? (
-                    <div className="flex flex-col items-center justify-center p-6 h-64 bg-white rounded-lg shadow-sm max-w-md mx-auto">
+                    <div className="flex flex-col items-center justify-center p-6 h-64 bg-gray-800 rounded-lg shadow-sm max-w-md mx-auto">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-3 border-blue-600 mb-2"></div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Initializing PDF viewer...</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">Loading PDF.js worker</span>
+                      <span className="text-sm text-gray-400">Initializing PDF viewer...</span>
+                      <span className="text-xs text-gray-400 mt-1">Loading PDF.js worker</span>
                     </div>
                   ) : pdfUrl && pdfjs && !error ? (
                     <Document
@@ -328,9 +328,9 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
                       onLoadSuccess={onDocumentLoadSuccess}
                       onLoadError={onDocumentLoadError}
                       loading={
-                        <div className="flex flex-col items-center justify-center p-6 h-64 bg-white rounded-lg shadow-sm max-w-md mx-auto">
+                        <div className="flex flex-col items-center justify-center p-6 h-64 bg-gray-800 rounded-lg shadow-sm max-w-md mx-auto">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-3 border-blue-600 mb-2"></div>
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Loading PDF...</span>
+                          <span className="text-sm text-gray-400">Loading PDF...</span>
                         </div>
                       }
                       options={documentOptions}
@@ -341,10 +341,10 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
                           scale={scale}
                           className="shadow-lg border border-gray-200 rounded-lg bg-white mx-auto block relative"
                           loading={
-                            <div className="flex items-center justify-center p-6 bg-gray-50 rounded-lg border border-gray-200 shadow-lg mx-auto" style={{ width: '400px', height: '500px' }}>
+                            <div className="flex items-center justify-center p-6 bg-gray-700 rounded-lg border border-gray-600 shadow-lg mx-auto" style={{ width: '400px', height: '500px' }}>
                               <div className="text-center">
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                                <span className="text-gray-600 text-xs">Rendering page...</span>
+                                <span className="text-gray-400 text-xs">Rendering page...</span>
                               </div>
                             </div>
                           }
@@ -361,10 +361,10 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
                               key={index}
                               className={`absolute border-2 rounded-sm pointer-events-auto cursor-pointer group ${
                                 diff.type === 'addition' 
-                                  ? 'border-green-400 bg-green-200/30 dark:border-green-500 dark:bg-green-500/20'
+                                  ? 'border-green-500 bg-green-500/20'
                                   : diff.type === 'deletion'
-                                  ? 'border-red-400 bg-red-200/30 dark:border-red-500 dark:bg-red-500/20'
-                                  : 'border-orange-400 bg-orange-200/30 dark:border-orange-500 dark:bg-orange-500/20'
+                                  ? 'border-red-500 bg-red-500/20'
+                                  : 'border-orange-500 bg-orange-500/20'
                               }`}
                               style={{
                                 left: `${diff.x * scale}px`,
@@ -378,18 +378,18 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
                               {/* Difference Type Indicator */}
                               <div className={`absolute -top-2 -left-2 w-4 h-4 rounded-full text-xs text-white flex items-center justify-center font-bold ${
                                 diff.type === 'addition' 
-                                  ? 'bg-green-500 dark:bg-green-600'
+                                  ? 'bg-green-600'
                                   : diff.type === 'deletion'
-                                  ? 'bg-red-500 dark:bg-red-600'
-                                  : 'bg-orange-500 dark:bg-orange-600'
+                                  ? 'bg-red-600'
+                                  : 'bg-orange-600'
                               }`}>
                                 {diff.type === 'addition' ? '+' : diff.type === 'deletion' ? '-' : '~'}
                               </div>
                               
                               {/* Tooltip on Hover */}
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-700 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                                 {diff.description}
-                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-700"></div>
                               </div>
                             </div>
                           ))}
@@ -398,31 +398,31 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
                     </Document>
                   ) : pdfUrl && !pdfjs && !error ? (
                     // PDF.js is still loading or not properly initialized
-                    <div className="flex flex-col items-center justify-center h-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg mx-auto max-w-md">
+                    <div className="flex flex-col items-center justify-center h-64 bg-gray-800 rounded-lg shadow-lg mx-auto max-w-md">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mb-4"></div>
-                      <span className="text-lg text-gray-600 dark:text-gray-400 font-medium mb-2">Initializing PDF viewer...</span>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Setting up the document reader</span>
-                      <span className="text-xs text-gray-400 dark:text-gray-500 mt-2">PDF: {pdfUrl}</span>
+                      <span className="text-lg text-gray-400 font-medium mb-2">Initializing PDF viewer...</span>
+                      <span className="text-sm text-gray-400">Setting up the document reader</span>
+                      <span className="text-xs text-gray-500 mt-2">PDF: {pdfUrl}</span>
                     </div>
                   ) : (
                     // Fallback to text content
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mx-auto max-w-full">
+                    <div className="bg-gray-800 rounded-lg shadow-md p-6 mx-auto max-w-full">
                       <div className="text-center mb-4">
-                        <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-full flex items-center justify-center">
-                          <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-blue-900 to-blue-800 rounded-full flex items-center justify-center">
+                          <svg className="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M4 3a2 2 0 00-2 2v1.5h2V5a1 1 0 011-1h2.5V3H4zM14.5 3v1H17a1 1 0 011 1v1.5h2V5a2 2 0 00-2-2h-3.5zM2 8.5V17a2 2 0 002 2h3.5v-2H4a1 1 0 01-1-1V8.5H2zM18 8.5V17a1 1 0 01-1 1h-3.5v2H17a2 2 0 002-2V8.5h-1z"/>
                           </svg>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                        <h3 className="text-lg font-semibold text-white mb-1">
                           {error ? 'PDF Viewer Error' : 'Document Preview'}
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-gray-400">
                           {error ? 'Showing text content instead' : 'Add PDF file for full viewer'}
                         </p>
                       </div>
-                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 max-h-80 overflow-auto">
+                      <div className="bg-gray-700 rounded-lg p-4 border border-gray-600 max-h-80 overflow-auto">
                         <div 
-                          className="prose prose-sm dark:prose-invert max-w-none leading-relaxed text-sm"
+                          className="prose prose-sm prose-invert max-w-none leading-relaxed text-sm"
                           dangerouslySetInnerHTML={{ __html: formatContent(report.content) }}
                         />
                       </div>
@@ -430,16 +430,16 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
                   )}
                   
                   {error && pdfUrl && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800 bg-opacity-95 dark:bg-opacity-95 rounded-lg">
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-95 rounded-lg">
                       <div className="text-center p-8 max-w-md">
-                        <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                          <svg className="w-8 h-8 text-red-500 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                        <div className="w-16 h-16 mx-auto mb-4 bg-red-900/30 rounded-full flex items-center justify-center">
+                          <svg className="w-8 h-8 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                           </svg>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Unable to Load PDF</h3>
-                        <p className="text-red-600 dark:text-red-400 mb-3">{error}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <h3 className="text-lg font-semibold text-white mb-2">Unable to Load PDF</h3>
+                        <p className="text-red-400 mb-3">{error}</p>
+                        <p className="text-sm text-gray-400">
                           Please check that the PDF file exists and is accessible.
                         </p>
                       </div>
@@ -450,30 +450,30 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+          <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-gray-900 to-gray-800">
             <div className="text-center max-w-sm">
               <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
                 slot === 0 
-                  ? 'bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30' 
-                  : 'bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30'
+                  ? 'bg-gradient-to-br from-blue-900/30 to-blue-800/30' 
+                  : 'bg-gradient-to-br from-green-900/30 to-green-800/30'
               }`}>
                 <svg className={`w-8 h-8 ${
-                  slot === 0 ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'
+                  slot === 0 ? 'text-blue-400' : 'text-green-400'
                 }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              <h4 className="text-lg font-semibold text-white mb-2">
                 No Report Selected
               </h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-gray-400 mb-4">
                 Select a PDF report from the navigation panel to view its content here.
               </p>
               <div className="flex items-center justify-center">
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                   slot === 0 
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
-                    : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                    ? 'bg-blue-900/30 text-blue-300' 
+                    : 'bg-green-900/30 text-green-300'
                 }`}>
                   {slot === 0 ? 'Report A' : 'Report B'}
                 </span>

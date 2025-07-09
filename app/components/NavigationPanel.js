@@ -172,10 +172,10 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
   }, []);
 
   return (
-    <div className="flex-1 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-full">
+    <div className="flex-1 bg-gray-800 border-r border-gray-700 flex flex-col h-full">
       {/* Panel Header - Compact */}
-      <div className="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
-        <h2 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+      <div className="flex-shrink-0 p-3 border-b border-gray-600 bg-gray-900">
+        <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
           <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
@@ -186,27 +186,27 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
         </h2>
 
         {/* SWMS User ID Section */}
-        <div className="mb-3 border border-gray-200 dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-800">
+        <div className="mb-3 border border-gray-600 rounded-md p-2 bg-gray-800">
           <div className="flex items-center gap-2 mb-1">
             <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">SWMS User ID</span>
+            <span className="text-xs font-medium text-gray-300">SWMS User ID</span>
           </div>
           
           {!isEditingUserId ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-center min-w-[32px]">
+                <span className="text-xs text-gray-400 bg-gray-700 px-1 py-0.5 rounded text-center min-w-[32px]">
                   OPS$
                 </span>
-                <span className="text-xs font-medium text-gray-900 dark:text-white bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-700">
+                <span className="text-xs font-medium text-white bg-blue-900/30 px-2 py-0.5 rounded border border-blue-700">
                   {currentUserId}
                 </span>
               </div>
               <button
                 onClick={handleUserIdEdit}
-                className="px-1.5 py-0.5 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                className="px-1.5 py-0.5 text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 rounded transition-colors"
               >
                 Edit
               </button>
@@ -214,7 +214,7 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
           ) : (
             <form onSubmit={handleUserIdSubmit} className="space-y-1.5">
               <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-center min-w-[32px]">
+                <span className="text-xs text-gray-400 bg-gray-700 px-1 py-0.5 rounded text-center min-w-[32px]">
                   OPS$
                 </span>
                 <input
@@ -222,7 +222,7 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
                   value={userIdInput}
                   onChange={(e) => setUserIdInput(e.target.value.toUpperCase())}
                   onKeyDown={handleUserIdKeyDown}
-                  className="flex-1 px-2 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white h-6"
+                  className="flex-1 px-2 py-0.5 text-xs border border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-gray-700 text-white h-6"
                   placeholder="Enter User ID"
                   autoFocus
                   required
@@ -238,7 +238,7 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
                 <button
                   type="button"
                   onClick={handleUserIdCancel}
-                  className="px-2 py-0.5 text-xs text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
+                  className="px-2 py-0.5 text-xs text-gray-400 hover:text-gray-300 hover:bg-gray-700 rounded transition-colors"
                 >
                   Cancel
                 </button>
@@ -249,7 +249,7 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
         
         {/* Search - Compact */}
         <div className="relative">
-          <svg className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
@@ -257,23 +257,23 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
             placeholder="Search reports..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
           />
         </div>
       </div>
 
       {/* Report List - Compact */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white dark:bg-gray-800 min-h-0">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-800 min-h-0">
         <div className="p-1.5">
           {filteredReports.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <div className="w-12 h-12 mx-auto mb-3 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+            <div className="text-center py-8 text-gray-400">
+              <div className="w-12 h-12 mx-auto mb-3 bg-gray-700 rounded-full flex items-center justify-center">
                 <svg className="w-6 h-6 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="font-medium text-gray-900 dark:text-white mb-1 text-sm">No reports found</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Try adjusting your search or filter</p>
+              <h3 className="font-medium text-white mb-1 text-sm">No reports found</h3>
+              <p className="text-xs text-gray-400">Try adjusting your search or filter</p>
             </div>
           ) : (
             filteredReports.map((report) => {
@@ -284,8 +284,8 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
                   key={report.id}
                   className={`group relative p-2 rounded-md border cursor-pointer transition-all duration-200 mb-1.5 hover:shadow-sm ${
                     selected 
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm' 
-                      : 'border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                      ? 'border-blue-500 bg-blue-900/30 shadow-sm' 
+                      : 'border-gray-600 hover:border-blue-500 hover:bg-gray-700/50'
                   }`}
                   onClick={() => toggleSlotSelector(null, report.id)}
                 >
@@ -311,10 +311,10 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
                     {/* Slot Selector Popup - Compact */}
                     {showSlotSelector === report.id && (
                       <div 
-                        className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-2 min-w-[160px] z-20"
+                        className="absolute top-full right-0 mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-lg p-2 min-w-[160px] z-20"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-medium">
+                        <div className="text-xs text-gray-400 mb-2 font-medium">
                           Choose viewer:
                         </div>
                         <div className="space-y-1">
@@ -323,20 +323,20 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
                               e.stopPropagation();
                               handleSlotSelect(report, 0);
                             }}
-                            className="w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200"
+                            className="w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-md hover:bg-blue-900/20 transition-all duration-200"
                           >
                             <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
-                            <span className="text-blue-600 dark:text-blue-400 font-medium">Left</span>
+                            <span className="text-blue-400 font-medium">Left</span>
                           </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSlotSelect(report, 1);
                             }}
-                            className="w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-md hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200"
+                            className="w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-md hover:bg-green-900/20 transition-all duration-200"
                           >
                             <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
-                            <span className="text-green-600 dark:text-green-400 font-medium">Right</span>
+                            <span className="text-green-400 font-medium">Right</span>
                           </button>
                         </div>
                       </div>
@@ -354,12 +354,12 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="mb-1">
-                          <h3 className="font-medium text-gray-900 dark:text-white text-xs whitespace-nowrap overflow-hidden text-ellipsis" title={report.name}>
+                          <h3 className="font-medium text-white text-xs whitespace-nowrap overflow-hidden text-ellipsis" title={report.name}>
                             {report.name}
                           </h3>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                          <span className="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-red-900/30 text-red-300">
                             {report.type}
                           </span>
                         </div>
