@@ -53,7 +53,7 @@ export default function LoginPage() {
       }));
 
       // Redirect to components selection page
-      router.push('/components');
+      router.push('/dashboard');
     } catch (err) {
       setError(err.message);
     } finally {

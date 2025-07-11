@@ -13,8 +13,8 @@ export default function Home() {
       try {
         const authInfo = JSON.parse(authData);
         if (authInfo.authenticated) {
-          // User is authenticated, redirect to components page
-          router.push('/components');
+          // User is authenticated, redirect to dashboard page
+          router.push('/dashboard');
           return;
         }
       } catch (error) {

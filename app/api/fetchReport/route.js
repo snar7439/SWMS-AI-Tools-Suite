@@ -52,7 +52,7 @@ export async function POST(request) {
         'x-session-user-id': formattedUsername,
         'x-swms-version': '61.0.0',
         'accept-language': 'en-US',
-        'cookie': swmsSessionCookie // Use the authenticated session cookie
+        'cookie': '_ga=GA1.1.1134090752.1749581339; _ga_ML9Z3SL0FP=GS2.1.s1751296511$o15$g1$t1751296678$j60$l0$h0; swmslx739q60=bb7f6a8598dc9193f4919dd8735545c8c4ac0ab8518f20d85cb08ba8f96f85d6' //swmsSessionCookie // Use the authenticated session cookie
       },
       body: JSON.stringify(finalPayload), // Use the payload with authenticated username
     });

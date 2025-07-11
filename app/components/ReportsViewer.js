@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { ssr: false });
 const Page = dynamic(() => import('react-pdf').then(mod => mod.Page), { ssr: false });
 
-export default function ReportsViewer({ report, slot, title, comparisonResult, showDifferences = false }) {
+export default function ReportsViewer({ report, slot, title, comparisonResult, showDifferences = false, onReportReplace }) {
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -15,6 +15,7 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
   const [scale, setScale] = useState(1.0);
   const [pdfjs, setPdfjs] = useState(null);
   const [showDiffOverlay, setShowDiffOverlay] = useState(showDifferences);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   // Simple PDF document options for react-pdf 10.x
   const documentOptions = useMemo(() => ({
@@ -55,6 +56,75 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
       mounted = false;
     };
   }, []) // Empty dependency array - only run once
+
+  // Drag and drop handlers for replacing reports
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragOver) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Only hide overlay if we're leaving the main container
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    const pdfFile = files.find(file => file.type === 'application/pdf');
+    
+    if (pdfFile && onReportReplace) {
+      handleFileUpload(pdfFile);
+    } else if (!pdfFile) {
+      alert('Please drop a PDF file');
+    }
+  };
+
+  const handleFileUpload = async (file) => {
+    try {
+      // Create a blob URL for the PDF file
+      const pdfUrl = URL.createObjectURL(file);
+      
+      // Create report object
+      const newReport = {
+        id: `manual_${Date.now()}`,
+        name: file.name.replace('.pdf', ''),
+        type: 'Manual Upload',
+        pdfUrl: pdfUrl,
+        fetchedFromSWMS: false,
+        isManualUpload: true,
+        file: file
+      };
+      
+      console.log('Replacing report with manual upload:', newReport);
+      onReportReplace(newReport, slot);
+      
+    } catch (error) {
+      console.error('Error uploading replacement file:', error);
+      alert('Error uploading file. Please try again.');
+    }
+  };
   
   const borderColor = slot === 0 ? 'border-blue-800' : 'border-green-800';
   const headerColor = slot === 0 ? 'bg-blue-900/20' : 'bg-green-900/20';
@@ -178,7 +248,27 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
   };
 
   return (
-    <div className={`flex flex-col h-full max-h-screen border-2 rounded-lg ${borderColor} bg-gray-800`}>
+    <div 
+      className={`flex flex-col h-full max-h-screen border-2 rounded-lg ${borderColor} bg-gray-800 relative`}
+      onDragEnter={onReportReplace ? handleDragEnter : undefined}
+      onDragOver={onReportReplace ? handleDragOver : undefined}
+      onDragLeave={onReportReplace ? handleDragLeave : undefined}
+      onDrop={onReportReplace ? handleDrop : undefined}
+    >
+      {/* Drag and Drop Overlay */}
+      {isDragOver && onReportReplace && (
+        <div className="absolute inset-0 z-50 bg-blue-900/80 backdrop-blur-sm rounded-lg flex items-center justify-center border-2 border-blue-400 border-dashed">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            </div>
+            <h4 className="text-lg font-bold text-white mb-2">Replace Report</h4>
+            <p className="text-sm text-blue-200">Drop PDF file to replace current report</p>
+          </div>
+        </div>
+      )}
       {/* Header - Ultra Compact */}
       <div className={`px-2 py-1 ${headerColor} border-b border-gray-600 rounded-t-lg`}>
         <div className="flex items-center justify-between">
@@ -467,7 +557,7 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
                 No Report Selected
               </h4>
               <p className="text-sm text-gray-400 mb-4">
-                Select a PDF report from the navigation panel to view its content here.
+                Select a PDF report from the navigation panel, or drag & drop a PDF file to view its content here.
               </p>
               <div className="flex items-center justify-center">
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${

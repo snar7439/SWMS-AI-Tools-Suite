@@ -5,8 +5,9 @@ import NavigationPanel from './NavigationPanel';
 import ReportViewer from './ReportsViewer';
 import CompareControls from './CompareControls';
 import ComparisonResultsTab from './ComparisonResultsTab';
+import DragDropArea from './DragDropArea';
 
-export default function ReportComparison({ currentUser, onLogout }) {
+export default function ReportComparison() {
   const [selectedReports, setSelectedReports] = useState([null, null]);
   const [isComparing, setIsComparing] = useState(false);
   const [comparisonResult, setComparisonResult] = useState(null);
@@ -31,6 +32,11 @@ export default function ReportComparison({ currentUser, onLogout }) {
       left: newSelected[0]?.name || 'None',
       right: newSelected[1]?.name || 'None'
     });
+  };
+
+  const handleManualUpload = (report, slot) => {
+    console.log('Manual upload:', report, 'to slot:', slot);
+    handleReportSelect(report, slot);
   };
 
   const handleCompare = () => {
@@ -82,20 +88,19 @@ export default function ReportComparison({ currentUser, onLogout }) {
   }, [isNavPanelVisible]);
 
   return (
-    <div className="flex h-screen bg-gray-900 relative">
-      {/* Navigation Panel - Conditionally Rendered */}
+    <div className="flex bg-gray-900 relative" style={{ height: 'calc(100vh - 5rem)' }}>
+      {/* Navigation Panel - Fixed Position */}
       {isNavPanelVisible && (
-        <div className="w-60 flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col">
+        <div className="w-60 flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col h-full">
           <NavigationPanel 
             selectedReports={selectedReports}
             onReportSelect={handleReportSelect}
-            currentUser={currentUser}
           />
         </div>
       )}
       
       {/* Navigation Panel Toggle Button - On the dividing line */}
-      <div className={`absolute top-1/16 transform -translate-y-1/2 z-50 transition-all duration-300 ease-in-out ${
+      <div className={`absolute top-1/14 transform -translate-y-1/2 z-50 transition-all duration-300 ease-in-out ${
         isNavPanelVisible ? 'left-60' : 'left-0'
       }`}>
         <button
@@ -119,56 +124,27 @@ export default function ReportComparison({ currentUser, onLogout }) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col transition-all duration-300 ease-in-out">
         {/* Header with Tabs */}
-        <header className="bg-gray-800 border-b border-gray-700">
-          <div className="px-6 py-2">
-            <div className="flex items-center justify-between">
-              {/* Title */}
-              <div className="text-center flex-1">
-                <h1 className="text-xl font-bold text-white mb-1">
-                  SWMS Report Testing Automation Tool
-                </h1>
-                <p className="text-gray-300 text-sm">
-                  Select two SWMS reports to compare their content and identify differences
-                </p>
-              </div>
-              
-              {/* User Info & Logout */}
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p className="text-sm text-gray-300">
-                    Logged in as
-                  </p>
-                  <p className="text-sm font-medium text-white">
-                    {currentUser}
-                  </p>
-                </div>
-                <button
-                  onClick={onLogout}
-                  className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white text-sm rounded-lg transition-colors flex items-center gap-2"
-                  title="Logout"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  Logout
-                </button>
-              </div>
-            </div>
+        <header className="bg-gray-800 border-b border-gray-700">          
+          {/* Description */}
+          <div className="px-6 py-2 text-center">
+            <p className="text-gray-300 text-s">
+              Select two SWMS reports to compare their content and identify differences
+            </p>
           </div>
           
           {/* Tab Navigation */}
           <div className="px-6 pb-2">
-            <nav className="flex justify-center space-x-8">
+            <nav className="flex justify-center space-x-6">
               <button
                 onClick={() => setActiveTab('reports')}
-                className={`py-1 px-2 border-b-2 font-medium text-xs transition-colors ${
+                className={`py-1.5 px-3 border-b-2 font-medium text-xs transition-colors ${
                   activeTab === 'reports'
                     ? 'border-blue-500 text-blue-400'
                     : 'border-transparent text-gray-400 hover:text-gray-300'
                 }`}
               >
-                <div className="flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   Reports
@@ -178,7 +154,7 @@ export default function ReportComparison({ currentUser, onLogout }) {
               <button
                 onClick={() => setActiveTab('results')}
                 disabled={!comparisonResult}
-                className={`py-1 px-2 border-b-2 font-medium text-xs transition-colors ${
+                className={`py-1.5 px-3 border-b-2 font-medium text-xs transition-colors ${
                   activeTab === 'results'
                     ? 'border-blue-500 text-blue-400'
                     : comparisonResult 
@@ -186,8 +162,8 @@ export default function ReportComparison({ currentUser, onLogout }) {
                       : 'border-transparent text-gray-600 cursor-not-allowed'
                 }`}
               >
-                <div className="flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                   Results
@@ -208,22 +184,40 @@ export default function ReportComparison({ currentUser, onLogout }) {
             {/* Report Viewers - Fixed equal widths and height */}
             <div className="flex-1 flex gap-4 p-6 min-h-0">
               <div className="w-1/2 flex-shrink-0 h-full">
-                <ReportViewer 
-                  report={selectedReports[0]}
-                  slot={0}
-                  title="Left Section"
-                  comparisonResult={comparisonResult}
-                  showDifferences={!!comparisonResult}
-                />
+                {selectedReports[0] ? (
+                  <ReportViewer 
+                    report={selectedReports[0]}
+                    slot={0}
+                    title="Left Section"
+                    comparisonResult={comparisonResult}
+                    showDifferences={!!comparisonResult}
+                    onReportReplace={handleManualUpload}
+                  />
+                ) : (
+                  <DragDropArea 
+                    onFileUpload={handleManualUpload}
+                    slot={0}
+                    title="Left Section"
+                  />
+                )}
               </div>
               <div className="w-1/2 flex-shrink-0 h-full">
-                <ReportViewer 
-                  report={selectedReports[1]}
-                  slot={1}
-                  title="Right Section"
-                  comparisonResult={comparisonResult}
-                  showDifferences={!!comparisonResult}
-                />
+                {selectedReports[1] ? (
+                  <ReportViewer 
+                    report={selectedReports[1]}
+                    slot={1}
+                    title="Right Section"
+                    comparisonResult={comparisonResult}
+                    showDifferences={!!comparisonResult}
+                    onReportReplace={handleManualUpload}
+                  />
+                ) : (
+                  <DragDropArea 
+                    onFileUpload={handleManualUpload}
+                    slot={1}
+                    title="Right Section"
+                  />
+                )}
               </div>
             </div>
 

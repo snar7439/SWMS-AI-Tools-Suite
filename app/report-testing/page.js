@@ -33,6 +33,19 @@ export default function ReportTestingPage() {
     setLoading(false);
   }, [router]);
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+
+    sessionStorage.removeItem('swms-auth');
+    router.push('/login');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
@@ -46,14 +59,14 @@ export default function ReportTestingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
-      {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Fixed Header */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-2">
           <div className="flex justify-between items-center py-3">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => router.push('/components')}
-                className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
+                onClick={() => router.push('/dashboard')}
+                className="flex items-center space-x-1 text-gray-300 hover:text-white transition-colors cursor-pointer"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -61,30 +74,39 @@ export default function ReportTestingPage() {
                 <span className="text-sm font-medium">Back to Tools</span>
               </button>
               <div className="border-l border-gray-600 pl-4">
-                <h1 className="text-xl font-bold text-white">Report Testing Automation</h1>
+                <h1 className="text-2xl font-extrabold text-white">SWMS Report Testing Automation</h1>
                 <p className="text-sm text-gray-400">Compare and validate SWMS reports</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
               {/* User Info */}
-              <div className="flex items-center space-x-3 bg-gray-700 rounded-lg px-3 py-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white">{currentUser}</p>
-                </div>
+              <div className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span className="text-white font-medium">{currentUser}</span>
               </div>
+              
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-colors cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Logout</span>
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content - Report Testing Component */}
-      <ReportComparison />
+      {/* Main Content with top padding to account for fixed header */}
+      <div className="pt-20">
+        <ReportComparison />
+      </div>
     </div>
   );
 }
