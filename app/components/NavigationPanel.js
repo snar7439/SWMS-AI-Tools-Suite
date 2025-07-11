@@ -3,46 +3,13 @@
 import { useState, useEffect } from 'react';
 import { swmsReports } from '../lib/reportsConfig';
 
-export default function NavigationPanel({ selectedReports, onReportSelect }) {
+export default function NavigationPanel({ selectedReports, onReportSelect, currentUser }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showSlotSelector, setShowSlotSelector] = useState(null); // Track which report's selector is open
   const [loading, setLoading] = useState(false);
-  
-  // SWMS User ID state
-  const [userIdInput, setUserIdInput] = useState('TEST0100');
-  const [currentUserId, setCurrentUserId] = useState('TEST0100');
-  const [isEditingUserId, setIsEditingUserId] = useState(false);
 
   // Use reports directly from config file
   const reports = swmsReports;
-
-  // SWMS User ID handlers
-  const handleUserIdSubmit = (e) => {
-    e.preventDefault();
-    if (userIdInput.trim()) {
-      setCurrentUserId(userIdInput.trim());
-      setIsEditingUserId(false);
-      
-      // Store in sessionStorage for persistence
-      sessionStorage.setItem('swms-user-id', userIdInput.trim());
-    }
-  };
-
-  const handleUserIdEdit = () => {
-    setIsEditingUserId(true);
-    setUserIdInput(currentUserId);
-  };
-
-  const handleUserIdCancel = () => {
-    setIsEditingUserId(false);
-    setUserIdInput(currentUserId);
-  };
-
-  const handleUserIdKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      handleUserIdCancel();
-    }
-  };
 
   const filteredReports = (reports || [])
     .filter(report => {
@@ -69,10 +36,8 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
       
       console.log('Loading payload directly from report config...');
       
-      const currentUserId = sessionStorage.getItem('swms-user-id') || 'TEST0100';
-      
-      // Ensure userID has OPS$ prefix format
-      const formattedUserId = currentUserId.startsWith('OPS$') ? currentUserId : `OPS$${currentUserId}`;
+      // Use the authenticated currentUser instead of sessionStorage
+      const formattedUserId = currentUser.startsWith('OPS$') ? currentUser : `OPS$${currentUser}`;
       
       // Find the report in config to get the exact payload
       const configReport = swmsReports.find(r => r.id === report.id);
@@ -87,13 +52,13 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
         configPayload: configReport.payload
       });
       
-      // Send the SWMS payload with user-entered userID override
+      // Send the SWMS payload with authenticated user ID
       const requestPayload = {
         ...configReport.payload, // Start with config payload
-        userId: formattedUserId    // Override with formatted user ID (OPS$...)
+        userId: formattedUserId    // Override with formatted authenticated user ID
       };
 
-      console.log('Final request payload sent to API (with formatted user ID):', requestPayload);
+      console.log('Final request payload sent to API (with authenticated user ID):', requestPayload);
 
       const response = await fetch('/api/fetchReport', {
         method: 'POST',
@@ -162,15 +127,6 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
     }
   }, [showSlotSelector]);
 
-  // Load user ID from sessionStorage on component mount
-  useEffect(() => {
-    const stored = sessionStorage.getItem('swms-user-id');
-    if (stored) {
-      setCurrentUserId(stored);
-      setUserIdInput(stored);
-    }
-  }, []);
-
   return (
     <div className="flex-1 bg-gray-800 border-r border-gray-700 flex flex-col h-full">
       {/* Panel Header - Compact */}
@@ -185,66 +141,27 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
           )}
         </h2>
 
-        {/* SWMS User ID Section */}
+        {/* Current User Display */}
         <div className="mb-3 border border-gray-600 rounded-md p-2 bg-gray-800">
           <div className="flex items-center gap-2 mb-1">
             <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            <span className="text-xs font-medium text-gray-300">SWMS User ID</span>
+            <span className="text-xs font-medium text-gray-300">Current User</span>
           </div>
           
-          {!isEditingUserId ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-400 bg-gray-700 px-1 py-0.5 rounded text-center min-w-[32px]">
-                  OPS$
-                </span>
-                <span className="text-xs font-medium text-white bg-blue-900/30 px-2 py-0.5 rounded border border-blue-700">
-                  {currentUserId}
-                </span>
-              </div>
-              <button
-                onClick={handleUserIdEdit}
-                className="px-1.5 py-0.5 text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 rounded transition-colors"
-              >
-                Edit
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleUserIdSubmit} className="space-y-1.5">
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-400 bg-gray-700 px-1 py-0.5 rounded text-center min-w-[32px]">
-                  OPS$
-                </span>
-                <input
-                  type="text"
-                  value={userIdInput}
-                  onChange={(e) => setUserIdInput(e.target.value.toUpperCase())}
-                  onKeyDown={handleUserIdKeyDown}
-                  className="flex-1 px-2 py-0.5 text-xs border border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-gray-700 text-white h-6"
-                  placeholder="Enter User ID"
-                  autoFocus
-                  required
-                />
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  type="submit"
-                  className="px-2 py-0.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={handleUserIdCancel}
-                  className="px-2 py-0.5 text-xs text-gray-400 hover:text-gray-300 hover:bg-gray-700 rounded transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-400 bg-gray-700 px-1 py-0.5 rounded text-center min-w-[32px]">
+              OPS$
+            </span>
+            <span className="text-xs font-medium text-white bg-blue-900/30 px-2 py-0.5 rounded border border-blue-700">
+              {currentUser}
+            </span>
+            <div className="flex-1"></div>
+            <span className="text-xs text-green-400 bg-green-900/20 px-2 py-0.5 rounded">
+              ✓ Authenticated
+            </span>
+          </div>
         </div>
         
         {/* Search - Compact */}

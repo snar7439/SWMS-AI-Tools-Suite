@@ -6,6 +6,22 @@ export async function POST(request) {
     const receivedPayload = await request.json();
     console.log('Received payload from browser:', receivedPayload);
 
+    // Get authentication info from cookies
+    const swmsSessionCookie = request.cookies.get('swms-session')?.value;
+    const authenticatedUsername = request.cookies.get('swms-username')?.value;
+
+    if (!swmsSessionCookie || !authenticatedUsername) {
+      return NextResponse.json(
+        { 
+          error: 'Authentication required', 
+          details: 'Please login first to access SWMS reports' 
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log('Using authenticated user:', authenticatedUsername);
+
     // Look up reportPath from the config using reportValue
     const reportConfig = swmsReports.find(report => 
       report.payload.reportValue === receivedPayload.reportValue
@@ -17,7 +33,14 @@ export async function POST(request) {
     
     const swmsUrl = `${process.env.REPORTS_API_URL || 'https://lx739q60-swms-service-layer.swms-np.us-east-1.aws.sysco.net'}${reportConfig.reportPath}`;
 
-    console.log('Using received payload for SWMS (with user ID override):', receivedPayload);
+    // Use the authenticated username for the payload, with OPS$ prefix if not already present
+    const formattedUsername = authenticatedUsername.startsWith('OPS$') ? authenticatedUsername : `OPS$${authenticatedUsername}`;
+    const finalPayload = {
+      ...receivedPayload,
+      userId: formattedUsername
+    };
+
+    console.log('Using authenticated payload for SWMS:', finalPayload);
     console.log('Fetching SWMS report from:', swmsUrl);
 
     const swmsRes = await fetch(swmsUrl, {
@@ -26,12 +49,12 @@ export async function POST(request) {
         'Content-Type': 'application/json',
         'syy-site-id': 'LX739Q60',
         'x-opco-number': 'lx739q60',
-        'x-session-user-id': 'OPS$TEST0100',
+        'x-session-user-id': formattedUsername,
         'x-swms-version': '61.0.0',
         'accept-language': 'en-US',
-        'cookie': '_ga=GA1.1.1134090752.1749581339; _ga_ML9Z3SL0FP=GS2.1.s1751296511$o15$g1$t1751296678$j60$l0$h0; swmslx739q60=3f5e993aab2c083be9cbb778523d9303f045bec9249d313513dec9e6bc7f4675'
+        'cookie': swmsSessionCookie // Use the authenticated session cookie
       },
-      body: JSON.stringify(receivedPayload), // Use the payload from browser (with user ID override)
+      body: JSON.stringify(finalPayload), // Use the payload with authenticated username
     });
 
     if (!swmsRes.ok) {

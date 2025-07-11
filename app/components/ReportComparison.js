@@ -6,7 +6,7 @@ import ReportViewer from './ReportsViewer';
 import CompareControls from './CompareControls';
 import ComparisonResultsTab from './ComparisonResultsTab';
 
-export default function ReportComparison() {
+export default function ReportComparison({ currentUser, onLogout }) {
   const [selectedReports, setSelectedReports] = useState([null, null]);
   const [isComparing, setIsComparing] = useState(false);
   const [comparisonResult, setComparisonResult] = useState(null);
@@ -89,6 +89,7 @@ export default function ReportComparison() {
           <NavigationPanel 
             selectedReports={selectedReports}
             onReportSelect={handleReportSelect}
+            currentUser={currentUser}
           />
         </div>
       )}
@@ -120,14 +121,38 @@ export default function ReportComparison() {
         {/* Header with Tabs */}
         <header className="bg-gray-800 border-b border-gray-700">
           <div className="px-6 py-2">
-            <div className="flex items-center justify-center">            <div className="text-center">
-              <h1 className="text-xl font-bold text-white mb-1">
-                SWMS Report Testing Automation Tool
-              </h1>
-              <p className="text-gray-300 text-sm">
-                Select two SWMS reports to compare their content and identify differences
-              </p>
-            </div>
+            <div className="flex items-center justify-between">
+              {/* Title */}
+              <div className="text-center flex-1">
+                <h1 className="text-xl font-bold text-white mb-1">
+                  SWMS Report Testing Automation Tool
+                </h1>
+                <p className="text-gray-300 text-sm">
+                  Select two SWMS reports to compare their content and identify differences
+                </p>
+              </div>
+              
+              {/* User Info & Logout */}
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-sm text-gray-300">
+                    Logged in as
+                  </p>
+                  <p className="text-sm font-medium text-white">
+                    {currentUser}
+                  </p>
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white text-sm rounded-lg transition-colors flex items-center gap-2"
+                  title="Logout"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
           
