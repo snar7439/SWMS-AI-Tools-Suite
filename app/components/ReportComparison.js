@@ -100,7 +100,7 @@ export default function ReportComparison() {
       )}
       
       {/* Navigation Panel Toggle Button - On the dividing line */}
-      <div className={`absolute top-1/14 transform -translate-y-1/2 z-50 transition-all duration-300 ease-in-out ${
+      <div className={`absolute top-1/19 transform -translate-y-1/2 z-50 transition-all duration-300 ease-in-out ${
         isNavPanelVisible ? 'left-60' : 'left-0'
       }`}>
         <button
@@ -126,25 +126,25 @@ export default function ReportComparison() {
         {/* Header with Tabs */}
         <header className="bg-gray-800 border-b border-gray-700">          
           {/* Description */}
-          <div className="px-6 py-2 text-center">
-            <p className="text-gray-300 text-s">
+          <div className="px-4 py-1 text-center">
+            <p className="text-gray-300 text-xs">
               Select two SWMS reports to compare their content and identify differences
             </p>
           </div>
           
           {/* Tab Navigation */}
-          <div className="px-6 pb-2">
-            <nav className="flex justify-center space-x-6">
+          <div className="px-4 pb-1">
+            <nav className="flex justify-center space-x-4">
               <button
                 onClick={() => setActiveTab('reports')}
-                className={`py-1.5 px-3 border-b-2 font-medium text-xs transition-colors ${
+                className={`py-1 px-2 border-b-2 font-medium text-xs transition-colors ${
                   activeTab === 'reports'
                     ? 'border-blue-500 text-blue-400'
                     : 'border-transparent text-gray-400 hover:text-gray-300'
                 }`}
               >
-                <div className="flex items-center gap-1.5">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   Reports
@@ -154,7 +154,7 @@ export default function ReportComparison() {
               <button
                 onClick={() => setActiveTab('results')}
                 disabled={!comparisonResult}
-                className={`py-1.5 px-3 border-b-2 font-medium text-xs transition-colors ${
+                className={`py-1 px-2 border-b-2 font-medium text-xs transition-colors ${
                   activeTab === 'results'
                     ? 'border-blue-500 text-blue-400'
                     : comparisonResult 
@@ -162,8 +162,8 @@ export default function ReportComparison() {
                       : 'border-transparent text-gray-600 cursor-not-allowed'
                 }`}
               >
-                <div className="flex items-center gap-1.5">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                   Results

@@ -191,7 +191,7 @@ export default function DashboardPage() {
           {/* Enhanced Description */}
           <div className="max-w-3xl mx-auto mb-6">
             <p className="text-xl text-gray-700 mb-3 font-medium leading-relaxed">
-              Enhance your workflow with our <span className="bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent font-semibold">AI-powered tools</span> built for SWMS operations.
+              Enhance your workflow with <span className="bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent font-semibold">AI-powered tools</span> built for SWMS operations.
             </p>
             <p className="text-lg text-gray-600 mb-4">
               Select a tool below to get started.
