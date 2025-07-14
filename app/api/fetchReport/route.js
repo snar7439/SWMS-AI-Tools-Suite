@@ -31,7 +31,7 @@ export async function POST(request) {
       throw new Error(`No report configuration found for reportValue: ${receivedPayload.reportValue}`);
     }
     
-    const swmsUrl = `${process.env.REPORTS_API_URL || 'https://lx739q60-swms-service-layer.swms-np.us-east-1.aws.sysco.net'}${reportConfig.reportPath}`;
+    const swmsUrl = `${process.env.REPORTS_API_URL || 'https://lx739q21-swms-service-layer.swms-np.us-east-1.aws.sysco.net'}${reportConfig.reportPath}`;
 
     // Use the authenticated username for the payload, with OPS$ prefix if not already present
     const formattedUsername = authenticatedUsername.startsWith('OPS$') ? authenticatedUsername : `OPS$${authenticatedUsername}`;
@@ -47,8 +47,8 @@ export async function POST(request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'syy-site-id': 'LX739Q60',
-        'x-opco-number': 'lx739q60',
+        'syy-site-id': 'LX739Q21',
+        'x-opco-number': 'lx739q21',
         'x-session-user-id': formattedUsername,
         'x-swms-version': '61.0.0',
         'accept-language': 'en-US',

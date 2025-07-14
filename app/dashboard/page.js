@@ -7,6 +7,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [navigating, setNavigating] = useState(null); // Track which component is being launched
 
   useEffect(() => {
     // Check authentication status
@@ -82,7 +83,11 @@ export default function DashboardPage() {
 
   const handleComponentSelect = (component) => {
     if (component.status === 'Available') {
-      router.push(component.route);
+      setNavigating(component.id);
+      // Add a small delay to show the loading state before navigation
+      setTimeout(() => {
+        router.push(component.route);
+      }, 500);
     }
   };
 
@@ -256,12 +261,25 @@ export default function DashboardPage() {
                   {component.status === 'Available' ? (
                     <div 
                       onClick={() => handleComponentSelect(component)}
-                      className="flex items-center justify-center bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-semibold group-hover:bg-blue-700 transition-colors cursor-pointer hover:cursor-pointer"
+                      className={`flex items-center justify-center py-2 px-4 rounded-lg text-sm font-semibold transition-colors cursor-pointer hover:cursor-pointer ${
+                        navigating === component.id 
+                          ? 'bg-blue-700 text-white' 
+                          : 'bg-blue-600 text-white group-hover:bg-blue-700'
+                      }`}
                     >
-                      <span>Launch Tool</span>
-                      <svg className="w-4 h-4 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
+                      {navigating === component.id ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          <span>Launching...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Launch Tool</span>
+                          <svg className="w-4 h-4 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
+                        </>
+                      )}
                     </div>
                   ) : (
                     <div className={`flex items-center justify-center py-2 px-4 rounded-lg text-sm font-semibold ${

@@ -172,7 +172,7 @@ export default function LoginPage() {
             </p>
             <div className="mt-2 flex items-center justify-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-xs text-gray-400">Connected to LX739Q60</span>
+              <span className="text-xs text-gray-400">Connected to LX739Q21</span>
             </div>
           </div>
         </div>
