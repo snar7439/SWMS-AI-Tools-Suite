@@ -2,104 +2,86 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { EyeIcon, EyeOffIcon } from '@heroicons/react/outline'; // Heroicons package
 
 export default function LoginPage() {
   const router = useRouter();
-  const [credentials, setCredentials] = useState({
-    username: '',
-    password: ''
-  });
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError('');
 
-    // Validate credentials before sending
     if (!credentials.username || !credentials.password) {
       setError('Please enter both username and password');
       setLoading(false);
       return;
     }
 
-    console.log('Sending login request with credentials:', {
-      username: credentials.username,
-      password: '***' // Don't log password
-    });
-
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        // Show specific error message from the API
         throw new Error(result.details || result.message || 'Login failed');
       }
 
-      // Store auth info in sessionStorage
       sessionStorage.setItem('swms-auth', JSON.stringify({
         username: credentials.username,
         authenticated: true,
         loginTime: new Date().toISOString()
       }));
 
-      console.log('Login successful, redirecting to dashboard...');
-      
-      // Redirect to components selection page
       router.push('/dashboard');
     } catch (err) {
-      console.error('Login error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const inputClass = "block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0690cf] focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-500";
+
+  const containerStyle = {
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 60%, rgba(255,255,255,0.02) 100%)',
+    backdropFilter: 'blur(22px)',
+    WebkitBackdropFilter: 'blur(22px)',
+    boxShadow: '0 2px 8px 0 rgba(0,0,0,0.06)',
+    border: '1px solid rgba(255,255,255,0.2)'
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-start p-1 relative">
-      {/* Background image with overlay */}
+    <div className="min-h-screen flex items-center justify-start px-2 sm:px-4 md:px-8 relative">
+      {/* Background */}
       <div className="absolute inset-0 z-0">
         <img src="/LoginBG.png" alt="Login Background" className="w-full h-full object-cover object-center" style={{ filter: 'brightness(0.7) blur(1px)' }} />
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-blue-700/15 to-indigo-900/30" />
       </div>
-      <div
-        className="rounded-2xl w-full max-w-md overflow-hidden z-10 border border-white/30 ml-2 sm:ml-4 md:ml-10 lg:ml-16"
-        style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.07) 60%, rgba(255,255,255,0.02) 100%)',
-          backdropFilter: 'blur(22px)',
-          WebkitBackdropFilter: 'blur(22px)',
-          boxShadow: '0 2px 8px 0 rgba(0,0,0,0.03)'
-        }}
-      >
+
+      {/* Login Card */}
+      <div className="rounded-3xl w-full max-w-md z-10 ml-2 sm:ml-6 md:ml-10 overflow-hidden" style={containerStyle}>
         {/* Header */}
-        <div className="px-8 py-6" style={{ background: 'linear-gradient(to right, #0690cf, #0690cf)' }}>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-white">
-              SWMS AI Tools Suite
-            </h1>
-            <p className="mt-2 text-sm" style={{ color: '#b3e3fa' }}>
-              Sign in to access SWMS AI Tools
-            </p>
-          </div>
+        <div className="px-6 py-6 sm:px-8 sm:py-6 bg-[#0690cf] text-white text-center">
+          <h1 className="text-2xl font-bold">SWMS AI Tools Suite</h1>
+          <p className="mt-2 text-sm text-[#b3e3fa]">Sign in to access SWMS AI Tools</p>
         </div>
 
-        {/* Login Form */}
-        <div className="px-8 py-6" style={{ background: 'rgba(255,255,255,0.97)', borderRadius: '0 0 1rem 1rem' }}>
+        {/* Form */}
+        <div className="px-6 py-6 sm:px-8 sm:py-6 bg-white bg-opacity-95">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Username Field */}
+            {/* User ID */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                User ID
-              </label>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">User ID</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,21 +90,20 @@ export default function LoginPage() {
                 </div>
                 <input
                   id="username"
+                  autoFocus
                   type="text"
                   required
                   value={credentials.username}
-                  onChange={(e) => setCredentials({...credentials, username: e.target.value.toUpperCase()})}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0690cf] focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-500"
+                  onChange={(e) => setCredentials({ ...credentials, username: e.target.value.toUpperCase() })}
+                  className={inputClass}
                   placeholder="Enter your user ID (e.g., TEST0100)"
                 />
               </div>
             </div>
 
-            {/* Password Field */}
+            {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,50 +112,47 @@ export default function LoginPage() {
                 </div>
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={credentials.password}
-                  onChange={(e) => setCredentials({...credentials, password: e.target.value})}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0690cf] focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-500"
+                  onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                  className={inputClass}
                   placeholder="Enter your password"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
+                >
+                  {showPassword ? (
+                    <EyeOffIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
               </div>
             </div>
 
-            {/* Error Message */}
+            {/* Error */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4" role="alert">
                 <div className="flex">
-                  <svg className="h-5 w-5 text-red-400 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.232 15.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-medium text-red-800 mb-1">
-                      Authentication Failed
-                    </h3>
-                    <p className="text-sm text-red-700">{error}</p>
-                    {error.includes('SWMS Authentication failed') && (
-                      <div className="mt-2 text-xs text-red-600">
-                        <p>• Verify your SWMS username and password</p>
-                        <p>• Ensure you have access to the LX739Q21 environment</p>
-                        <p>• Try again or contact your system administrator</p>
-                      </div>
-                    )}
+                  <div className="text-sm text-red-700">
+                    <h3 className="font-medium text-red-800 mb-1">Authentication Failed</h3>
+                    <p>{error}</p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Submit Button */}
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white"
-              style={{ background: '#0690cf', color: '#fff' }}
-              onMouseOver={e => e.currentTarget.style.background = '#0570a6'}
-              onMouseOut={e => e.currentTarget.style.background = '#0690cf'}
-              onFocus={e => e.currentTarget.style.boxShadow = '0 0 0 2px #b3e3fa'}
-              onBlur={e => e.currentTarget.style.boxShadow = 'none'}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#0690cf] hover:bg-[#0570a6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#b3e3fa]"
             >
               {loading ? (
                 <>
@@ -192,9 +170,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500">
-              Secure connection to SWMS Service Layer
-            </p>
+            <p className="text-xs text-gray-500">Secure connection to SWMS Service Layer</p>
             <div className="mt-2 flex items-center justify-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span className="text-xs text-gray-400">Connected to LX739Q21</span>
