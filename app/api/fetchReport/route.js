@@ -7,14 +7,34 @@ export async function POST(request) {
     console.log('Received payload from browser:', receivedPayload);
 
     // Get authentication info from cookies
-    const swmsSessionCookie = request.cookies.get('swms-session')?.value;
     const authenticatedUsername = request.cookies.get('swms-username')?.value;
+    const allSessionCookies = request.cookies.get('swms-session-all')?.value;
+    
+    // Also get individual cookies in case we need them
+    const individualCookies = {};
+    
+    // Get all cookies and filter for SWMS ones
+    const allCookies = request.cookies.getAll();
+    allCookies.forEach(cookie => {
+      if (cookie.name.startsWith('swms-') && cookie.name !== 'swms-username' && cookie.name !== 'swms-session-all') {
+        const cookieName = cookie.name.replace('swms-', '');
+        individualCookies[cookieName] = cookie.value;
+      }
+    });
 
-    if (!swmsSessionCookie || !authenticatedUsername) {
+    console.log('Available cookies for report fetching:', {
+      authenticatedUsername,
+      allSessionCookies,
+      individualCookies: Object.keys(individualCookies),
+      cookieDetails: individualCookies,
+      totalCookiesFound: allCookies.length
+    });
+
+    if (!authenticatedUsername || (!allSessionCookies && Object.keys(individualCookies).length === 0)) {
       return NextResponse.json(
         { 
           error: 'Authentication required', 
-          details: 'Please login first to access SWMS reports' 
+          details: 'Please login first to access SWMS reports. Missing session cookies.' 
         },
         { status: 401 }
       );
@@ -43,6 +63,19 @@ export async function POST(request) {
     console.log('Using authenticated payload for SWMS:', finalPayload);
     console.log('Fetching SWMS report from:', swmsUrl);
 
+    // Prepare cookies for the request
+    let cookieHeader = '';
+    if (allSessionCookies) {
+      // Use the combined cookie string if available
+      cookieHeader = allSessionCookies;
+    } else {
+      // Build cookie string from individual cookies
+      const cookiePairs = Object.entries(individualCookies).map(([name, value]) => `${name}=${value}`);
+      cookieHeader = cookiePairs.join('; ');
+    }
+
+    console.log('Using cookie header for SWMS request:', cookieHeader);
+
     const swmsRes = await fetch(swmsUrl, {
       method: 'POST',
       headers: {
@@ -52,7 +85,9 @@ export async function POST(request) {
         'x-session-user-id': formattedUsername,
         'x-swms-version': '61.0.0',
         'accept-language': 'en-US',
-        'cookie': swmsSessionCookie // Use the authenticated session cookie
+        'accept': 'application/json',
+        'user-agent': 'SWMS-Report-Tool/1.0',
+        'cookie': cookieHeader // Use all session cookies
       },
       body: JSON.stringify(finalPayload), // Use the payload with authenticated username
     });
