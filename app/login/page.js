@@ -65,27 +65,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+    <div className="min-h-screen flex items-center justify-start p-1 relative">
+      {/* Background image with overlay */}
+      <div className="absolute inset-0 z-0">
+        <img src="/LoginBG.png" alt="Login Background" className="w-full h-full object-cover object-center" style={{ filter: 'brightness(0.7) blur(1px)' }} />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-blue-700/15 to-indigo-900/30" />
+      </div>
+      <div
+        className="rounded-2xl w-full max-w-md overflow-hidden z-10 border border-white/30 ml-2 sm:ml-4 md:ml-10 lg:ml-16"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.07) 60%, rgba(255,255,255,0.02) 100%)',
+          backdropFilter: 'blur(22px)',
+          WebkitBackdropFilter: 'blur(22px)',
+          boxShadow: '0 2px 8px 0 rgba(0,0,0,0.03)'
+        }}
+      >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
+        <div className="px-8 py-6" style={{ background: 'linear-gradient(to right, #0690cf, #0690cf)' }}>
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-white/10 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            </div>
             <h1 className="text-2xl font-bold text-white">
-              SWMS Report Tool
+              SWMS AI Tools Suite
             </h1>
-            <p className="text-blue-100 mt-2 text-sm">
-              Sign in to access report comparison features
+            <p className="mt-2 text-sm" style={{ color: '#b3e3fa' }}>
+              Sign in to access SWMS AI Tools
             </p>
           </div>
         </div>
 
         {/* Login Form */}
-        <div className="px-8 py-6">
+        <div className="px-8 py-6" style={{ background: 'rgba(255,255,255,0.97)', borderRadius: '0 0 1rem 1rem' }}>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Username Field */}
             <div>
@@ -104,13 +112,10 @@ export default function LoginPage() {
                   required
                   value={credentials.username}
                   onChange={(e) => setCredentials({...credentials, username: e.target.value.toUpperCase()})}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-500"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0690cf] focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-500"
                   placeholder="Enter your user ID (e.g., TEST0100)"
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-500">
-                Enter your user ID without the OPS$ prefix - it will be added automatically
-              </p>
             </div>
 
             {/* Password Field */}
@@ -130,7 +135,7 @@ export default function LoginPage() {
                   required
                   value={credentials.password}
                   onChange={(e) => setCredentials({...credentials, password: e.target.value})}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-500"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0690cf] focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-500"
                   placeholder="Enter your password"
                 />
               </div>
@@ -164,7 +169,12 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white"
+              style={{ background: '#0690cf', color: '#fff' }}
+              onMouseOver={e => e.currentTarget.style.background = '#0570a6'}
+              onMouseOut={e => e.currentTarget.style.background = '#0690cf'}
+              onFocus={e => e.currentTarget.style.boxShadow = '0 0 0 2px #b3e3fa'}
+              onBlur={e => e.currentTarget.style.boxShadow = 'none'}
             >
               {loading ? (
                 <>
@@ -175,7 +185,7 @@ export default function LoginPage() {
                   Signing in...
                 </>
               ) : (
-                'Sign In to SWMS'
+                'Sign In'
               )}
             </button>
           </form>
