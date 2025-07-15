@@ -12,8 +12,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Report Testing Automation Tool",
-  description: "Compare reports side by side and identify differences with advanced automation",
+  title: "SWMS AI Tools Suite",
+  description: "Intelligent Operations Platform",
 };
 
 export default function RootLayout({ children }) {

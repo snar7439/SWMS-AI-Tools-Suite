@@ -100,9 +100,9 @@ export default function ReportComparison() {
       )}
       
       {/* Navigation Panel Toggle Button - On the dividing line */}
-      <div className={`absolute top-1/19 transform -translate-y-1/2 z-50 transition-all duration-300 ease-in-out ${
+      <div className={`fixed z-50 transition-all duration-300 ease-in-out ${
         isNavPanelVisible ? 'left-60' : 'left-0'
-      }`}>
+      }`} style={{ top: 'calc(1rem + 78px)' }}>
         <button
           onClick={toggleNavPanel}
           className="p-1 rounded-full bg-gray-800 border-2 border-gray-600 hover:bg-gray-700 shadow-md transition-all duration-200 hover:scale-110"

@@ -106,7 +106,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Fixed Header */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-6 sm:px-8 lg:px-12 xl:px-16">
           <div className="flex justify-between items-center py-3">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
@@ -179,34 +179,33 @@ export default function DashboardPage() {
 
       {/* Scrollable Main Content */}
       <div className="pt-20 overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Welcome Section */}
-        <div className="text-center mb-10">
-          {/* Main Title with Gradient Text */}
-          <div className="relative mb-4">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-800 via-blue-900 to-indigo-800 bg-clip-text text-transparent mb-3 leading-tight">
-              SWMS AI Tools
-            </h2>
-            {/* Decorative underline */}
-            <div className="flex justify-center">
-              <div className="w-24 h-1 bg-gradient-to-r from-blue-800 to-indigo-800 rounded-full"></div>
+        <div className="w-full px-6 sm:px-8 lg:px-12 xl:px-16 py-8">
+          {/* Welcome Section */}
+          <div className="text-center mb-12">
+            {/* Main Title with Gradient Text */}
+            <div className="relative mb-4">
+              <h2 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-800 via-blue-900 to-indigo-800 bg-clip-text text-transparent mb-3 leading-tight">
+                SWMS AI Tools
+              </h2>
+              {/* Decorative underline */}
+              <div className="flex justify-center">
+                <div className="w-32 h-1 bg-gradient-to-r from-blue-800 to-indigo-800 rounded-full"></div>
+              </div>
             </div>
-          </div>
           
           {/* Enhanced Description */}
-          <div className="max-w-3xl mx-auto mb-6">
-            <p className="text-xl text-gray-700 mb-3 font-medium leading-relaxed">
-              Enhance your workflow with <span className="bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent font-semibold">AI-powered tools</span> built for SWMS operations.
-            </p>
-            <p className="text-lg text-gray-600 mb-4">
-              Select a tool below to get started.
-            </p>
-            
+          <div className="max-w-4xl mx-auto mb-8">
+              <p className="text-xl lg:text-2xl text-gray-700 mb-4 font-medium leading-relaxed">
+                Enhance your workflow with <span className="bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent font-semibold">AI-powered tools</span> built for SWMS operations.
+              </p>
+              <p className="text-lg lg:text-xl text-gray-600 mb-6">
+                Select a tool below to get started.
+              </p>
           </div>
         </div>
 
-        {/* Components Grid - 2x2 layout */}
-        <div className="grid grid-cols-2 gap-8 max-w-4xl mx-auto">
+        {/* Components Grid - Responsive layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8 lg:gap-10 max-w-7xl mx-auto">
           {components.map((component) => (
             <div
               key={component.id}
@@ -214,11 +213,11 @@ export default function DashboardPage() {
                 component.id === 'coming-soon'
                   ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 border-dashed'
                   : 'bg-white border-gray-100 hover:border-blue-200'
-              } p-6`}
+              } p-8`}
             >
               {/* Status Badge */}
-              <div className="absolute top-3 right-3">
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+              <div className="absolute top-4 right-4">
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
                   component.status === 'Available' 
                     ? 'bg-green-100 text-green-700 shadow-sm' 
                     : 'bg-amber-100 text-amber-700 shadow-sm'
@@ -230,20 +229,20 @@ export default function DashboardPage() {
               </div>
 
               {/* Icon */}
-              <div className={`flex items-center justify-center w-16 h-16 rounded-xl mb-4 transition-all duration-300 mx-auto ${
+              <div className={`flex items-center justify-center w-20 h-20 rounded-xl mb-6 transition-all duration-300 mx-auto ${
                 component.id === 'coming-soon'
                   ? 'bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-gray-150 group-hover:to-gray-250'
                   : 'bg-gradient-to-br from-blue-50 to-indigo-100 group-hover:from-blue-100 group-hover:to-indigo-200'
               }`}>
-                <span className={`text-3xl ${component.id === 'coming-soon' ? 'opacity-60' : ''}`}>
+                <span className={`text-4xl ${component.id === 'coming-soon' ? 'opacity-60' : ''}`}>
                   {component.icon}
                 </span>
               </div>
 
               {/* Content */}
-              <div className="space-y-3 text-center">
+              <div className="space-y-4 text-center">
                 <div>
-                  <h3 className={`text-base font-bold leading-tight mb-2 ${
+                  <h3 className={`text-lg font-bold leading-tight mb-3 ${
                     component.id === 'coming-soon' ? 'text-gray-600' : 'text-gray-900'
                   }`}>
                     {component.title}
@@ -257,11 +256,11 @@ export default function DashboardPage() {
                 </p>
 
                 {/* Action */}
-                <div className="pt-3">
+                <div className="pt-4">
                   {component.status === 'Available' ? (
                     <div 
                       onClick={() => handleComponentSelect(component)}
-                      className={`flex items-center justify-center py-2 px-4 rounded-lg text-sm font-semibold transition-colors cursor-pointer hover:cursor-pointer ${
+                      className={`flex items-center justify-center py-3 px-6 rounded-lg text-sm font-semibold transition-colors cursor-pointer hover:cursor-pointer ${
                         navigating === component.id 
                           ? 'bg-blue-700 text-white' 
                           : 'bg-blue-600 text-white group-hover:bg-blue-700'
@@ -282,7 +281,7 @@ export default function DashboardPage() {
                       )}
                     </div>
                   ) : (
-                    <div className={`flex items-center justify-center py-2 px-4 rounded-lg text-sm font-semibold ${
+                    <div className={`flex items-center justify-center py-3 px-6 rounded-lg text-sm font-semibold ${
                       component.id === 'coming-soon'
                         ? 'bg-gray-100 text-gray-500 border border-dashed border-gray-300'
                         : 'bg-amber-100 text-amber-700 cursor-not-allowed'
@@ -297,14 +296,14 @@ export default function DashboardPage() {
         </div>
 
         {/* Footer Info */}
-        <div className="mt-6 text-center">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm border border-blue-100 py-2 px-4">
+        <div className="mt-12 text-center">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm border border-blue-100 py-3 px-6 max-w-sm mx-auto">
             <div className="flex items-center justify-center space-x-2">
               <div className="relative">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <div className="absolute inset-0 w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
               </div>
-              <span className="text-xs font-medium text-gray-700">SWMS Service Layer Connected</span>
+              <span className="text-sm font-medium text-gray-700">SWMS Service Layer Connected</span>
             </div>
           </div>
         </div>

@@ -61,7 +61,7 @@ export default function ReportTestingPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
       {/* Fixed Header */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-2">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3">
             <div className="flex items-center space-x-4">
               <button
