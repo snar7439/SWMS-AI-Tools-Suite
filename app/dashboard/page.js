@@ -61,7 +61,7 @@ export default function DashboardPage() {
       description: 'AI-powered assistant for SWMS queries and operations',
       icon: '🤖',
       route: '/ask-swms',
-      status: 'Coming Soon'
+      status: 'Available'
     },
     {
       id: 'warehouse-simulation',

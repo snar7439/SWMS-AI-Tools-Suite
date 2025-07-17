@@ -265,11 +265,11 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
                             {report.name}
                           </h3>
                         </div>
-                        <div className="flex items-center gap-1">
+                        {/* <div className="flex items-center gap-1">
                           <span className="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-red-900/30 text-red-300">
                             {report.type}
                           </span>
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   </div>
