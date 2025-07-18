@@ -233,17 +233,17 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
                             className="w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-md hover:bg-blue-900/20 transition-all duration-200"
                           >
                             <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
-                            <span className="text-blue-400 font-medium">Left</span>
+                            <span className="text-blue-400 font-medium">Baseline</span>
                           </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSlotSelect(report, 1);
                             }}
-                            className="w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-md hover:bg-green-900/20 transition-all duration-200"
+                            className="w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-md hover:bg-yellow-900/20 transition-all duration-200"
                           >
-                            <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
-                            <span className="text-green-400 font-medium">Right</span>
+                            <div className="w-3 h-3 bg-yellow-500 rounded-sm flex-shrink-0"></div>
+                            <span className="text-yellow-400 font-medium">Test</span>
                           </button>
                         </div>
                       </div>

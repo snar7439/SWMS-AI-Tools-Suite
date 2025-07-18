@@ -78,7 +78,7 @@ export default function CompareControls({
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
               </svg>
-              <span className="px-2 py-1 bg-green-900/30 text-green-300 rounded text-xs">
+              <span className="px-2 py-1 bg-yellow-600/20 text-yellow-400 rounded text-xs">
                 {selectedDocuments[1]?.name}
               </span>
             </div>

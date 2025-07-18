@@ -126,9 +126,9 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
     }
   };
   
-  const borderColor = slot === 0 ? 'border-blue-800' : 'border-green-800';
-  const headerColor = slot === 0 ? 'bg-blue-900/20' : 'bg-green-900/20';
-  const labelColor = slot === 0 ? 'text-blue-300' : 'text-green-300';
+  const borderColor = slot === 0 ? 'border-blue-700' : 'border-yellow-500';
+  const headerColor = slot === 0 ? 'bg-blue-900/20' : 'bg-yellow-600/20';
+  const labelColor = slot === 0 ? 'text-blue-300' : 'text-yellow-400';
 
   const onDocumentLoadSuccess = useCallback(({ numPages }) => {
     setNumPages(numPages);
