@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 
-export default function DragDropArea({ onFileUpload, slot, title }) {
+export default function DragDropArea({ onFileUpload, slot, title, sub }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
@@ -113,10 +113,10 @@ export default function DragDropArea({ onFileUpload, slot, title }) {
             </div>
             <div>
               <h3 className="text-sm font-semibold text-white">{title}</h3>
-              <p className="text-xs text-gray-400">Choose your report</p>
+              <p className="text-xs text-gray-400">{sub}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <span className={`text-xs px-3 py-1 rounded-full font-medium ${
               slot === 0 
                 ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' 
@@ -124,7 +124,7 @@ export default function DragDropArea({ onFileUpload, slot, title }) {
             }`}>
               {slot === 0 ? 'Report A' : 'Report B'}
             </span>
-          </div>
+          </div> */}
         </div>
       </div>
 

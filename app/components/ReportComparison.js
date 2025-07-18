@@ -188,7 +188,7 @@ export default function ReportComparison() {
                   <ReportViewer 
                     report={selectedReports[0]}
                     slot={0}
-                    title="Left Section"
+                    title="Baseline Report"
                     comparisonResult={comparisonResult}
                     showDifferences={!!comparisonResult}
                     onReportReplace={handleManualUpload}
@@ -197,7 +197,8 @@ export default function ReportComparison() {
                   <DragDropArea 
                     onFileUpload={handleManualUpload}
                     slot={0}
-                    title="Left Section"
+                    title="Baseline Report"
+                    sub="Upload the original or correct version for comparison"
                   />
                 )}
               </div>
@@ -206,7 +207,7 @@ export default function ReportComparison() {
                   <ReportViewer 
                     report={selectedReports[1]}
                     slot={1}
-                    title="Right Section"
+                    title="Test Report"
                     comparisonResult={comparisonResult}
                     showDifferences={!!comparisonResult}
                     onReportReplace={handleManualUpload}
@@ -215,7 +216,8 @@ export default function ReportComparison() {
                   <DragDropArea 
                     onFileUpload={handleManualUpload}
                     slot={1}
-                    title="Right Section"
+                    title="Test Report"
+                    sub="Upload the new or generated report to validate"
                   />
                 )}
               </div>
