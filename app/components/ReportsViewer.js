@@ -270,20 +270,45 @@ export default function ReportsViewer({ report, slot, title, comparisonResult, s
         </div>
       )}
       {/* Header - Ultra Compact */}
-      <div className={`px-2 py-1 ${headerColor} border-b border-gray-600 rounded-t-lg`}>
+      <div className={`px-3 py-2 ${headerColor} border-b border-gray-600 rounded-t-lg`}>
         <div className="flex items-center justify-between">
-          <h3 className={`text-sm font-semibold ${labelColor}`}>
-            {title}
-          </h3>
-        </div>
-        
-        {report && (
-          <div className="mt-0.5">
-            <p className="text-xs font-medium text-white truncate">
-              {report.name}
-            </p>
+          {/* Title and Subtitle */}
+          <div className="flex flex-col gap-y-0.5">
+            <h3 className={`text-sm font-semibold ${labelColor}`}>
+              {title}
+            </h3>
+            {report && (
+              <p className="text-xs font-medium text-white truncate">
+                {report.name}
+              </p>
+            )}
           </div>
-        )}
+
+          {/* Clear Button with Icon */}
+          {report && onReportReplace && (
+            <button
+              type="button"
+              onClick={() => onReportReplace(null, slot)}
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-gray-700 hover:bg-red-600 text-gray-300 hover:text-white border border-gray-600 hover:border-red-700 transition-colors shadow-sm"
+              title="Clear this report"
+            >
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Content */}
