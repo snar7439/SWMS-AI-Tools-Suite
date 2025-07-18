@@ -39,14 +39,17 @@ export default function AskSWMSChatbot() {
       type: 'bot',
       content: "Hello! I'm ASK SWMS, your intelligent assistant for SWMS related queries and operations. How can I help you today?",
       timestamp: null,
+      isComplete: true,
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const streamingIntervalRef = useRef(null);
 
   // Initialize timestamp on client side to avoid hydration mismatch
   useEffect(() => {
@@ -80,6 +83,44 @@ export default function AskSWMSChatbot() {
     scrollToBottom();
   }, [messages]);
 
+  // Cleanup streaming interval on unmount
+  useEffect(() => {
+    return () => {
+      if (streamingIntervalRef.current) {
+        clearInterval(streamingIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const typeMessage = (messageId, fullContent, onComplete) => {
+    let currentIndex = 0;
+    const typingSpeed = 40; // milliseconds between characters
+    
+    const typeInterval = setInterval(() => {
+      if (currentIndex < fullContent.length) {
+        const currentContent = fullContent.substring(0, currentIndex + 1);
+        setMessages(prev => prev.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, content: currentContent }
+            : msg
+        ));
+        currentIndex++;
+      } else {
+        clearInterval(typeInterval);
+        setMessages(prev => prev.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, isComplete: true }
+            : msg
+        ));
+        setStreamingMessageId(null);
+        if (onComplete) onComplete();
+      }
+    }, typingSpeed);
+
+    streamingIntervalRef.current = typeInterval;
+    return typeInterval;
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
@@ -89,46 +130,71 @@ export default function AskSWMSChatbot() {
       type: 'user',
       content: inputValue,
       timestamp: new Date().toLocaleTimeString(),
+      isComplete: true,
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const userInput = inputValue;
     setInputValue('');
     setIsLoading(true);
-    setIsTyping(true);
+    setIsThinking(true);
 
     try {
-      // Dummy fetch request - replace with your actual backend endpoint
+      // Simulate thinking time
+      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+      
+      setIsThinking(false);
+
+      // Create bot message placeholder
+      const botMessageId = Date.now() + 1;
+      const botMessage = {
+        id: botMessageId,
+        type: 'bot',
+        content: '',
+        timestamp: new Date().toLocaleTimeString(),
+        isComplete: false,
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+      setStreamingMessageId(botMessageId);
+
+      // Simulate API call
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: inputValue }),
+        body: JSON.stringify({ message: userInput }),
       });
 
-      // Simulate API delay for demo
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Generate a more dynamic response based on the user input
+      const responseTexts = [
+        `Thank you for asking about "${userInput}". I'm processing your request and analyzing the relevant SWMS documentation. Based on my understanding, I can provide you with comprehensive information about this topic. Let me walk you through the key points and provide detailed guidance that will help you with your specific needs.`,
+        `I understand you're looking for information about "${userInput}". This is an important topic in SWMS operations. Let me provide you with a detailed explanation and practical guidance. I'll break this down into clear, actionable steps that you can follow to address your specific requirements effectively.`,
+        `Great question about "${userInput}"! I'm accessing the relevant SWMS protocols and procedures to give you the most accurate and up-to-date information. Here's what I can tell you: This involves several key considerations that I'll explain in detail to help you understand the complete process.`,
+        `I see you're interested in "${userInput}". This is a common query in SWMS operations, and I'm happy to help clarify this for you. Let me provide a comprehensive overview that covers all the essential aspects you need to know, including best practices and important considerations.`
+      ];
 
-      const botResponse = {
-        id: Date.now() + 1,
-        type: 'bot',
-        content: `Thank you for your message. I'm processing your request and will provide a detailed response shortly. This is a demo response from ASK SWMS.`,
-        timestamp: new Date().toLocaleTimeString(),
-      };
+      const fullResponse = responseTexts[Math.floor(Math.random() * responseTexts.length)];
+      
+      // Start typing animation
+      typeMessage(botMessageId, fullResponse, () => {
+        setIsLoading(false);
+      });
 
-      setMessages(prev => [...prev, botResponse]);
     } catch (error) {
       console.error('Error sending message:', error);
+      setIsThinking(false);
+      
       const errorResponse = {
         id: Date.now() + 1,
         type: 'bot',
         content: 'Sorry, I encountered an error. Please try again.',
         timestamp: new Date().toLocaleTimeString(),
+        isComplete: true,
       };
       setMessages(prev => [...prev, errorResponse]);
-    } finally {
       setIsLoading(false);
-      setIsTyping(false);
     }
   };
 
@@ -221,7 +287,6 @@ export default function AskSWMSChatbot() {
               </div>
             </div>
 
-
             {/* Right side - User info and logout */}
             <div className="flex items-center space-x-4">
               {/* User Info */}
@@ -271,7 +336,14 @@ export default function AskSWMSChatbot() {
                       : 'bg-gray-50 text-gray-900 border border-gray-400'
                   }`}
                 >
-                  <p className="text-sm leading-relaxed">{message.content}</p>
+                  <div className="flex items-start gap-2">
+                    <p className="text-sm leading-relaxed flex-1">
+                      {message.content}
+                      {message.type === 'bot' && !message.isComplete && (
+                        <span className="inline-block w-0.5 h-4 bg-gray-500 animate-pulse ml-1 rounded-full"></span>
+                      )}
+                    </p>
+                  </div>
                   <div className="flex items-center justify-between mt-2">
                     {message.timestamp && (
                       <span className={`text-xs ${message.type === 'user' ? 'text-blue-100' : 'text-gray-500'}`}>
@@ -279,7 +351,7 @@ export default function AskSWMSChatbot() {
                       </span>
                     )}
                     {!message.timestamp && <div></div>}
-                    {message.type === 'bot' && (
+                    {message.type === 'bot' && message.isComplete && (
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => copyMessage(message.content)}
@@ -306,7 +378,8 @@ export default function AskSWMSChatbot() {
               </div>
             ))}
 
-            {isTyping && (
+            {/* Thinking State */}
+            {isThinking && (
               <div className="flex gap-3 justify-start">
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                   <Bot className="w-4 h-4 text-white" />
@@ -314,11 +387,11 @@ export default function AskSWMSChatbot() {
                 <div className="bg-white/80 rounded-2xl px-4 py-3 border border-gray-200">
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                     </div>
-                    <span className="text-xs text-gray-500">ASK SWMS is typing...</span>
+                    <span className="text-xs text-gray-600 font-medium">ASK SWMS is thinking...</span>
                   </div>
                 </div>
               </div>
@@ -379,9 +452,6 @@ export default function AskSWMSChatbot() {
               )}
             </button>
           </div>
-          {/* <p className="text-xs text-gray-500 mt-2 text-center">
-            Press Enter to send, Shift+Enter for new line
-          </p> */}
         </div>
       </div>
     </div>
