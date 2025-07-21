@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Sparkles, MessageCircle, Loader2, Copy, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Send, Bot, User, Sparkles, MessageCircle, Loader2, Copy, ThumbsUp, ThumbsDown, Edit, Check, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function AskSWMSChatbot() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editingContent, setEditingContent] = useState('');
 
   useEffect(() => {
     // Check authentication status
@@ -38,7 +40,6 @@ export default function AskSWMSChatbot() {
       id: 1,
       type: 'bot',
       content: "Hello! I'm ASK SWMS, your intelligent assistant for SWMS related queries and operations. How can I help you today?",
-      timestamp: null,
       isComplete: true,
     }
   ]);
@@ -46,21 +47,9 @@ export default function AskSWMSChatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [streamingMessageId, setStreamingMessageId] = useState(null);
-  const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const streamingIntervalRef = useRef(null);
-
-  // Initialize timestamp on client side to avoid hydration mismatch
-  useEffect(() => {
-    if (!isInitialized) {
-      setMessages(prev => prev.map(msg => ({
-        ...msg,
-        timestamp: msg.timestamp || new Date().toLocaleTimeString()
-      })));
-      setIsInitialized(true);
-    }
-  }, [isInitialized]);
 
   const handleLogout = async () => {
     try {
@@ -129,7 +118,6 @@ export default function AskSWMSChatbot() {
       id: Date.now(),
       type: 'user',
       content: inputValue,
-      timestamp: new Date().toLocaleTimeString(),
       isComplete: true,
     };
 
@@ -151,7 +139,6 @@ export default function AskSWMSChatbot() {
         id: botMessageId,
         type: 'bot',
         content: '',
-        timestamp: new Date().toLocaleTimeString(),
         isComplete: false,
       };
 
@@ -190,7 +177,6 @@ export default function AskSWMSChatbot() {
         id: Date.now() + 1,
         type: 'bot',
         content: 'Sorry, I encountered an error. Please try again.',
-        timestamp: new Date().toLocaleTimeString(),
         isComplete: true,
       };
       setMessages(prev => [...prev, errorResponse]);
@@ -200,6 +186,88 @@ export default function AskSWMSChatbot() {
 
   const copyMessage = (content) => {
     navigator.clipboard.writeText(content);
+  };
+
+  const startEditingMessage = (messageId, content) => {
+    setEditingMessageId(messageId);
+    setEditingContent(content);
+  };
+
+  const cancelEditingMessage = () => {
+    setEditingMessageId(null);
+    setEditingContent('');
+  };
+
+  const saveEditedMessage = async (messageId) => {
+    if (!editingContent.trim()) return;
+
+    // Update the user message
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId 
+        ? { ...msg, content: editingContent.trim() }
+        : msg
+    ));
+
+    // Find the index of the edited message
+    const messageIndex = messages.findIndex(msg => msg.id === messageId);
+    
+    // Remove all messages after the edited message (including bot responses)
+    setMessages(prev => prev.slice(0, messageIndex + 1));
+
+    // Reset editing state
+    setEditingMessageId(null);
+    setEditingContent('');
+
+    // Generate new bot response for the edited message
+    setIsLoading(true);
+    setIsThinking(true);
+
+    try {
+      // Simulate thinking time
+      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+      
+      setIsThinking(false);
+
+      // Create bot message placeholder
+      const botMessageId = Date.now();
+      const botMessage = {
+        id: botMessageId,
+        type: 'bot',
+        content: '',
+        isComplete: false,
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+      setStreamingMessageId(botMessageId);
+
+      // Generate a more dynamic response based on the edited input
+      const responseTexts = [
+        `Thank you for asking about "${editingContent.trim()}". I'm processing your request and analyzing the relevant SWMS documentation. Based on my understanding, I can provide you with comprehensive information about this topic. Let me walk you through the key points and provide detailed guidance that will help you with your specific needs.`,
+        `I understand you're looking for information about "${editingContent.trim()}". This is an important topic in SWMS operations. Let me provide you with a detailed explanation and practical guidance. I'll break this down into clear, actionable steps that you can follow to address your specific requirements effectively.`,
+        `Great question about "${editingContent.trim()}"! I'm accessing the relevant SWMS protocols and procedures to give you the most accurate and up-to-date information. Here's what I can tell you: This involves several key considerations that I'll explain in detail to help you understand the complete process.`,
+        `I see you're interested in "${editingContent.trim()}". This is a common query in SWMS operations, and I'm happy to help clarify this for you. Let me provide a comprehensive overview that covers all the essential aspects you need to know, including best practices and important considerations.`
+      ];
+
+      const fullResponse = responseTexts[Math.floor(Math.random() * responseTexts.length)];
+      
+      // Start typing animation
+      typeMessage(botMessageId, fullResponse, () => {
+        setIsLoading(false);
+      });
+
+    } catch (error) {
+      console.error('Error sending edited message:', error);
+      setIsThinking(false);
+      
+      const errorResponse = {
+        id: Date.now(),
+        type: 'bot',
+        content: 'Sorry, I encountered an error. Please try again.',
+        isComplete: true,
+      };
+      setMessages(prev => [...prev, errorResponse]);
+      setIsLoading(false);
+    }
   };
 
   const quickActions = [
@@ -303,7 +371,7 @@ export default function AskSWMSChatbot() {
                 className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-blue-600 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg hover:from-blue-100 hover:to-purple-100 hover:text-blue-700 transition-all duration-200 cursor-pointer"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013 3v1" />
                 </svg>
                 <span>Logout</span>
               </button>
@@ -330,44 +398,103 @@ export default function AskSWMSChatbot() {
                 )}
                 
                 <div
-                  className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                  className={`max-w-[70%] rounded-2xl px-4 py-3 relative group ${
                     message.type === 'user'
                       ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
                       : 'bg-gray-50 text-gray-900 border border-gray-400'
                   }`}
                 >
-                  <div className="flex items-start gap-2">
-                    <p className="text-sm leading-relaxed flex-1">
-                      {message.content}
-                      {message.type === 'bot' && !message.isComplete && (
-                        <span className="inline-block w-0.5 h-4 bg-gray-500 animate-pulse ml-1 rounded-full"></span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
-                    {message.timestamp && (
-                      <span className={`text-xs ${message.type === 'user' ? 'text-blue-100' : 'text-gray-500'}`}>
-                        {message.timestamp}
-                      </span>
-                    )}
-                    {!message.timestamp && <div></div>}
-                    {message.type === 'bot' && message.isComplete && (
-                      <div className="flex items-center gap-1">
+                  {editingMessageId === message.id ? (
+                    // Edit mode for user messages
+                    <div className="flex flex-col gap-2">
+                      <textarea
+                        value={editingContent}
+                        onChange={(e) => setEditingContent(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white text-gray-900 text-sm"
+                        rows="3"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && e.ctrlKey) {
+                            e.preventDefault();
+                            saveEditedMessage(message.id);
+                          }
+                          if (e.key === 'Escape') {
+                            cancelEditingMessage();
+                          }
+                        }}
+                      />
+                      <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => copyMessage(message.content)}
-                          className="p-1 hover:bg-gray-100 rounded transition-colors"
+                          onClick={cancelEditingMessage}
+                          className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                          title="Cancel (Esc)"
                         >
-                          <Copy className="w-3 h-3 text-gray-500" />
+                          Cancel
                         </button>
-                        <button className="p-1 hover:bg-gray-100 rounded transition-colors">
-                          <ThumbsUp className="w-3 h-3 text-gray-500" />
-                        </button>
-                        <button className="p-1 hover:bg-gray-100 rounded transition-colors">
-                          <ThumbsDown className="w-3 h-3 text-gray-500" />
+                        <button
+                          onClick={() => saveEditedMessage(message.id)}
+                          className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                          title="Save (Ctrl+Enter)"
+                        >
+                          Send
                         </button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    // Normal message display
+                    <>
+                      <div className="flex items-start gap-2">
+                        <p className="text-sm leading-relaxed flex-1">
+                          {message.content}
+                          {message.type === 'bot' && !message.isComplete && (
+                            <span className="inline-block w-0.5 h-4 bg-gray-500 animate-pulse ml-1 rounded-full"></span>
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Hover actions for user messages */}
+                      {message.type === 'user' && !isLoading && (
+                        <div className="absolute -right-2 -top-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg shadow-lg p-1">
+                            <button
+                              onClick={() => copyMessage(message.content)}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
+                              title="Copy message"
+                            >
+                              <Copy className="w-3 h-3 text-gray-600" />
+                            </button>
+                            <button
+                              onClick={() => startEditingMessage(message.id, message.content)}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
+                              title="Edit message"
+                            >
+                              <Edit className="w-3 h-3 text-gray-600" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Bot message actions */}
+                      {message.type === 'bot' && message.isComplete && (
+                        <div className="flex items-center justify-end mt-2">
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => copyMessage(message.content)}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
+                            >
+                              <Copy className="w-3 h-3 text-gray-500" />
+                            </button>
+                            <button className="p-1 hover:bg-gray-100 rounded transition-colors">
+                              <ThumbsUp className="w-3 h-3 text-gray-500" />
+                            </button>
+                            <button className="p-1 hover:bg-gray-100 rounded transition-colors">
+                              <ThumbsDown className="w-3 h-3 text-gray-500" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 {message.type === 'user' && (
