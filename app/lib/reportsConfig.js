@@ -7,7 +7,7 @@
 export const swmsReports = [
   {
     id: 'equipment-overview',
-    name: 'Equipment Overview',
+    name: 'Equipment Overview Report',
     type: 'PDF',
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
@@ -211,5 +211,68 @@ export const swmsReports = [
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/cool-item-cross-reference-items-not-setup',
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"category":null,"custPrefVendor":null,"descrip":null,"prodId":null,"printerName":null,"reportValue":"mc1rc"}
+  },
+  {
+    id: 'labor-monitor-by-batch',
+    name: 'Monitor Batch Report',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/labor-monitor-by-batch',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","printerName":null,"reportValue":"lb1rf","type":"PDF"}
+  },
+  {
+    id: 'home-location',
+    name: 'Home Location Report',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/home-location',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","aisleSide":null,"area":null,"bckLogiLoc":null,"cube":null,"floatLoc":null,"languageId":3,"logiLoc":null,"palletType":null,"prodId":null,"slotHeight":null,"slotType":null,"status":null,"type":"PDF","uom":null,"widthPositions":null,"zoneId":null,"putZone":null,"descrip":null,"location":null,"locationId":null,"itemNo":null,"locType":null,"pickLoc":null,"rdcItem":null,"printerName":null,"reportValue":"ml1ra"}
+  },
+  {
+    id: 'sos-user-configuration-report',
+    name: 'SOS User Configuration Report',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/sos-user-configuration-report',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","languageId":3,"type":"PDF","printerName":null,"reportValue":"sosuc"}
+  },
+  {
+    id: 'sosShort-main',
+    name: 'SOS Short Report',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/sosShort-main',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","area":null,"batchNo":null,"containShortOnShort":null,"languageId":3,"queryUserId":null,"shortBatch":null,"shortUser":null,"sortBy":"TIME","truck":null,"type":"PDF","printerName":null,"reportValue":"soss1_h"}
+  },
+  {
+    id: 'load-list',
+    name: 'Sls load list',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/load-list',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","languageId":3,"type":"PDF","printerName":null,"reportValue":"lasll"}
+  },
+  {
+    id: 'slt-equipment-overview',
+    name: 'SOS/SLS/STS Equipment Overview Report',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/slt-equipment-overview',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","languageId":3,"type":"PDF","printerName":null,"reportValue":"mc1ra"}
+  },
+  {
+    id: 'cycle-count-overview',
+    name: 'Cycle Count Overview Report',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/cycle-count-overview',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","languageId":3,"type":"PDF","printerName":null,"reportValue":"mc2ra"}
   },
 ];
