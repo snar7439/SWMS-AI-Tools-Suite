@@ -15,15 +15,6 @@ export const swmsReports = [
     payload: {"userId":"OPS$TEST0100","languageID":3,"opcoNumber":"swms","type":"PDF","equipId":null,"zoneId":null,"printerName":null,"reportValue":"me1ra"}
   },
   {
-    id: 'inventory-overview',
-    name: 'Inventory Overview',
-    type: 'PDF',
-    lastModified: 'Real-time',
-    pdfUrl: null, // Will be fetched from SWMS
-    reportPath: '/report/inventory-overview',
-    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageID":3,"prodId":null,"custPreferVendor":null,"brand":null,"recId":null,"descrip":null,"palletType":null,"plogiLoc":null,"logicLoc":null,"status":null,"msku":null,"rdcItem":null,"miniLoad":null,"parentpalletId":null,"mfgSku":null,"vendorId":null,"uom":null,"prodSize":null,"prodSizeUnit":null,"ti":null,"hi":null,"warehouseId":null,"lotId":null,"pack":null,"aisleSide":null,"mxEligible":null,"mxItemAssignFlag":null,"qtyExp":null,"qtyAlc":null,"printerName":null,"reportValue":"mn1rb"}
-  },
-  {
     id: 'item-overview-item',
     name: 'Item Overview by Item',
     type: 'PDF',
@@ -85,5 +76,140 @@ export const swmsReports = [
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/packing-list-for-R042',
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1rg"}
+  },
+  // {
+  //   id: 'inventory-overview',
+  //   name: 'Inventory Overview Report',
+  //   type: 'PDF',
+  //   lastModified: 'Real-time',
+  //   pdfUrl: null, // Will be fetched from SWMS
+  //   reportPath: '/report/inventory-overview',
+  //   payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageID":3,"prodId":null,"custPreferVendor":null,"brand":null,"recId":null,"descrip":null,"palletType":null,"plogiLoc":null,"logicLoc":null,"status":null,"msku":null,"rdcItem":null,"miniLoad":null,"parentpalletId":null,"mfgSku":null,"vendorId":null,"uom":null,"prodSize":null,"prodSizeUnit":null,"ti":null,"hi":null,"warehouseId":null,"lotId":null,"pack":null,"aisleSide":null,"mxEligible":null,"mxItemAssignFlag":null,"qtyExp":null,"qtyAlc":null,"printerName":null,"reportValue":"mn1rb"}
+  // },
+  // {
+  //   id: 'inventory-location',
+  //   name: 'Inventory Location Report',
+  //   type: 'PDF',
+  //   lastModified: 'Real-time',
+  //   pdfUrl: null, // Will be fetched from SWMS
+  //   reportPath: '/report/inventory-location',
+  //   payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageID":3,"prodId":null,"custPreferVendor":null,"brand":null,"recId":null,"descrip":null,"palletType":null,"plogiLoc":null,"logicLoc":null,"status":null,"msku":null,"rdcItem":null,"miniLoad":null,"parentpalletId":null,"mfgSku":null,"vendorId":null,"uom":null,"prodSize":null,"prodSizeUnit":null,"ti":null,"hi":null,"warehouseId":null,"lotId":null,"pack":null,"aisleSide":null,"mxEligible":null,"mxItemAssignFlag":null,"qtyExp":null,"qtyAlc":null,"printerName":null,"reportValue":"mn1rc"}
+  // },
+  {
+    id: 'generic-labels',
+    name: 'Generic Labels',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/generic-labels',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageID":3,"qty":1,"printerName":null,"reportValue":"mn1rb"}
+  },
+  // {
+  //   id: 'expiration-warning',
+  //   name: 'Expiration Warning Report',
+  //   type: 'PDF',
+  //   lastModified: 'Real-time',
+  //   pdfUrl: null, // Will be fetched from SWMS
+  //   reportPath: '/report/expiration-warning',
+  //   payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageID":3,"prodId":null,"custPreferVendor":null,"brand":null,"recId":null,"descrip":null,"palletType":null,"plogiLoc":null,"logicLoc":null,"status":null,"msku":null,"rdcItem":null,"miniLoad":null,"parentpalletId":null,"mfgSku":null,"vendorId":null,"uom":null,"prodSize":null,"prodSizeUnit":null,"ti":null,"hi":null,"warehouseId":null,"lotId":null,"pack":null,"aisleSide":null,"mxEligible":null,"mxItemAssignFlag":null,"qtyExp":null,"qtyAlc":null,"printerName":null,"reportValue":"mn1rd"}
+  // },
+  {
+    id: 'reserve-location-pallets-received-90-days-prior',
+    name: 'Reserve Location pallets received 90 days prior',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/reserve-location-pallets-received-90-days-prior',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageID":3,"prodId":null,"custPreferVendor":null,"brand":null,"recId":null,"descrip":null,"palletType":null,"plogiLoc":null,"logicLoc":null,"status":null,"msku":null,"rdcItem":null,"miniLoad":null,"parentpalletId":null,"mfgSku":null,"vendorId":null,"uom":null,"prodSize":null,"prodSizeUnit":null,"ti":null,"hi":null,"warehouseId":null,"lotId":null,"pack":null,"aisleSide":null,"mxEligible":null,"mxItemAssignFlag":null,"qtyExp":null,"qtyAlc":null,"printerName":null,"reportValue":"mn1re"}
+  },
+  {
+    id: 'adjustment-type-overview',
+    name: 'Adjustment Type Overview Report',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/adjustment-type-overview',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","languageId":3,"reasonCode":null,"reasonCodeType":null,"type":"PDF","printerName":null,"reportValue":"mc1ra"}
+  },
+   {
+    id: 'no-qoh-report',
+    name: 'No Quantity On Hand Report for Both',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/no-qoh-report',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","prodId":null,"palletType":null,"description":null,"cpv":null,"mfgId":null,"brand":null,"reportName":"Both","location":null,"rdcItem":null,"printerName":null,"reportValue":"mi1rb","type":"PDF"}
+  },
+   {
+    id: 'pallet-worksheet',
+    name: 'Pallet WorkSheet',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/pallet-worksheet',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1rb"}
+  },
+   {
+    id: 'catchweight-recording',
+    name: 'CatchWeight Recording',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/catchweight-recording',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1rc"}
+  },
+  {
+    id: 'out-bound-checkoff-summary',
+    name: 'OutBound CheckOff',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/out-bound-checkoff-summary',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1re"}
+  },
+  {
+    id: 'out-bound-checkoff-detail',
+    name: 'CheckOff Report',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/out-bound-checkoff-detail',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1ra"}
+  },
+  {
+    id: 'selector-list-for-R042',
+    name: 'Selector List',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/selector-list-for-R042',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1rh"}
+  },
+  {
+    id: 'return-receiving-worksheet',
+    name: 'Return Rec Worksheet',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/return-receiving-worksheet',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","languageId":3,"type":"PDF","printerName":null,"reportValue":"rp1rh"}
+  },
+  {
+    id: 'cool-item-setup',
+    name: 'Items setup with Xref',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/cool-item-setup',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"category":null,"custPrefVendor":null,"descrip":null,"prodId":null,"printerName":null,"reportValue":"mc1rc"}
+  },
+  {
+    id: 'cool-item-cross-reference-items-not-setup',
+    name: 'Items non setup with Xref',
+    type: 'PDF',
+    lastModified: 'Real-time',
+    pdfUrl: null, // Will be fetched from SWMS
+    reportPath: '/report/cool-item-cross-reference-items-not-setup',
+    payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"category":null,"custPrefVendor":null,"descrip":null,"prodId":null,"printerName":null,"reportValue":"mc1rc"}
   },
 ];

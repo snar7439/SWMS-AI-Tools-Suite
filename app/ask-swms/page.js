@@ -50,6 +50,8 @@ export default function AskSWMSChatbot() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const streamingIntervalRef = useRef(null);
+  const userHasScrolled = useRef(false);
+  const messagesContainerRef = useRef(null);
 
   const handleLogout = async () => {
     try {
@@ -65,7 +67,19 @@ export default function AskSWMSChatbot() {
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Only auto-scroll if user hasn't manually scrolled
+    if (!userHasScrolled.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Track user scrolling
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+      userHasScrolled.current = !isAtBottom;
+    }
   };
 
   useEffect(() => {
@@ -81,21 +95,29 @@ export default function AskSWMSChatbot() {
     };
   }, []);
 
+  // Performance-optimized typing function that works in background
   const typeMessage = (messageId, fullContent, onComplete) => {
     let currentIndex = 0;
     const typingSpeed = 40; // milliseconds between characters
+    const batchSize = 3; // Process multiple characters at once for better performance
     
-    const typeInterval = setInterval(() => {
+    // Use setInterval instead of recursive setTimeout for background reliability
+    streamingIntervalRef.current = setInterval(() => {
       if (currentIndex < fullContent.length) {
-        const currentContent = fullContent.substring(0, currentIndex + 1);
+        // Process multiple characters at once to reduce DOM updates
+        const nextIndex = Math.min(currentIndex + batchSize, fullContent.length);
+        const currentContent = fullContent.substring(0, nextIndex);
+        
         setMessages(prev => prev.map(msg => 
           msg.id === messageId 
             ? { ...msg, content: currentContent }
             : msg
         ));
-        currentIndex++;
+        
+        currentIndex = nextIndex;
       } else {
-        clearInterval(typeInterval);
+        // Complete the message
+        clearInterval(streamingIntervalRef.current);
         setMessages(prev => prev.map(msg => 
           msg.id === messageId 
             ? { ...msg, isComplete: true }
@@ -105,14 +127,14 @@ export default function AskSWMSChatbot() {
         if (onComplete) onComplete();
       }
     }, typingSpeed);
-
-    streamingIntervalRef.current = typeInterval;
-    return typeInterval;
   };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
+
+    // Reset scroll tracking when sending new message
+    userHasScrolled.current = false;
 
     const userMessage = {
       id: Date.now(),
@@ -128,10 +150,15 @@ export default function AskSWMSChatbot() {
     setIsThinking(true);
 
     try {
-      // Simulate thinking time
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+      // Use Promise with setTimeout that continues in background
+      const thinkingPromise = new Promise(resolve => {
+        setTimeout(() => {
+          setIsThinking(false);
+          resolve();
+        }, 1000 + Math.random() * 1000);
+      });
       
-      setIsThinking(false);
+      await thinkingPromise;
 
       // Create bot message placeholder
       const botMessageId = Date.now() + 1;
@@ -145,7 +172,7 @@ export default function AskSWMSChatbot() {
       setMessages(prev => [...prev, botMessage]);
       setStreamingMessageId(botMessageId);
 
-      // Simulate API call
+      // Simulate API call - this continues regardless of tab focus
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -164,7 +191,7 @@ export default function AskSWMSChatbot() {
 
       const fullResponse = responseTexts[Math.floor(Math.random() * responseTexts.length)];
       
-      // Start typing animation
+      // Start typing animation - continues in background using setInterval
       typeMessage(botMessageId, fullResponse, () => {
         setIsLoading(false);
       });
@@ -201,6 +228,9 @@ export default function AskSWMSChatbot() {
   const saveEditedMessage = async (messageId) => {
     if (!editingContent.trim()) return;
 
+    // Reset scroll tracking when editing message
+    userHasScrolled.current = false;
+
     // Update the user message
     setMessages(prev => prev.map(msg => 
       msg.id === messageId 
@@ -223,10 +253,15 @@ export default function AskSWMSChatbot() {
     setIsThinking(true);
 
     try {
-      // Simulate thinking time
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+      // Use Promise with setTimeout that continues in background
+      const thinkingPromise = new Promise(resolve => {
+        setTimeout(() => {
+          setIsThinking(false);
+          resolve();
+        }, 1000 + Math.random() * 1000);
+      });
       
-      setIsThinking(false);
+      await thinkingPromise;
 
       // Create bot message placeholder
       const botMessageId = Date.now();
@@ -250,7 +285,7 @@ export default function AskSWMSChatbot() {
 
       const fullResponse = responseTexts[Math.floor(Math.random() * responseTexts.length)];
       
-      // Start typing animation
+      // Start typing animation - continues in background using setInterval
       typeMessage(botMessageId, fullResponse, () => {
         setIsLoading(false);
       });
@@ -384,8 +419,13 @@ export default function AskSWMSChatbot() {
       <div className="flex-1 flex flex-col mx-auto w-full px-4 py-4 min-h-0">
         {/* Messages Area */}
         <div className="flex-1 bg-white/60 backdrop-blur-sm rounded-t-2xl shadow-xl border border-white/20 border-b-0 flex flex-col overflow-hidden">
-          {/* Messages Container */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* Messages Container - Now with scroll handling */}
+          <div 
+            ref={messagesContainerRef}
+            className="flex-1 overflow-y-auto p-6 space-y-4" 
+            onScroll={handleScroll}
+            style={{ scrollBehavior: 'smooth' }}
+          >
             {messages.map((message) => (
               <div
                 key={message.id}
