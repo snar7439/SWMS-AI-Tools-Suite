@@ -52,6 +52,7 @@ export default function AskSWMSChatbot() {
   const streamingIntervalRef = useRef(null);
   const userHasScrolled = useRef(false);
   const messagesContainerRef = useRef(null);
+  const workerRef = useRef(null);
 
   const handleLogout = async () => {
     try {
@@ -95,38 +96,42 @@ export default function AskSWMSChatbot() {
     };
   }, []);
 
+  // Initialize web worker for background processing
+  useEffect(() => {
+    workerRef.current = new Worker('/worker.js');
+    const worker = workerRef.current;
+
+    worker.onmessage = (e) => {
+      const { type, messageId, content } = e.data;
+
+      if (type === 'progress') {
+        setMessages(prev =>
+          prev.map(msg => msg.id === messageId ? { ...msg, content } : msg)
+        );
+      }
+
+      if (type === 'done') {
+        setMessages(prev =>
+          prev.map(msg => msg.id === messageId ? { ...msg, isComplete: true } : msg)
+        );
+        setStreamingMessageId(null);
+        setIsLoading(false);
+      }
+    };
+
+    return () => worker.terminate();
+  }, []);
+
   // Performance-optimized typing function that works in background
   const typeMessage = (messageId, fullContent, onComplete) => {
-    let currentIndex = 0;
-    const typingSpeed = 40; // milliseconds between characters
-    const batchSize = 3; // Process multiple characters at once for better performance
-    
-    // Use setInterval instead of recursive setTimeout for background reliability
-    streamingIntervalRef.current = setInterval(() => {
-      if (currentIndex < fullContent.length) {
-        // Process multiple characters at once to reduce DOM updates
-        const nextIndex = Math.min(currentIndex + batchSize, fullContent.length);
-        const currentContent = fullContent.substring(0, nextIndex);
-        
-        setMessages(prev => prev.map(msg => 
-          msg.id === messageId 
-            ? { ...msg, content: currentContent }
-            : msg
-        ));
-        
-        currentIndex = nextIndex;
-      } else {
-        // Complete the message
-        clearInterval(streamingIntervalRef.current);
-        setMessages(prev => prev.map(msg => 
-          msg.id === messageId 
-            ? { ...msg, isComplete: true }
-            : msg
-        ));
-        setStreamingMessageId(null);
-        if (onComplete) onComplete();
-      }
-    }, typingSpeed);
+    if (workerRef.current) {
+      workerRef.current.postMessage({
+        messageId,
+        content: fullContent,
+        batchSize: 3,
+        speed: 40
+      });
+    }
   };
 
   const handleSendMessage = async (e) => {
