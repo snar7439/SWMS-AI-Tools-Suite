@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import ChatMessage from "../components/ChatMessage";
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import { Send, Bot, User, Sparkles, MessageCircle, Loader2, Copy, ThumbsUp, ThumbsDown, Edit, Check, X } from 'lucide-react';
@@ -525,9 +526,7 @@ export default function AskSWMSChatbot() {
                       <div className="flex items-start gap-2">
                         <div className="text-sm leading-relaxed flex-1">
                           {message.type === 'bot' && message.format === 'slack-markdown' ? (
-                            <div className="prose prose-sm max-w-none">
-                              <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>{message.content}</ReactMarkdown>
-                            </div>
+                            <ChatMessage content={message.content} />
                           ) : (
                             <span>
                               {message.content}
