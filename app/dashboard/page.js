@@ -64,6 +64,14 @@ export default function DashboardPage() {
       status: 'Available'
     },
     {
+      id: 'knowledge-graph',
+      title: 'SWMS Knowledge Graph Visualization',
+      description: 'Explore SWMS tables and relationships with an interactive graph',
+      icon: '🧠',
+      route: '/knowledge-graph',
+      status: 'Available'
+    },
+    {
       id: 'warehouse-simulation',
       title: 'Warehouse Simulation',
       description: 'Simulate warehouse operations with AI',
