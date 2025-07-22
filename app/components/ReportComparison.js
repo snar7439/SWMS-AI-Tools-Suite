@@ -42,20 +42,34 @@ export default function ReportComparison() {
   const handleCompare = () => {
     if (selectedReports[0] && selectedReports[1]) {
       setIsComparing(true);
-      
-      // Simulate comparison process
-      setTimeout(() => {
-        const result = {
-          similarity: Math.floor(Math.random() * 40) + 60, // 60-99%
-          differences: Math.floor(Math.random() * 20) + 5, // 5-24 differences
-          additions: Math.floor(Math.random() * 15) + 2,
-          deletions: Math.floor(Math.random() * 10) + 1,
-          modifications: Math.floor(Math.random() * 12) + 3
-        };
-        setComparisonResult(result);
-        setIsComparing(false);
-        setActiveTab('results'); // Automatically switch to results tab
-      }, 2000);
+      // Prepare the user_query payload (e.g., JSON string of both reports)
+      const userQuery = JSON.stringify({
+        baseline: selectedReports[0],
+        test: selectedReports[1]
+      });
+      fetch('/api/compare', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ai_agent_id: '687f480f36a26d2728ab55b4',
+          user_query: userQuery,
+          configuration_environment: 'DEV'
+        })
+      })
+        .then(async (response) => {
+          if (!response.ok) throw new Error('Agent API error');
+          const data = await response.json();
+          setComparisonResult(data.result || data);
+          setIsComparing(false);
+          setActiveTab('results');
+        })
+        .catch((error) => {
+          console.error('Comparison API error:', error);
+          setComparisonResult({ error: 'Failed to compare reports.' });
+          setIsComparing(false);
+        });
     }
   };
 
