@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import { Send, Bot, User, Sparkles, MessageCircle, Loader2, Copy, ThumbsUp, ThumbsDown, Edit, Check, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -102,17 +105,25 @@ export default function AskSWMSChatbot() {
     const worker = workerRef.current;
 
     worker.onmessage = (e) => {
-      const { type, messageId, content } = e.data;
+      const { type, messageId, content, format } = e.data;
 
       if (type === 'progress') {
         setMessages(prev =>
-          prev.map(msg => msg.id === messageId ? { ...msg, content } : msg)
+          prev.map(msg =>
+            msg.id === messageId
+              ? { ...msg, content, format: format || msg.format || 'slack-markdown' }
+              : msg
+          )
         );
       }
 
       if (type === 'done') {
         setMessages(prev =>
-          prev.map(msg => msg.id === messageId ? { ...msg, isComplete: true } : msg)
+          prev.map(msg =>
+            msg.id === messageId
+              ? { ...msg, isComplete: true, format: format || msg.format || 'slack-markdown' }
+              : msg
+          )
         );
         setStreamingMessageId(null);
         setIsLoading(false);
@@ -177,27 +188,34 @@ export default function AskSWMSChatbot() {
       setMessages(prev => [...prev, botMessage]);
       setStreamingMessageId(botMessageId);
 
-      // Simulate API call - this continues regardless of tab focus
+      // Call the proxy API route
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: userInput }),
+        body: JSON.stringify({
+          ai_agent_id: '6878e1f31ef4befdb53b22cf',
+          user_query: userInput,
+          configuration_environment: 'DEV',
+        }),
       });
 
-      // Generate a more dynamic response based on the user input
-      const responseTexts = [
-        `Thank you for asking about "${userInput}". I'm processing your request and analyzing the relevant SWMS documentation. Based on my understanding, I can provide you with comprehensive information about this topic. Let me walk you through the key points and provide detailed guidance that will help you with your specific needs.`,
-        `I understand you're looking for information about "${userInput}". This is an important topic in SWMS operations. Let me provide you with a detailed explanation and practical guidance. I'll break this down into clear, actionable steps that you can follow to address your specific requirements effectively.`,
-        `Great question about "${userInput}"! I'm accessing the relevant SWMS protocols and procedures to give you the most accurate and up-to-date information. Here's what I can tell you: This involves several key considerations that I'll explain in detail to help you understand the complete process.`,
-        `I see you're interested in "${userInput}". This is a common query in SWMS operations, and I'm happy to help clarify this for you. Let me provide a comprehensive overview that covers all the essential aspects you need to know, including best practices and important considerations.`
-      ];
+      let fullResponse = '';
+      let format = 'text';
+      if (response.ok) {
+        const data = await response.json();
+        fullResponse = data?.answer || data?.content || 'Sorry, I did not receive a valid response.';
+        format = data?.format || 'text';
+      } else {
+        fullResponse = 'Sorry, I could not get a response from the backend.';
+      }
 
-      const fullResponse = responseTexts[Math.floor(Math.random() * responseTexts.length)];
-      
       // Start typing animation - continues in background using setInterval
       typeMessage(botMessageId, fullResponse, () => {
+        setMessages(prev => prev.map(msg =>
+          msg.id === botMessageId ? { ...msg, format: format } : msg
+        ));
         setIsLoading(false);
       });
 
@@ -280,18 +298,34 @@ export default function AskSWMSChatbot() {
       setMessages(prev => [...prev, botMessage]);
       setStreamingMessageId(botMessageId);
 
-      // Generate a more dynamic response based on the edited input
-      const responseTexts = [
-        `Thank you for asking about "${editingContent.trim()}". I'm processing your request and analyzing the relevant SWMS documentation. Based on my understanding, I can provide you with comprehensive information about this topic. Let me walk you through the key points and provide detailed guidance that will help you with your specific needs.`,
-        `I understand you're looking for information about "${editingContent.trim()}". This is an important topic in SWMS operations. Let me provide you with a detailed explanation and practical guidance. I'll break this down into clear, actionable steps that you can follow to address your specific requirements effectively.`,
-        `Great question about "${editingContent.trim()}"! I'm accessing the relevant SWMS protocols and procedures to give you the most accurate and up-to-date information. Here's what I can tell you: This involves several key considerations that I'll explain in detail to help you understand the complete process.`,
-        `I see you're interested in "${editingContent.trim()}". This is a common query in SWMS operations, and I'm happy to help clarify this for you. Let me provide a comprehensive overview that covers all the essential aspects you need to know, including best practices and important considerations.`
-      ];
+      // Call the proxy API route for the edited message
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ai_agent_id: '6878e1f31ef4befdb53b22cf',
+          user_query: editingContent.trim(),
+          configuration_environment: 'DEV',
+        }),
+      });
 
-      const fullResponse = responseTexts[Math.floor(Math.random() * responseTexts.length)];
-      
+      let fullResponse = '';
+      let format = 'text';
+      if (response.ok) {
+        const data = await response.json();
+        fullResponse = data?.answer || data?.content || 'Sorry, I did not receive a valid response.';
+        format = data?.format || 'text';
+      } else {
+        fullResponse = 'Sorry, I could not get a response from the backend.';
+      }
+
       // Start typing animation - continues in background using setInterval
       typeMessage(botMessageId, fullResponse, () => {
+        setMessages(prev => prev.map(msg =>
+          msg.id === botMessageId ? { ...msg, format: format } : msg
+        ));
         setIsLoading(false);
       });
 
@@ -489,12 +523,20 @@ export default function AskSWMSChatbot() {
                     // Normal message display
                     <>
                       <div className="flex items-start gap-2">
-                        <p className="text-sm leading-relaxed flex-1">
-                          {message.content}
-                          {message.type === 'bot' && !message.isComplete && (
-                            <span className="inline-block w-0.5 h-4 bg-gray-500 animate-pulse ml-1 rounded-full"></span>
+                        <div className="text-sm leading-relaxed flex-1">
+                          {message.type === 'bot' && message.format === 'slack-markdown' ? (
+                            <div className="prose prose-sm max-w-none">
+                              <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>{message.content}</ReactMarkdown>
+                            </div>
+                          ) : (
+                            <span>
+                              {message.content}
+                              {message.type === 'bot' && !message.isComplete && (
+                                <span className="inline-block w-0.5 h-4 bg-gray-500 animate-pulse ml-1 rounded-full"></span>
+                              )}
+                            </span>
                           )}
-                        </p>
+                        </div>
                       </div>
 
                       {/* Hover actions for user messages */}

@@ -7,10 +7,10 @@ self.onmessage = function (e) {
       const nextIndex = Math.min(index + batchSize, content.length);
       const partial = content.substring(0, nextIndex);
       index = nextIndex;
-      self.postMessage({ type: 'progress', messageId, content: partial });
+      self.postMessage({ type: 'progress', messageId, content: partial, format: 'slack-markdown' });
     } else {
       clearInterval(interval);
-      self.postMessage({ type: 'done', messageId });
+      self.postMessage({ type: 'done', messageId, format: 'slack-markdown' });
     }
   }, speed);
 };
