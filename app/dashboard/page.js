@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import ReportTestingModal from '../components/ReportTestingSelection'; 
 
 export default function DashboardPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [navigating, setNavigating] = useState(null); // Track which component is being launched
+  const [showReportTestingModal, setShowReportTestingModal] = useState(false);
 
   useEffect(() => {
     // Check authentication status
@@ -91,12 +93,30 @@ export default function DashboardPage() {
 
   const handleComponentSelect = (component) => {
     if (component.status === 'Available') {
-      setNavigating(component.id);
-      // Add a small delay to show the loading state before navigation
-      setTimeout(() => {
-        router.push(component.route);
-      }, 500);
+      // Special handling for report testing - show selection popup instead of direct navigation
+      if (component.id === 'report-testing') {
+        setShowReportTestingModal(true);
+      } else {
+        setNavigating(component.id);
+        setTimeout(() => {
+          router.push(component.route);
+        }, 500);
+      }
     }
+  };
+
+  // Handle modal selection
+  const handleReportTestingSelect = (option) => {
+    setShowReportTestingModal(false);
+    setNavigating('report-testing');
+    setTimeout(() => {
+      router.push(option.route);
+    }, 500);
+  };
+
+  // Handle modal close
+  const handleModalClose = () => {
+    setShowReportTestingModal(false);
   };
 
   if (loading) {
@@ -317,6 +337,12 @@ export default function DashboardPage() {
         </div>
         </div>
       </div>
+      {/* Report Selection Modal */}
+      <ReportTestingModal
+        isOpen={showReportTestingModal}
+        onClose={handleModalClose}
+        onSelect={handleReportTestingSelect}
+      />
     </div>
   );
 }
