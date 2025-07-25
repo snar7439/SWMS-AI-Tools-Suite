@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 
-export default function DragDropArea({ onFileUpload, slot, title, sub }) {
+export default function DragDropArea({ onFileUpload, slot, title, sub, mode = 'comparison' }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
@@ -40,44 +40,115 @@ export default function DragDropArea({ onFileUpload, slot, title, sub }) {
     setIsDragOver(false);
     
     const files = Array.from(e.dataTransfer.files);
-    const pdfFile = files.find(file => file.type === 'application/pdf');
+    let targetFile;
     
-    if (pdfFile) {
-      handleFileUpload(pdfFile);
+    if (mode === 'single' && slot === 'analysis') {
+      targetFile = files.find(file => 
+        file.type === 'application/pdf' || 
+        file.type === 'text/markdown' || 
+        file.type === 'text/x-markdown' ||
+        file.name.toLowerCase().endsWith('.md') ||
+        file.name.toLowerCase().endsWith('.markdown')
+      );
+      if (!targetFile) {
+        alert('Please drop a PDF or Markdown file');
+        return;
+      }
     } else {
-      alert('Please drop a PDF file');
+      targetFile = files.find(file => file.type === 'application/pdf');
+      if (!targetFile) {
+        alert('Please drop a PDF file');
+        return;
+      }
     }
+    
+    handleFileUpload(targetFile);
   };
 
   const handleFileInputChange = (e) => {
     const file = e.target.files[0];
-    if (file && file.type === 'application/pdf') {
-      handleFileUpload(file);
+    if (!file) return;
+
+    let isValidFile = false;
+    
+    if (mode === 'single' && slot === 'analysis') {
+      isValidFile = file.type === 'application/pdf' || 
+                   file.type === 'text/markdown' || 
+                   file.type === 'text/x-markdown' ||
+                   file.name.toLowerCase().endsWith('.md') ||
+                   file.name.toLowerCase().endsWith('.markdown');
+      if (!isValidFile) {
+        alert('Please select a PDF or Markdown file');
+        return;
+      }
     } else {
-      alert('Please select a PDF file');
+      isValidFile = file.type === 'application/pdf';
+      if (!isValidFile) {
+        alert('Please select a PDF file');
+        return;
+      }
     }
+    
+    handleFileUpload(file);
   };
 
   const handleFileUpload = async (file) => {
     setIsUploading(true);
     
     try {
-      // Create a blob URL for the PDF file
-      const pdfUrl = URL.createObjectURL(file);
-      
-      // Create report object
-      const report = {
-        id: `manual_${Date.now()}`,
-        name: file.name.replace('.pdf', ''),
-        type: 'Manual Upload',
-        pdfUrl: pdfUrl,
-        fetchedFromSWMS: false,
-        isManualUpload: true,
-        file: file
-      };
-      
-      console.log('Manual report uploaded:', report);
-      onFileUpload(report, slot);
+      // For analysis documents, check if it's markdown
+      if (mode === 'single' && slot === 'analysis') {
+        const isMarkdown = file.type === 'text/markdown' || 
+                          file.type === 'text/x-markdown' ||
+                          file.name.toLowerCase().endsWith('.md') ||
+                          file.name.toLowerCase().endsWith('.markdown');
+        
+        if (isMarkdown) {
+          // Handle markdown file
+          const content = await file.text();
+          const report = {
+            id: `manual_${Date.now()}`,
+            name: file.name.replace(/\.(md|markdown)$/i, ''),
+            type: 'markdown',
+            content: content,
+            isManualUpload: true,
+            isMarkdown: true,
+            file: file
+          };
+          
+          console.log('Markdown file uploaded:', report);
+          onFileUpload(report, slot);
+        } else if (file.type === 'application/pdf') {
+          // Handle PDF file
+          const pdfUrl = URL.createObjectURL(file);
+          const report = {
+            id: `manual_${Date.now()}`,
+            name: file.name.replace('.pdf', ''),
+            type: 'PDF Analysis',
+            pdfUrl: pdfUrl,
+            isManualUpload: true,
+            file: file
+          };
+          
+          console.log('PDF analysis file uploaded:', report);
+          onFileUpload(report, slot);
+        }
+      } else {
+        // Handle regular PDF report upload
+        const pdfUrl = URL.createObjectURL(file);
+        const report = {
+          id: `manual_${Date.now()}`,
+          name: file.name.replace('.pdf', ''),
+          type: 'Manual Upload',
+          pdfUrl: pdfUrl,
+          fetchedFromSWMS: false,
+          isManualUpload: true,
+          file: file
+        };
+        
+        console.log('PDF report uploaded:', report);
+        onFileUpload(report, slot);
+      }
       
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -91,24 +162,62 @@ export default function DragDropArea({ onFileUpload, slot, title, sub }) {
     fileInputRef.current?.click();
   };
 
+  const getAcceptTypes = () => {
+    if (mode === 'single' && slot === 'analysis') {
+      return '.pdf,.md,.markdown';
+    }
+    return '.pdf';
+  };
+
+  const getSlotColor = () => {
+    if (mode === 'single') {
+      if (slot === 'analysis') {
+        return {
+          gradient: 'bg-gradient-to-r from-purple-900/30 to-purple-800/20',
+          border: 'border-purple-700',
+          icon: 'text-purple-400',
+          bg: 'bg-purple-600/20 border border-purple-500/30',
+          hover: 'border-purple-400 bg-purple-600/10'
+        };
+      }
+      return {
+        gradient: 'bg-gradient-to-r from-blue-900/30 to-blue-800/20',
+        border: 'border-blue-700',
+        icon: 'text-blue-400',
+        bg: 'bg-blue-600/20 border border-blue-500/30',
+        hover: 'border-blue-400 bg-blue-900/20'
+      };
+    }
+    
+    return slot === 0 ? {
+      gradient: 'bg-gradient-to-r from-blue-900/30 to-blue-800/20',
+      border: 'border-blue-700',
+      icon: 'text-blue-400',
+      bg: 'bg-blue-600/20 border border-blue-500/30',
+      hover: 'border-blue-400 bg-blue-900/20'
+    } : {
+      gradient: 'bg-gradient-to-r from-yellow-800/30 to-yellow-600/20',
+      border: 'border-yellow-500',
+      icon: 'text-yellow-300',
+      bg: 'bg-yellow-400/20 border border-yellow-400/30',
+      hover: 'border-yellow-400 bg-yellow-600/10'
+    };
+  };
+
+  const colors = getSlotColor();
+
   return (
     <div className="h-full flex flex-col">
-      <div className={`px-3 py-2 rounded-t-lg border-b-2 mb-3 ${
-        slot === 0 
-          ? 'bg-gradient-to-r from-blue-900/30 to-blue-800/20 border-blue-700' 
-          : 'bg-gradient-to-r from-yellow-800/30 to-yellow-600/20 border-yellow-500'
-      }`}>
+      <div className={`px-3 py-2 rounded-t-lg border-b-2 mb-3 ${colors.gradient} ${colors.border}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              slot === 0 
-                ? 'bg-blue-600/20 border border-blue-500/30' 
-                : 'bg-yellow-400/20 border border-yellow-400/30'
-            }`}>
-              <svg className={`w-4 h-4 ${
-                slot === 0 ? 'text-blue-400' : 'text-yellow-300'
-              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${colors.bg}`}>
+              <svg className={`w-4 h-4 ${colors.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mode === 'single' && slot === 'analysis' ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                )}
               </svg>
             </div>
             <div>
@@ -116,24 +225,13 @@ export default function DragDropArea({ onFileUpload, slot, title, sub }) {
               <p className="text-xs text-gray-400">{sub}</p>
             </div>
           </div>
-          {/* <div className="flex items-center gap-2">
-            <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-              slot === 0 
-                ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' 
-                : 'bg-amber-400/20 text-amber-200 border border-amber-400/30'
-            }`}>
-              {slot === 0 ? 'Report A' : 'Report B'}
-            </span>
-          </div> */}
         </div>
       </div>
 
       <div 
         className={`flex-1 border-2 border-dashed rounded-lg transition-all duration-200 flex flex-col items-center justify-center p-6 cursor-pointer ${
           isDragOver 
-            ? (slot === 0 
-                ? 'border-blue-400 bg-blue-900/20' 
-                : 'border-yellow-400 bg-yellow-600/10')
+            ? colors.hover
             : 'border-gray-600 hover:border-gray-500 hover:bg-gray-800/50'
         } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
         onDragEnter={handleDragEnter}
@@ -145,7 +243,7 @@ export default function DragDropArea({ onFileUpload, slot, title, sub }) {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pdf"
+          accept={getAcceptTypes()}
           onChange={handleFileInputChange}
           className="hidden"
           disabled={isUploading}
@@ -153,7 +251,11 @@ export default function DragDropArea({ onFileUpload, slot, title, sub }) {
 
         {isUploading ? (
           <div className="text-center">
-            <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${slot === 0 ? 'border-blue-400' : 'border-yellow-400'} mx-auto mb-3`}></div>
+            <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
+              mode === 'single' && slot === 'analysis' ? 'border-purple-400' : 
+              mode === 'single' ? 'border-blue-400' : 
+              slot === 0 ? 'border-blue-400' : 'border-yellow-400'
+            } mx-auto mb-3`}></div>
             <p className="text-sm text-gray-300">Uploading...</p>
           </div>
         ) : (
@@ -164,16 +266,23 @@ export default function DragDropArea({ onFileUpload, slot, title, sub }) {
               </svg>
             </div>
             
-            <h4 className="text-sm font-medium text-white mb-2">Drop PDF here</h4>
+            <h4 className="text-sm font-medium text-white mb-2">
+              {mode === 'single' && slot === 'analysis' ? 'Drop Analysis Document' : 'Drop PDF here'}
+            </h4>
             <p className="text-xs text-gray-400 text-center mb-3">
-              Select from the report list, drag and drop your PDF file here, or click to browse
+              {mode === 'single' && slot === 'analysis' 
+                ? 'Drag and drop your analysis document (PDF or Markdown), or click to browse'
+                : 'Select from the report list, drag and drop your PDF file here, or click to browse'
+              }
             </p>
             
             <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg border border-gray-600 transition-colors">
               Browse Files
             </button>
             
-            <p className="text-xs text-gray-500 mt-3">PDF files only</p>
+            <p className="text-xs text-gray-500 mt-3">
+              {mode === 'single' && slot === 'analysis' ? 'PDF or Markdown (.md) files' : 'PDF files only'}
+            </p>
           </>
         )}
       </div>

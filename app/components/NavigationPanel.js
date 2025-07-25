@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { swmsReports } from '../lib/reportsConfig';
 
-export default function NavigationPanel({ selectedReports, onReportSelect }) {
+export default function NavigationPanel({ selectedReports, onReportSelect, mode = 'comparison' }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [showSlotSelector, setShowSlotSelector] = useState(null); // Track which report's selector is open
+  const [showSlotSelector, setShowSlotSelector] = useState(null);
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState('');
 
@@ -32,15 +32,10 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
     })
     .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically by name
 
-  const getFileIcon = (type) => {
-    return (
-      <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M4 3a2 2 0 00-2 2v1.5h2V5a1 1 0 011-1h2.5V3H4zM14.5 3v1H17a1 1 0 011 1v1.5h2V5a2 2 0 00-2-2h-3.5zM2 8.5V17a2 2 0 002 2h3.5v-2H4a1 1 0 01-1-1V8.5H2zM18 8.5V17a1 1 0 01-1 1h-3.5v2H17a2 2 0 002-2V8.5h-1z"/>
-      </svg>
-    );
-  };
-
   const isSelected = (report) => {
+    if (mode === 'single') {
+      return selectedReports === report;
+    }
     return selectedReports && selectedReports.includes(report);
   };
 
@@ -141,6 +136,11 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
     }
   }, [showSlotSelector]);
 
+  // Single Report Handle
+  const handleSingleReportSelect = (report) => {
+    handleSlotSelect(report, 0);
+  };
+
   return (
     <div className="flex-1 bg-gray-800 border-r border-gray-700 flex flex-col h-full">        {/* Panel Header - Compact */}
       <div className="flex-shrink-0 p-3 border-b border-gray-600 bg-gray-900">
@@ -194,26 +194,27 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
                       ? 'border-blue-500 bg-blue-900/30 shadow-sm' 
                       : 'border-gray-600 hover:border-blue-500 hover:bg-gray-700/50'
                   }`}
-                  onClick={() => toggleSlotSelector(null, report.id)}
+                  onClick={() => mode === 'single' ? handleSingleReportSelect(report) : toggleSlotSelector(null, report.id)}
                 >
                   {/* Print to Screen Button */}
-                  <div className="absolute top-1.5 right-1.5 z-10">
-                    <button
-                      onClick={(e) => toggleSlotSelector(e, report.id)}
-                      className={`px-1.5 py-0.5 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1 ${
-                        showSlotSelector === report.id 
-                          ? 'bg-green-600 text-white shadow-md scale-105' 
-                          : `bg-green-500 text-white hover:bg-green-600 hover:shadow-sm ${
-                              showSlotSelector === null ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'
-                            }`
-                      }`}
-                      title="Load Report"
-                    >
-                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <span className="whitespace-nowrap text-xs">Print to screen</span>
-                    </button>
+                  {mode === 'comparison' && (
+                    <div className="absolute top-1.5 right-1.5 z-10">
+                      <button
+                        onClick={(e) => toggleSlotSelector(e, report.id)}
+                        className={`px-1.5 py-0.5 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1 ${
+                          showSlotSelector === report.id 
+                            ? 'bg-green-600 text-white shadow-md scale-105' 
+                            : `bg-green-500 text-white hover:bg-green-600 hover:shadow-sm ${
+                                showSlotSelector === null ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'
+                              }`
+                        }`}
+                        title="Load Report"
+                      >
+                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="whitespace-nowrap text-xs">Print to screen</span>
+                      </button>
 
                     {/* Slot Selector Popup - Compact */}
                     {showSlotSelector === report.id && (
@@ -249,6 +250,22 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
                       </div>
                     )}
                   </div>
+                  )}
+
+                  {mode === 'single' && (
+                    <div className="absolute top-1.5 right-1.5 z-10">
+                      <div className={`px-1.5 py-0.5 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1 ${
+                        selected ? 'bg-blue-600 text-white' : 'bg-green-500 text-white opacity-0 group-hover:opacity-100'
+                      }`}>
+                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="whitespace-nowrap text-xs">
+                          {selected ? 'Selected' : 'Print to Screen'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Report Info - Compact Layout with Dynamic Padding */}
                   <div className="pr-2 group-hover:pr-29 transition-all duration-200 overflow-hidden">
@@ -265,11 +282,6 @@ export default function NavigationPanel({ selectedReports, onReportSelect }) {
                             {report.name}
                           </h3>
                         </div>
-                        {/* <div className="flex items-center gap-1">
-                          <span className="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-red-900/30 text-red-300">
-                            {report.type}
-                          </span>
-                        </div> */}
                       </div>
                     </div>
                   </div>
