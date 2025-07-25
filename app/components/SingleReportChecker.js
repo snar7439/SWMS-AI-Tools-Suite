@@ -1,18 +1,61 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import NavigationPanel from './NavigationPanel';
 import DragDropArea from './DragDropArea';
 import SingleReportResultsTab from './CheckResultsTab';
 import SingleReportViewer from './SingleReportViewer';
 
 export default function SingleReportCheck() {
+  // State for analysis document visibility
+  const [isAnalysisVisible, setIsAnalysisVisible] = useState(true);
+  
+  // State for resizable analysis document width
+  const [analysisWidth, setAnalysisWidth] = useState(50); // percent, default 50%
+  const [isResizing, setIsResizing] = useState(false);
+
+  // Mouse event handlers for resizing
+  const handleResizeStart = (e) => {
+    setIsResizing(true);
+    document.body.style.cursor = 'col-resize';
+  };
+
+  const handleResize = (e) => {
+    if (!isResizing) return;
+    // Calculate new width based on mouse position
+    const container = document.getElementById('analysis-resize-container');
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    let percent = ((rect.right - e.clientX) / rect.width) * 100;
+    percent = Math.max(20, Math.min(80, percent)); // Clamp between 20% and 80%
+    setAnalysisWidth(percent);
+  };
+
+  const handleResizeEnd = () => {
+    setIsResizing(false);
+    document.body.style.cursor = '';
+  };
+
+  // Attach mousemove and mouseup listeners
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener('mousemove', handleResize);
+      window.addEventListener('mouseup', handleResizeEnd);
+    } else {
+      window.removeEventListener('mousemove', handleResize);
+      window.removeEventListener('mouseup', handleResizeEnd);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleResize);
+      window.removeEventListener('mouseup', handleResizeEnd);
+    };
+  }, [isResizing]);
+  
   const [activeTab, setActiveTab] = useState('check');
   const [selectedReport, setSelectedReport] = useState(null);
   const [analysisDocument, setAnalysisDocument] = useState(null);
   const [checkResult, setCheckResult] = useState(null);
   const [isChecking, setIsChecking] = useState(false);
-  const [showSideBySide, setShowSideBySide] = useState(false);
 
   const handleReportSelect = (report, slot) => {
     setSelectedReport(report);
@@ -146,6 +189,10 @@ export default function SingleReportCheck() {
     setActiveTab('check');
   };
 
+  const handleToggleAnalysis = () => {
+    setIsAnalysisVisible(!isAnalysisVisible);
+  };
+
   const tabs = [
     { id: 'check', name: 'Report Check', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
     { id: 'results', name: 'Results', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' }
@@ -154,7 +201,7 @@ export default function SingleReportCheck() {
   return (
     <div className="flex h-screen bg-gray-900">
       {/* Navigation Panel */}
-      <div className="w-65 flex-shrink-0">
+      <div className="w-60 flex-shrink-0">
         <NavigationPanel
           selectedReports={selectedReport}
           onReportSelect={handleReportSelect}
@@ -202,7 +249,7 @@ export default function SingleReportCheck() {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleClearAll}
-                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors"
+                    className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white text-sm font-medium rounded-md transition-colors"
                   >
                     Clear All
                   </button>
@@ -210,7 +257,7 @@ export default function SingleReportCheck() {
                   <button
                     onClick={handleRunCheck}
                     disabled={!selectedReport || !analysisDocument || isChecking}
-                    className="px-5 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors flex items-center gap-2"
+                    className="px-5 py-1.5 bg-blue-700 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors flex items-center gap-2"
                   >
                     {isChecking ? (
                       <>
@@ -231,9 +278,15 @@ export default function SingleReportCheck() {
             </div>
 
             {/* Upload Areas */}
-            <div className="flex-1 px-4 pb-4 min-h-0">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
-                <div className="flex flex-col min-h-0">
+            <div className="flex-1 px-4 pb-4 min-h-0 relative">
+              <div id="analysis-resize-container" className="flex h-full w-full min-h-0">
+                {/* Report Section (left) */}
+                <div 
+                  style={{ 
+                    width: isAnalysisVisible ? `${100 - analysisWidth}%` : '100%' 
+                  }} 
+                  className="flex flex-col min-h-0 transition-all duration-300 ease-in-out"
+                >
                   {selectedReport ? (
                     <SingleReportViewer
                       report={selectedReport}
@@ -254,13 +307,34 @@ export default function SingleReportCheck() {
                   )}
                 </div>
 
-                <div className="flex flex-col min-h-0">
+                {/* Resize Handle - only show when analysis is visible */}
+                {isAnalysisVisible && (
+                  <div
+                    className="w-2 cursor-col-resize flex items-center justify-center hover:bg-gray-600 transition-colors"
+                    onMouseDown={handleResizeStart}
+                    style={{ zIndex: 10 }}
+                    title="Drag to resize analysis document"
+                  >
+                    <div className="w-1 h-12 rounded bg-gray-400" />
+                  </div>
+                )}
+
+                {/* Analysis Section (right) */}
+                <div 
+                  style={{ 
+                    width: isAnalysisVisible ? `${analysisWidth}%` : '0%',
+                    opacity: isAnalysisVisible ? 1 : 0
+                  }} 
+                  className="flex flex-col min-h-0 transition-all duration-300 ease-in-out overflow-hidden"
+                >
                   {analysisDocument ? (
                     <SingleReportViewer
                       report={analysisDocument}
-                      slot={1}
+                      slot="analysis"
                       title="Analysis Document"
                       onReportReplace={(doc) => handleFileUpload(doc, 'analysis')}
+                      onToggleVisibility={handleToggleAnalysis}
+                      isVisible={isAnalysisVisible}
                     />
                   ) : (
                     <div className="h-full min-h-96">
@@ -270,11 +344,28 @@ export default function SingleReportCheck() {
                         title="Analysis Document"
                         sub="Upload PDF or Markdown file"
                         mode="single"
+                        onToggleVisibility={handleToggleAnalysis}
+                        isVisible={isAnalysisVisible}
                       />
                     </div>
                   )}
                 </div>
               </div>
+
+              {/* Show Analysis Arrow - appears when analysis is hidden */}
+              {!isAnalysisVisible && (
+                <div className="absolute top-1/2 right-0 transform -translate-y-1/2 z-20">
+                  <button
+                    onClick={handleToggleAnalysis}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-l-lg shadow-lg transition-colors duration-200"
+                    title="Show Analysis Document"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

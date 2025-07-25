@@ -173,16 +173,16 @@ export default function DragDropArea({ onFileUpload, slot, title, sub, mode = 'c
     if (mode === 'single') {
       if (slot === 'analysis') {
         return {
-          gradient: 'bg-gradient-to-r from-purple-900/30 to-purple-800/20',
-          border: 'border-purple-700',
-          icon: 'text-purple-400',
-          bg: 'bg-purple-600/20 border border-purple-500/30',
-          hover: 'border-purple-400 bg-purple-600/10'
+          gradient: 'bg-gradient-to-r from-emerald-900/30 to-emerald-800/20',
+          border: 'border-emerald-600',
+          icon: 'text-emerald-400',
+          bg: 'bg-emerald-600/20 border border-emerald-500/30',
+          hover: 'border-emerald-400 bg-emerald-600/10'
         };
       }
       return {
         gradient: 'bg-gradient-to-r from-blue-900/30 to-blue-800/20',
-        border: 'border-blue-700',
+        border: 'border-blue-600',
         icon: 'text-blue-400',
         bg: 'bg-blue-600/20 border border-blue-500/30',
         hover: 'border-blue-400 bg-blue-900/20'
@@ -191,16 +191,16 @@ export default function DragDropArea({ onFileUpload, slot, title, sub, mode = 'c
     
     return slot === 0 ? {
       gradient: 'bg-gradient-to-r from-blue-900/30 to-blue-800/20',
-      border: 'border-blue-700',
+      border: 'border-blue-600',
       icon: 'text-blue-400',
       bg: 'bg-blue-600/20 border border-blue-500/30',
       hover: 'border-blue-400 bg-blue-900/20'
     } : {
-      gradient: 'bg-gradient-to-r from-yellow-800/30 to-yellow-600/20',
-      border: 'border-yellow-500',
-      icon: 'text-yellow-300',
-      bg: 'bg-yellow-400/20 border border-yellow-400/30',
-      hover: 'border-yellow-400 bg-yellow-600/10'
+      gradient: 'bg-gradient-to-r from-emerald-900/30 to-emerald-800/20',
+      border: 'border-emerald-600',
+      icon: 'text-emerald-400',
+      bg: 'bg-emerald-600/20 border border-emerald-500/30',
+      hover: 'border-emerald-400 bg-emerald-600/10'
     };
   };
 
