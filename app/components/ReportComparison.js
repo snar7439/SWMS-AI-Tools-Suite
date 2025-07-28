@@ -141,7 +141,7 @@ export default function ReportComparison() {
       )}
       
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col transition-all duration-300 ease-in-out">
+      <div className="flex-1 flex flex-col transition-all duration-300 ease-in-out overflow-x-auto min-w-0">
         {/* Header with Tabs */}
         <header className="bg-gray-800 border-b border-gray-700">          
           {/* Description */}
@@ -201,8 +201,8 @@ export default function ReportComparison() {
         {activeTab === 'reports' ? (
           <>
             {/* Report Viewers - Fixed equal widths and height */}
-            <div className="flex-1 flex gap-4 p-6 min-h-0">
-              <div className="w-1/2 flex-shrink-0 h-full">
+            <div className="flex-1 flex gap-4 p-6 min-h-0 overflow-x-auto min-w-0">
+              <div className="w-1/2 flex-shrink-0 h-full min-w-[320px]">
                 {selectedReports[0] ? (
                   <ReportViewer 
                     report={selectedReports[0]}
@@ -221,7 +221,7 @@ export default function ReportComparison() {
                   />
                 )}
               </div>
-              <div className="w-1/2 flex-shrink-0 h-full">
+              <div className="w-1/2 flex-shrink-0 h-full min-w-[320px]">
                 {selectedReports[1] ? (
                   <ReportViewer 
                     report={selectedReports[1]}

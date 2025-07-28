@@ -17,6 +17,9 @@ export default function SingleReportCheck() {
   const [analysisWidth, setAnalysisWidth] = useState(50); // percent, default 50%
   const [isResizing, setIsResizing] = useState(false);
 
+  // State for inline results visibility
+  const [showInlineResults, setShowInlineResults] = useState(false);
+
   // Toggle navigation panel
   const toggleNavPanel = () => {
     setIsNavPanelVisible(!isNavPanelVisible);
@@ -189,7 +192,8 @@ export default function SingleReportCheck() {
       };
       
       setCheckResult(mockResult);
-      setActiveTab('results');
+      setShowInlineResults(true); // Show inline results
+      setActiveTab('results'); // Also switch to results tab
       
     } catch (error) {
       console.error('Error running check:', error);
@@ -208,10 +212,15 @@ export default function SingleReportCheck() {
     setAnalysisDocument(null);
     setCheckResult(null);
     setActiveTab('check');
+    setShowInlineResults(false);
   };
 
   const handleToggleAnalysis = () => {
     setIsAnalysisVisible(!isAnalysisVisible);
+  };
+
+  const handleToggleInlineResults = () => {
+    setShowInlineResults(!showInlineResults);
   };
 
   const tabs = [
@@ -221,7 +230,7 @@ export default function SingleReportCheck() {
 
   return (
     <div className="flex h-[calc(100vh-5rem)] bg-gray-900 overflow-hidden relative">
-      {/* Navigation Panel - Collapsible sidebar */}
+      {/* Navigation Panel - Fixed height, no scrolling */}
       <div 
         className={`flex-shrink-0 bg-gray-800 border-r border-gray-700 h-full transition-all duration-300 ease-in-out ${
           isNavPanelVisible ? 'w-64' : 'w-0'
@@ -261,8 +270,8 @@ export default function SingleReportCheck() {
         </div>
       )}
 
-      {/* Main Content Area - Fixed height */}
-      <div className="flex-1 flex flex-col min-w-0 h-full">
+      {/* Main Content Area - Fixed height with internal scrolling */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-x-auto">
         {/* Compact Header */}
         <header className="flex-shrink-0 bg-gray-800 border-b border-gray-700 px-4 py-2">
           <div className="flex items-center justify-between">
@@ -294,125 +303,204 @@ export default function SingleReportCheck() {
 
         {/* Tab Content - Takes remaining height */}
         {activeTab === 'check' && (
-          <div className="flex flex-col flex-1 min-h-0">
-            {/* Upload Areas - Fixed height container */}
-            <div className="flex-shrink-0 p-3 h-96">
-              <div id="analysis-resize-container" className="flex gap-1.5 h-full">
-                {/* Report Section */}
-                <div 
-                  style={{ 
-                    width: isAnalysisVisible ? `${100 - analysisWidth}%` : '100%' 
-                  }} 
-                  className="bg-gray-800 rounded-lg border border-gray-700 shadow-lg transition-all duration-300 flex flex-col min-w-0"
-                >
-                  <div className="flex-1 p-2 min-h-0">
-                    {selectedReport ? (
-                      <div className="h-full flex flex-col">
-                        <div className="flex-1 min-h-0 border border-gray-600 rounded overflow-hidden">
-                          <SingleReportViewer
-                            report={selectedReport}
-                            slot={0}
-                            title=""
-                            onReportReplace={handleReportSelect}
-                            compact={true}
-                          />
-                        </div>
+          <div className="flex flex-col flex-1 min-h-0 overflow-x-auto min-w-0">
+            {/* Scrollable Main Content Area */}
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+              <div className="p-3 space-y-4">
+                {/* Upload Areas */}
+                <div className="h-96 overflow-x-auto min-w-0"> 
+                  <div id="analysis-resize-container" className="flex gap-1.5 h-full min-w-[600px]">
+                    {/* Report Section */}
+                    <div 
+                      style={{ 
+                        width: isAnalysisVisible ? `${100 - analysisWidth}%` : '100%' 
+                      }} 
+                      className="bg-gray-800 rounded-lg border border-gray-700 shadow-lg transition-all duration-300 flex flex-col min-w-0"
+                    >
+                      <div className="flex-1 p-2 min-h-0">
+                        {selectedReport ? (
+                          <div className="h-full flex flex-col">
+                            <div className="flex-1 min-h-0 border border-gray-600 rounded overflow-hidden">
+                              <SingleReportViewer
+                                report={selectedReport}
+                                slot={0}
+                                title=""
+                                onReportReplace={handleReportSelect}
+                                compact={true}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-full">
+                            <DragDropArea
+                              onFileUpload={handleFileUpload}
+                              slot={0}
+                              title="SWMS Report"
+                              sub="Select from list or drop report here"
+                              mode="single"
+                              compact={true}
+                            />
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="h-full">
-                        <DragDropArea
-                          onFileUpload={handleFileUpload}
-                          slot={0}
-                          title="SWMS Report"
-                          sub="Select from list or drop report here"
-                          mode="single"
-                          compact={true}
-                        />
+                    </div>
+
+                    {/* Resize Handle */}
+                    {isAnalysisVisible && (
+                      <div
+                        className="w-1 cursor-col-resize flex items-center justify-center hover:bg-gray-300 transition-colors rounded"
+                        onMouseDown={handleResizeStart}
+                        style={{ zIndex: 10 }}
+                        title="Drag to resize"
+                      >
+                        <div className="w-0.5 h-8 bg-gray-500 rounded" />
                       </div>
                     )}
+
+                    {/* Analysis Section */}
+                    <div 
+                      style={{ 
+                        width: isAnalysisVisible ? `${analysisWidth}%` : '0%',
+                        opacity: isAnalysisVisible ? 1 : 0
+                      }} 
+                      className="bg-gray-800 rounded-lg border border-gray-700 shadow-lg transition-all duration-300 flex flex-col min-w-0 overflow-hidden"
+                    >
+                      <div className="flex-1 p-2 min-h-0">
+                        {analysisDocument ? (
+                          <div className="h-full flex flex-col">
+                            <div className="flex-1 min-h-0 border border-gray-600 rounded overflow-hidden">
+                              <SingleReportViewer
+                                report={analysisDocument}
+                                slot="analysis"
+                                title=""
+                                onReportReplace={(doc) => handleFileUpload(doc, 'analysis')}
+                                onToggleVisibility={handleToggleAnalysis}
+                                isVisible={isAnalysisVisible}
+                                compact={true}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-full">
+                            <DragDropArea
+                              onFileUpload={handleFileUpload}
+                              slot="analysis"
+                              title="Analysis Document"
+                              sub="Drop analysis document here"
+                              mode="single"
+                              onToggleVisibility={handleToggleAnalysis}
+                              isVisible={isAnalysisVisible}
+                              compact={true}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Show Analysis Button */}
+                  {!isAnalysisVisible && (
+                    <div className="absolute top-1/2 right-4 transform -translate-y-1/2 z-20">
+                      <button
+                        onClick={handleToggleAnalysis}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-l-lg shadow-lg transition-all duration-200 flex items-center gap-2"
+                        title="Show Analysis Document"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {/* Resize Handle */}
-                {isAnalysisVisible && (
-                  <div
-                    className="w-1 cursor-col-resize flex items-center justify-center hover:bg-gray-300 transition-colors rounded"
-                    onMouseDown={handleResizeStart}
-                    style={{ zIndex: 10 }}
-                    title="Drag to resize"
-                  >
-                    <div className="w-0.5 h-8 bg-gray-500 rounded" />
+                {/* Inline Results Section - Now scrollable with the main content */}
+                {showInlineResults && checkResult && (
+                  <div className="border-2 border-gray-600 bg-gray-800 rounded-lg overflow-hidden">
+                    {/* Results Header */}
+                    <div className="bg-gray-750 border-b border-gray-600 px-4 py-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <h3 className="text-lg font-semibold text-white">Check Results</h3>
+                          </div>
+                          <span className="px-3 py-1 bg-green-900/30 text-green-300 text-sm font-medium rounded-full">
+                            Analysis Complete
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={handleToggleInlineResults}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium bg-gray-600 hover:bg-gray-700 text-gray-300 hover:text-white rounded transition-colors"
+                            title="Hide inline results"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                            Hide
+                          </button>
+                          <button
+                            onClick={() => setActiveTab('results')}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            Full View
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Results Content - No height restriction, lets natural content flow */}
+                    <div className="min-h-0">
+                      <SingleReportResultsTab
+                        selectedReport={selectedReport}
+                        analysisDocument={analysisDocument}
+                        checkResult={checkResult}
+                        onBackToCheck={handleBackToCheck}
+                        inline={true}
+                      />
+                    </div>
                   </div>
                 )}
-
-                {/* Analysis Section */}
-                <div 
-                  style={{ 
-                    width: isAnalysisVisible ? `${analysisWidth}%` : '0%',
-                    opacity: isAnalysisVisible ? 1 : 0
-                  }} 
-                  className="bg-gray-800 rounded-lg border border-gray-700 shadow-lg transition-all duration-300 flex flex-col min-w-0 overflow-hidden"
-                >
-                  <div className="flex-1 p-2 min-h-0">
-                    {analysisDocument ? (
-                      <div className="h-full flex flex-col">
-                        <div className="flex-1 min-h-0 border border-gray-600 rounded overflow-hidden">
-                          <SingleReportViewer
-                            report={analysisDocument}
-                            slot="analysis"
-                            title=""
-                            onReportReplace={(doc) => handleFileUpload(doc, 'analysis')}
-                            onToggleVisibility={handleToggleAnalysis}
-                            isVisible={isAnalysisVisible}
-                            compact={true}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="h-full">
-                        <DragDropArea
-                          onFileUpload={handleFileUpload}
-                          slot="analysis"
-                          title="Analysis Document"
-                          sub="Drop analysis document here"
-                          mode="single"
-                          onToggleVisibility={handleToggleAnalysis}
-                          isVisible={isAnalysisVisible}
-                          compact={true}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
-
-              {/* Show Analysis Button */}
-              {!isAnalysisVisible && (
-                <div className="absolute top-1/2 right-4 transform -translate-y-1/2 z-20">
-                  <button
-                    onClick={handleToggleAnalysis}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-l-lg shadow-lg transition-all duration-200 flex items-center gap-2"
-                    title="Show Analysis Document"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Action Bar - Fixed at bottom */}
             <div className="flex-shrink-0 border-t border-gray-700 px-4 py-3 bg-gray-800">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {selectedReport && analysisDocument ? 
-                    'Ready to run compliance check' : 
-                    'Upload both documents to continue'
-                  }
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {selectedReport && analysisDocument ? 
+                      'Ready to run compliance check' : 
+                      'Upload both documents to continue'
+                    }
+                  </div>
+                  
+                  {/* Show Results Toggle Button */}
+                  {checkResult && (
+                    <button
+                      onClick={handleToggleInlineResults}
+                      className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                        showInlineResults 
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                          : 'bg-gray-600 hover:bg-gray-700 text-gray-300 hover:text-white'
+                      }`}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={showInlineResults ? "M19 9l-7 7-7-7" : "M5 15l7-7 7 7"} />
+                      </svg>
+                      {showInlineResults ? 'Hide Results' : 'Show Results'}
+                    </button>
+                  )}
                 </div>
                 
                 <div className="flex items-center gap-3">

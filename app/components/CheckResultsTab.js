@@ -4,7 +4,8 @@ export default function SingleReportResultsTab({
   selectedReport, 
   analysisDocument, 
   checkResult, 
-  onBackToCheck 
+  onBackToCheck,
+  inline = false // New prop to control inline display
 }) {
   if (!checkResult || !selectedReport || !analysisDocument) {
     return (
@@ -19,12 +20,14 @@ export default function SingleReportResultsTab({
           <p className="text-gray-400 mb-4">
             Run a report check to see detailed results here.
           </p>
-          <button
-            onClick={onBackToCheck}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-          >
-            Back to Check
-          </button>
+          {!inline && (
+            <button
+              onClick={onBackToCheck}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+            >
+              Back to Check
+            </button>
+          )}
         </div>
       </div>
     );
@@ -159,32 +162,34 @@ export default function SingleReportResultsTab({
   const findings = generateDetailedFindings();
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-800 h-full">
-      {/* Header - Fixed */}
-      <div className="flex-shrink-0 bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-white">
-              Report Check Results
-            </h2>
-            <p className="text-gray-300 mt-1">
-              Analysis of report alignment with provided analysis document
-            </p>
+    <div className={`${inline ? '' : 'flex-1 flex flex-col bg-gray-800 h-full'}`}>
+      {/* Header - Only show when not inline */}
+      {!inline && (
+        <div className="flex-shrink-0 bg-gray-800 border-b border-gray-700 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-white">
+                Report Check Results
+              </h2>
+              <p className="text-gray-300 mt-1">
+                Analysis of report alignment with provided analysis document
+              </p>
+            </div>
+            <button
+              onClick={onBackToCheck}
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Check
+            </button>
           </div>
-          <button
-            onClick={onBackToCheck}
-            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Check
-          </button>
         </div>
-      </div>
+      )}
 
-      {/* Scrollable Results Content */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 p-6">
+      {/* Results Content */}
+      <div className={`${inline ? 'p-6' : 'flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 p-6'}`}>
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
           <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">

@@ -252,9 +252,9 @@ export default function DragDropArea({ onFileUpload, slot, title, sub, mode = 'c
         {isUploading ? (
           <div className="text-center">
             <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
-              mode === 'single' && slot === 'analysis' ? 'border-purple-400' : 
-              mode === 'single' ? 'border-blue-400' : 
-              slot === 0 ? 'border-blue-400' : 'border-yellow-400'
+              mode === 'single' && slot === 'analysis' ? 'border-emerald-600' : 
+              mode === 'single' ? 'border-amber-600' : 
+              slot === 0 ? 'border-amber-600' : 'border-emerald-600'
             } mx-auto mb-3`}></div>
             <p className="text-sm text-gray-300">Uploading...</p>
           </div>
@@ -266,7 +266,7 @@ export default function DragDropArea({ onFileUpload, slot, title, sub, mode = 'c
               </svg>
             </div>
             
-            <h4 className="text-sm font-medium text-white mb-2">
+            <h4 className="text-sm font-medium text-white text-center mb-2">
               {mode === 'single' && slot === 'analysis' ? 'Drop Analysis Document' : 'Drop PDF here'}
             </h4>
             <p className="text-xs text-gray-400 text-center mb-3">
@@ -280,7 +280,7 @@ export default function DragDropArea({ onFileUpload, slot, title, sub, mode = 'c
               Browse Files
             </button>
             
-            <p className="text-xs text-gray-500 mt-3">
+            <p className="text-xs text-gray-500 text-center mt-3">
               {mode === 'single' && slot === 'analysis' ? 'PDF or Markdown (.md) files' : 'PDF files only'}
             </p>
           </>
