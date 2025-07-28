@@ -612,23 +612,23 @@ const PLSQLKnowledgeGraph = () => {
 
             <div className="space-y-3 text-sm">
               <div>
-                <span className="font-medium">Type:</span> {selectedNode.type}
+                <span className="font-medium text-gray-800">Type:</span> {selectedNode.type}
               </div>
               <div>
-                <span className="font-medium">Domain:</span>{" "}
+                <span className="font-medium text-gray-800">Domain:</span>{" "}
                 {selectedNode.domain}
               </div>
               <div>
-                <span className="font-medium">Degree:</span>{" "}
+                <span className="font-medium text-gray-800">Degree:</span>{" "}
                 {selectedNode.degree}
               </div>
               <div>
-                <span className="font-medium">File:</span> {selectedNode.file}
+                <span className="font-medium text-gray-800">File:</span> {selectedNode.file}
               </div>
 
               {selectedNode.procedures?.length > 0 && (
                 <div>
-                  <span className="font-medium">Procedures:</span>
+                  <span className="font-medium text-gray-800">Procedures:</span>
                   <div className="mt-1 text-xs text-gray-600">
                     {selectedNode.procedures.slice(0, 5).join(", ")}
                     {selectedNode.procedures.length > 5 && "..."}

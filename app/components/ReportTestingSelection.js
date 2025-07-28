@@ -9,7 +9,7 @@ export default function ReportTestingModal({ isOpen, onClose, onSelect }) {
   const reportOptions = [
     {
       id: "single-report",
-      title: "Single Report Check",
+      title: "Single Report Verification",
       description:
         "Analyze and validate a single SWMS report with automated testing",
       icon: "📄",

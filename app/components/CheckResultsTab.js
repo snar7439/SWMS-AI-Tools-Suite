@@ -159,9 +159,9 @@ export default function SingleReportResultsTab({
   const findings = generateDetailedFindings();
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-800">
-      {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+    <div className="flex-1 flex flex-col bg-gray-800 h-full">
+      {/* Header - Fixed */}
+      <div className="flex-shrink-0 bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">
@@ -183,8 +183,8 @@ export default function SingleReportResultsTab({
         </div>
       </div>
 
-      {/* Results Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      {/* Scrollable Results Content */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 p-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
           <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
@@ -268,7 +268,7 @@ export default function SingleReportResultsTab({
         </div>
 
         {/* Detailed Findings */}
-        <div className="bg-gray-800 border border-gray-700 rounded-lg">
+        <div className="bg-gray-800 border border-gray-700 rounded-lg mb-6">
           <div className="px-6 py-4 border-b border-gray-700">
             <h3 className="text-lg font-semibold text-white">
               Detailed Findings ({findings.length})

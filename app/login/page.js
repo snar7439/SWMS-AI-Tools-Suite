@@ -48,6 +48,15 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+
+    // // Bypass SWMS authentication: accept any credentials
+    // sessionStorage.setItem('swms-auth', JSON.stringify({
+    //   username: credentials.username,
+    //   authenticated: true,
+    //   loginTime: new Date().toISOString()
+    // }));
+    
+    router.push('/dashboard');
   };
 
   const inputClass = "block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0690cf] focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-500 text-sm lg:text-base";

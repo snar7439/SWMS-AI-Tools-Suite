@@ -132,40 +132,40 @@ export default function SingleReportViewer({
     html = html.replace(/`([^`\n]+)`/g, '<code class="bg-gray-700 text-blue-300 px-2 py-1 rounded text-sm font-mono border border-gray-600">$1</code>');
     
     // Convert headers with better spacing and hierarchy
-    html = html.replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold mb-6 mt-8 text-white border-b border-emerald-500 pb-3 first:mt-0">$1</h1>');
-    html = html.replace(/^## (.*$)/gm, '<h2 class="text-2xl font-semibold mb-4 mt-8 text-emerald-100 border-l-4 border-emerald-500 pl-4">$1</h2>');
-    html = html.replace(/^### (.*$)/gm, '<h3 class="text-xl font-semibold mb-3 mt-6 text-emerald-200">$1</h3>');
-    html = html.replace(/^#### (.*$)/gm, '<h4 class="text-lg font-semibold mb-3 mt-5 text-emerald-300">$1</h4>');
-    html = html.replace(/^##### (.*$)/gm, '<h5 class="text-base font-semibold mb-2 mt-4 text-emerald-300">$1</h5>');
-    html = html.replace(/^###### (.*$)/gm, '<h6 class="text-sm font-semibold mb-2 mt-3 text-emerald-400">$1</h6>');
+    html = html.replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold mb-6 mt-8 text-white border-b border-white-500 pb-3 first:mt-0">$1</h1>');
+    html = html.replace(/^## (.*$)/gm, '<h2 class="text-2xl font-semibold mb-4 mt-8 text-white border-l-4 border-white pl-4">$1</h2>');
+    html = html.replace(/^### (.*$)/gm, '<h3 class="text-xl font-semibold mb-3 mt-6 text-white">$1</h3>');
+    html = html.replace(/^#### (.*$)/gm, '<h4 class="text-lg font-semibold mb-3 mt-5 text-white">$1</h4>');
+    html = html.replace(/^##### (.*$)/gm, '<h5 class="text-base font-semibold mb-2 mt-4 text-white">$1</h5>');
+    html = html.replace(/^###### (.*$)/gm, '<h6 class="text-sm font-semibold mb-2 mt-3 text-white">$1</h6>');
     
     // Convert blockquotes with better styling
     html = html.replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-emerald-500 pl-6 py-3 mb-6 bg-gray-800/50 text-gray-200 italic rounded-r-lg shadow-sm">$1</blockquote>');
     
     // Convert horizontal rules
-    html = html.replace(/^---+$/gm, '<hr class="border-0 h-px bg-gradient-to-r from-transparent via-emerald-500 to-transparent my-8">');
-    html = html.replace(/^\*\*\*+$/gm, '<hr class="border-0 h-px bg-gradient-to-r from-transparent via-emerald-500 to-transparent my-8">');
+    html = html.replace(/^---+$/gm, '<hr class="border-0 h-px bg-gradient-to-r from-transparent via-white to-transparent my-8">');
+    html = html.replace(/^\*\*\*+$/gm, '<hr class="border-0 h-px bg-gradient-to-r from-transparent via-white to-transparent my-8">');
     
     // Convert bold and italic text
-    html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong class="font-bold text-emerald-100"><em class="italic">$1</em></strong>');
-    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-emerald-100">$1</strong>');
-    html = html.replace(/\*([^*]+)\*/g, '<em class="italic text-emerald-200">$1</em>');
-    html = html.replace(/___([^_]+)___/g, '<strong class="font-bold text-emerald-100"><em class="italic">$1</em></strong>');
-    html = html.replace(/__([^_]+)__/g, '<strong class="font-semibold text-emerald-100">$1</strong>');
-    html = html.replace(/_([^_]+)_/g, '<em class="italic text-emerald-200">$1</em>');
+    html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong class="font-bold text-white"><em class="italic">$1</em></strong>');
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-white">$1</strong>');
+    html = html.replace(/\*([^*]+)\*/g, '<em class="italic text-white">$1</em>');
+    html = html.replace(/___([^_]+)___/g, '<strong class="font-bold text-white"><em class="italic">$1</em></strong>');
+    html = html.replace(/__([^_]+)__/g, '<strong class="font-semibold text-white">$1</strong>');
+    html = html.replace(/_([^_]+)_/g, '<em class="italic text-white">$1</em>');
     
     // Convert strikethrough
     html = html.replace(/~~([^~]+)~~/g, '<del class="text-gray-400 line-through">$1</del>');
     
     // Convert links with better styling
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-emerald-400 hover:text-emerald-300 underline hover:no-underline transition-colors duration-200 font-medium" target="_blank" rel="noopener noreferrer">$1</a>');
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-white hover:text-emerald-300 underline hover:no-underline transition-colors duration-200 font-medium" target="_blank" rel="noopener noreferrer">$1</a>');
     
     // Convert unordered lists with better bullet points
     const unorderedListRegex = /^(\s*)[*-] (.+)$/gm;
     html = html.replace(unorderedListRegex, (match, indent, content) => {
         const level = Math.floor(indent.length / 2);
         const marginClass = level > 0 ? `ml-${level * 4}` : 'ml-0';
-        return `<li class="${marginClass} mb-2 text-gray-200 flex items-start"><span class="text-emerald-400 mr-3 mt-1 flex-shrink-0">•</span><span class="flex-1">${content}</span></li>`;
+        return `<li class="${marginClass} mb-2 text-gray-200 flex items-start"><span class="text-white mr-3 mt-1 flex-shrink-0">•</span><span class="flex-1">${content}</span></li>`;
     });
     
     // Convert ordered lists
@@ -174,7 +174,7 @@ export default function SingleReportViewer({
     html = html.replace(orderedListRegex, (match, indent, content) => {
         const level = Math.floor(indent.length / 2);
         const marginClass = level > 0 ? `ml-${level * 4}` : 'ml-0';
-        return `<li class="${marginClass} mb-2 text-gray-200 flex items-start"><span class="text-emerald-400 mr-3 mt-1 flex-shrink-0 font-medium min-w-[1.5rem]">${listCounter++}.</span><span class="flex-1">${content}</span></li>`;
+        return `<li class="${marginClass} mb-2 text-gray-200 flex items-start"><span class="text-white mr-3 mt-1 flex-shrink-0 font-medium min-w-[1.5rem]">${listCounter++}.</span><span class="flex-1">${content}</span></li>`;
     });
     
     // Wrap consecutive list items in ul/ol tags
@@ -245,7 +245,7 @@ export default function SingleReportViewer({
   const isAnalysisSlot = slot === 'analysis' || slot === 1;
   const colorScheme = isAnalysisSlot ? {
     border: 'border-emerald-600',
-    header: 'bg-emerald-900/20',
+    header: 'bg-emerald-800/20',
     text: 'text-emerald-300',
     icon: 'bg-emerald-600',
     accent: 'text-emerald-400',
@@ -257,18 +257,18 @@ export default function SingleReportViewer({
     emptyBg: 'bg-gradient-to-br from-emerald-900/30 to-emerald-800/30',
     emptyBadge: 'bg-emerald-900/30 text-emerald-300'
   } : {
-    border: 'border-blue-600',
-    header: 'bg-blue-900/20',
-    text: 'text-blue-300',
-    icon: 'bg-blue-600',
-    accent: 'text-blue-400',
-    drag: 'bg-blue-900/80',
-    dragBorder: 'border-blue-400',
-    button: 'bg-blue-600 hover:bg-blue-700',
-    badge: 'bg-blue-600',
-    emptyIcon: 'text-blue-400',
-    emptyBg: 'bg-gradient-to-br from-blue-900/30 to-blue-800/30',
-    emptyBadge: 'bg-blue-900/30 text-blue-300'
+    border: 'border-amber-600',
+    header: 'bg-amber-800/20',
+    text: 'text-amber-600',
+    icon: 'bg-amber-500',
+    accent: 'text-amber-700',
+    drag: 'bg-amber-300/80',
+    dragBorder: 'border-amber-400',
+    button: 'bg-amber-500 hover:bg-amber-600',
+    badge: 'bg-amber-600',
+    emptyIcon: 'text-amber-600',
+    emptyBg: 'bg-gradient-to-br from-amber-200/40 to-amber-300/40',
+    emptyBadge: 'bg-amber-200/50 text-amber-700'
   };
 
   // Drag and drop handlers for replacing reports
@@ -486,7 +486,7 @@ export default function SingleReportViewer({
                   </span>
                 )}
                 {!shouldShowMarkdown && report && (
-                  <span className="px-1.5 py-0.5 bg-rose-500 text-white text-xs rounded font-medium">
+                  <span className={`px-1.5 py-0.5 ${colorScheme.badge} text-white text-xs rounded font-medium`}>
                     PDF
                   </span>
                 )}

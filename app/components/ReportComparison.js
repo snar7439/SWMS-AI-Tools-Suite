@@ -103,37 +103,42 @@ export default function ReportComparison() {
 
   return (
     <div className="flex bg-gray-900 relative" style={{ height: 'calc(100vh - 5rem)' }}>
-      {/* Navigation Panel - Fixed Position */}
-      {isNavPanelVisible && (
-        <div className="w-60 flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col h-full">
+      {/* Navigation Panel - Collapsible sidebar */}
+      <div 
+        className={`flex-shrink-0 bg-gray-800 border-r border-gray-700 h-full transition-all duration-300 ease-in-out ${
+          isNavPanelVisible ? 'w-60' : 'w-0'
+        } overflow-hidden`}
+      >
+        <div className="h-full flex flex-col w-60">
           <NavigationPanel 
             selectedReports={selectedReports}
             onReportSelect={handleReportSelect}
+            mode="comparison"
+            isVisible={isNavPanelVisible}
+            onToggleVisibility={toggleNavPanel}
           />
         </div>
-      )}
-      
-      {/* Navigation Panel Toggle Button - On the dividing line */}
-      <div className={`fixed z-50 transition-all duration-300 ease-in-out ${
-        isNavPanelVisible ? 'left-60' : 'left-0'
-      }`} style={{ top: 'calc(1rem + 78px)' }}>
-        <button
-          onClick={toggleNavPanel}
-          className="p-1 rounded-full bg-gray-800 border-2 border-gray-600 hover:bg-gray-700 shadow-md transition-all duration-200 hover:scale-110"
-          title={`${isNavPanelVisible ? "Hide" : "Show"} Navigation Panel (Ctrl+B)`}
-        >
-          <svg 
-            className={`w-2.5 h-2.5 text-gray-300 transition-transform duration-200 ${
-              isNavPanelVisible ? 'rotate-180' : ''
-            }`} 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
       </div>
+      
+      {/* Show Navigation Button - When panel is hidden */}
+      {!isNavPanelVisible && (
+        <div className="fixed left-2 z-50" style={{ top: 'calc(50vh - 20px)' }}>
+          <button
+            onClick={toggleNavPanel}
+            className="p-1.5 rounded-lg bg-gray-800 border-2 border-gray-600 hover:bg-gray-700 shadow-lg transition-all duration-200 hover:scale-105 flex items-center gap-2"
+            title="Show Navigation Panel (Ctrl+B)"
+          >
+            <svg 
+              className="w-3 h-3 text-gray-300" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      )}
       
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col transition-all duration-300 ease-in-out">

@@ -3,7 +3,13 @@
 import { useState, useEffect } from 'react';
 import { swmsReports } from '../lib/reportsConfig';
 
-export default function NavigationPanel({ selectedReports, onReportSelect, mode = 'comparison' }) {
+export default function NavigationPanel({ 
+  selectedReports, 
+  onReportSelect, 
+  mode = 'comparison',
+  isVisible = true,
+  onToggleVisibility 
+}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showSlotSelector, setShowSlotSelector] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -142,17 +148,38 @@ export default function NavigationPanel({ selectedReports, onReportSelect, mode 
   };
 
   return (
-    <div className="flex-1 bg-gray-800 border-r border-gray-700 flex flex-col h-full">        {/* Panel Header - Compact */}
+    <div className="flex-1 bg-gray-800 border-r border-gray-700 flex flex-col h-full">
+      {/* Panel Header - Compact with Toggle Button */}
       <div className="flex-shrink-0 p-3 border-b border-gray-600 bg-gray-900">
-        <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-          SWMS Reports
-          {loading && (
-            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold text-white flex items-center gap-2">
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            SWMS Reports
+            {loading && (
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+            )}
+          </h2>
+          
+          {/* Toggle Button */}
+          {onToggleVisibility && (
+            <button
+              onClick={onToggleVisibility}
+              className="p-1 rounded-md bg-gray-700 hover:bg-gray-600 border border-gray-600 hover:border-gray-500 transition-all duration-200 group"
+              title="Hide Navigation Panel (Ctrl+B)"
+            >
+              <svg 
+                className="w-3 h-3 text-gray-400 group-hover:text-gray-300 transition-colors duration-200" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
           )}
-        </h2>
+        </div>
         
         {/* Search - Compact */}
         <div className="relative">

@@ -181,20 +181,20 @@ export default function DragDropArea({ onFileUpload, slot, title, sub, mode = 'c
         };
       }
       return {
-        gradient: 'bg-gradient-to-r from-blue-900/30 to-blue-800/20',
-        border: 'border-blue-600',
-        icon: 'text-blue-400',
-        bg: 'bg-blue-600/20 border border-blue-500/30',
-        hover: 'border-blue-400 bg-blue-900/20'
+        gradient: 'bg-gradient-to-r from-amber-800/30 to-amber-700/20',
+        border: 'border-amber-600',
+        icon: 'text-amber-500',
+        bg: 'bg-amber-600/20 border border-amber-500/30',
+        hover: 'border-amber-400 bg-amber-600/20'
       };
     }
     
     return slot === 0 ? {
-      gradient: 'bg-gradient-to-r from-blue-900/30 to-blue-800/20',
-      border: 'border-blue-600',
-      icon: 'text-blue-400',
-      bg: 'bg-blue-600/20 border border-blue-500/30',
-      hover: 'border-blue-400 bg-blue-900/20'
+      gradient: 'bg-gradient-to-r from-amber-800/30 to-amber-700/20',
+      border: 'border-amber-600',
+      icon: 'text-amber-500',
+      bg: 'bg-amber-600/20 border border-amber-500/30',
+      hover: 'border-amber-400 bg-amber-600/20'
     } : {
       gradient: 'bg-gradient-to-r from-emerald-900/30 to-emerald-800/20',
       border: 'border-emerald-600',

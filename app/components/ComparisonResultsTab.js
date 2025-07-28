@@ -120,9 +120,9 @@ export default function ComparisonResultsTab({
   const differences = generateDetailedDifferences();
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-800">
-      {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
+      {/* Header - Fixed */}
+      <div className="flex-shrink-0 bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">
@@ -144,134 +144,136 @@ export default function ComparisonResultsTab({
         </div>
       </div>
 
-      {/* Results Content */}
-      <div className="flex-1 overflow-y-auto p-6">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
-            <div className="text-2xl font-bold text-blue-400">
-              {comparisonResult.similarity}%
+      {/* Scrollable Results Content - This will be the only scrolling area */}
+      <div className="flex-1 overflow-y-auto bg-gray-900">
+        <div className="p-6 space-y-8">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
+              <div className="text-2xl font-bold text-blue-400">
+                {comparisonResult.similarity}%
+              </div>
+              <div className="text-sm text-blue-300 font-medium">
+                Overall Similarity
+              </div>
             </div>
-            <div className="text-sm text-blue-300 font-medium">
-              Overall Similarity
+            
+            <div className="bg-orange-900/20 border border-orange-800 rounded-lg p-4">
+              <div className="text-2xl font-bold text-orange-400">
+                {comparisonResult.differences}
+              </div>
+              <div className="text-sm text-orange-300 font-medium">
+                Total Differences
+              </div>
             </div>
-          </div>
-          
-          <div className="bg-orange-900/20 border border-orange-800 rounded-lg p-4">
-            <div className="text-2xl font-bold text-orange-400">
-              {comparisonResult.differences}
+            
+            <div className="bg-green-900/20 border border-green-800 rounded-lg p-4">
+              <div className="text-2xl font-bold text-green-400">
+                {comparisonResult.additions}
+              </div>
+              <div className="text-sm text-green-300 font-medium">
+                Additions
+              </div>
             </div>
-            <div className="text-sm text-orange-300 font-medium">
-              Total Differences
+            
+            <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
+              <div className="text-2xl font-bold text-red-400">
+                {comparisonResult.deletions}
+              </div>
+              <div className="text-sm text-red-300 font-medium">
+                Deletions
+              </div>
             </div>
-          </div>
-          
-          <div className="bg-green-900/20 border border-green-800 rounded-lg p-4">
-            <div className="text-2xl font-bold text-green-400">
-              {comparisonResult.additions}
-            </div>
-            <div className="text-sm text-green-300 font-medium">
-              Additions
-            </div>
-          </div>
-          
-          <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
-            <div className="text-2xl font-bold text-red-400">
-              {comparisonResult.deletions}
-            </div>
-            <div className="text-sm text-red-300 font-medium">
-              Deletions
-            </div>
-          </div>
-          
-          <div className="bg-purple-900/20 border border-purple-800 rounded-lg p-4">
-            <div className="text-2xl font-bold text-purple-400">
-              {comparisonResult.modifications}
-            </div>
-            <div className="text-sm text-purple-300 font-medium">
-              Modifications
-            </div>
-          </div>
-        </div>
-
-        {/* Report Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-blue-100 mb-3">
-              Document A
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div><span className="font-medium">Name:</span> {selectedDocuments[0].name}</div>
-              <div className="flex justify-between items-start">
-                <span className="font-medium">Type:</span> 
-                <div className="text-right">
-                  <div className="font-normal">{selectedDocuments[0].type}</div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    Modified: {selectedDocuments[0].lastModified}
-                  </div>
-                </div>
+            
+            <div className="bg-purple-900/20 border border-purple-800 rounded-lg p-4">
+              <div className="text-2xl font-bold text-purple-400">
+                {comparisonResult.modifications}
+              </div>
+              <div className="text-sm text-purple-300 font-medium">
+                Modifications
               </div>
             </div>
           </div>
-          
-          <div className="bg-green-900/20 border border-green-800 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-green-100 mb-3">
-              Document B
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div><span className="font-medium">Name:</span> {selectedDocuments[1].name}</div>
-              <div className="flex justify-between items-start">
-                <span className="font-medium">Type:</span>
-                <div className="text-right">
-                  <div className="font-normal">{selectedDocuments[1].type}</div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    Modified: {selectedDocuments[1].lastModified}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Detailed Differences */}
-        <div className="bg-gray-800 border border-gray-700 rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-700">
-            <h3 className="text-lg font-semibold text-white">
-              Detailed Differences ({differences.length})
-            </h3>
-          </div>
-          
-          <div className="divide-y divide-gray-700">
-            {differences.map((diff) => (
-              <div key={diff.id} className="px-6 py-4 hover:bg-gray-700/50 transition-colors">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 mt-1">
-                    {getDifferenceIcon(diff.type)}
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-sm font-medium text-white">
-                        {diff.section} (Line {diff.lineNumber})
-                      </span>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSeverityColor(diff.severity)}`}>
-                        {diff.severity} priority
-                      </span>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        diff.type === 'addition' ? 'bg-green-900/30 text-green-300' :
-                        diff.type === 'deletion' ? 'bg-red-900/30 text-red-300' :
-                        'bg-blue-900/30 text-blue-300'
-                      }`}>
-                        {diff.type}
-                      </span>
+          {/* Report Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-blue-100 mb-3">
+                Document A
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div><span className="font-medium">Name:</span> {selectedDocuments[0].name}</div>
+                <div className="flex justify-between items-start">
+                  <span className="font-medium">Type:</span> 
+                  <div className="text-right">
+                    <div className="font-normal">{selectedDocuments[0].type}</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      Modified: {selectedDocuments[0].lastModified}
                     </div>
-                    <p className="text-sm text-gray-400">
-                      {diff.description}
-                    </p>
                   </div>
                 </div>
               </div>
-            ))}
+            </div>
+            
+            <div className="bg-green-900/20 border border-green-800 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-green-100 mb-3">
+                Document B
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div><span className="font-medium">Name:</span> {selectedDocuments[1].name}</div>
+                <div className="flex justify-between items-start">
+                  <span className="font-medium">Type:</span>
+                  <div className="text-right">
+                    <div className="font-normal">{selectedDocuments[1].type}</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      Modified: {selectedDocuments[1].lastModified}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Detailed Differences */}
+          <div className="bg-gray-800 border border-gray-700 rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-700">
+              <h3 className="text-lg font-semibold text-white">
+                Detailed Differences ({differences.length})
+              </h3>
+            </div>
+            
+            <div className="divide-y divide-gray-700">
+              {differences.map((diff) => (
+                <div key={diff.id} className="px-6 py-4 hover:bg-gray-700/50 transition-colors">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 mt-1">
+                      {getDifferenceIcon(diff.type)}
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-sm font-medium text-white">
+                          {diff.section} (Line {diff.lineNumber})
+                        </span>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSeverityColor(diff.severity)}`}>
+                          {diff.severity} priority
+                        </span>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          diff.type === 'addition' ? 'bg-green-900/30 text-green-300' :
+                          diff.type === 'deletion' ? 'bg-red-900/30 text-red-300' :
+                          'bg-blue-900/30 text-blue-300'
+                        }`}>
+                          {diff.type}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-400">
+                        {diff.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
