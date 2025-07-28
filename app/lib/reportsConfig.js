@@ -84,6 +84,11 @@ export const swmsReports = [
   //   lastModified: 'Real-time',
   //   pdfUrl: null, // Will be fetched from SWMS
   //   reportPath: '/report/inventory-overview',
+    // analysisDocument: {
+    //   path: '/Analysis Documents/mn1rb_analysis.md',
+    //   name: 'MN1RB Report Analysis',
+    //   type: 'markdown'
+    // },
   //   payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageID":3,"prodId":null,"custPreferVendor":null,"brand":null,"recId":null,"descrip":null,"palletType":null,"plogiLoc":null,"logicLoc":null,"status":null,"msku":null,"rdcItem":null,"miniLoad":null,"parentpalletId":null,"mfgSku":null,"vendorId":null,"uom":null,"prodSize":null,"prodSizeUnit":null,"ti":null,"hi":null,"warehouseId":null,"lotId":null,"pack":null,"aisleSide":null,"mxEligible":null,"mxItemAssignFlag":null,"qtyExp":null,"qtyAlc":null,"printerName":null,"reportValue":"mn1rb"}
   // },
   // {
@@ -129,6 +134,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/adjustment-type-overview',
+    analysisDocument: {
+      path: '/Analysis Documents/mc1ra_analysis.md',
+      name: 'MC1RA Report Analysis',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","languageId":3,"reasonCode":null,"reasonCodeType":null,"type":"PDF","printerName":null,"reportValue":"mc1ra"}
   },
    {
@@ -147,6 +157,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/pallet-worksheet',
+    // analysisDocument: {
+    //   path: '/Analysis Documents/ob1rb_analysis.md',
+    //   name: 'OB1RB Report Analysis',
+    //   type: 'markdown'
+    // },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1rb"}
   },
    {
@@ -237,6 +252,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/sos-user-configuration-report',
+    analysisDocument: {
+      path: '/Analysis Documents/sosuc_analysis.md',
+      name: 'SOSUC Report Analysis',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","languageId":3,"type":"PDF","printerName":null,"reportValue":"sosuc"}
   },
   {

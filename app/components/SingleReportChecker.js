@@ -81,9 +81,16 @@ export default function SingleReportCheck() {
   const [checkResult, setCheckResult] = useState(null);
   const [isChecking, setIsChecking] = useState(false);
 
+  // Handles report selection from NavigationPanel
   const handleReportSelect = (report, slot) => {
     setSelectedReport(report);
     console.log('Report selected:', report);
+  };
+
+  // Handles analysis document loading from NavigationPanel
+  const handleAnalysisDocumentLoad = (analysisDoc) => {
+    setAnalysisDocument(analysisDoc);
+    console.log('Analysis document loaded from NavigationPanel:', analysisDoc);
   };
 
   const handleFileUpload = (reportOrFile, slot) => {
@@ -242,6 +249,7 @@ export default function SingleReportCheck() {
             <NavigationPanel
               selectedReports={selectedReport}
               onReportSelect={handleReportSelect}
+              onAnalysisDocumentLoad={handleAnalysisDocumentLoad}
               mode="single"
               isVisible={isNavPanelVisible}
               onToggleVisibility={toggleNavPanel}

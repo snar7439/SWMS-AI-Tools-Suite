@@ -6,6 +6,7 @@ import { swmsReports } from '../lib/reportsConfig';
 export default function NavigationPanel({ 
   selectedReports, 
   onReportSelect, 
+  onAnalysisDocumentLoad, // New prop for loading analysis documents
   mode = 'comparison',
   isVisible = true,
   onToggleVisibility 
@@ -28,6 +29,33 @@ export default function NavigationPanel({
     }
   }, []);
 
+  // Function to load analysis document from public folder
+  const loadAnalysisDocument = async (analysisDocConfig) => {
+    try {
+      const response = await fetch(analysisDocConfig.path);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch analysis document: ${response.statusText}`);
+      }
+      
+      const content = await response.text();
+      
+      const analysisDoc = {
+        id: `analysis_${Date.now()}`,
+        name: analysisDocConfig.name,
+        type: 'markdown',
+        content: content,
+        isMarkdown: true,
+        fetchedFromPublic: true,
+        path: analysisDocConfig.path
+      };
+      
+      return analysisDoc;
+    } catch (error) {
+      console.error('Error loading analysis document:', error);
+      throw error;
+    }
+  };
+
   // Use reports directly from config file
   const reports = swmsReports;
 
@@ -49,7 +77,7 @@ export default function NavigationPanel({
     try {
       setLoading(true);
       
-      console.log('Loading payload directly from report config...');
+      console.log('Loading report and analysis document...');
       
       // Use the authenticated currentUser instead of sessionStorage
       const formattedUserId = currentUser.startsWith('OPS$') ? currentUser : `OPS$${currentUser}`;
@@ -58,6 +86,17 @@ export default function NavigationPanel({
       const configReport = swmsReports.find(r => r.id === report.id);
       if (!configReport) {
         throw new Error(`Report configuration not found for: ${report.id}`);
+      }
+      
+      // Load analysis document if it exists
+      let analysisDoc = null;
+      if (configReport.analysisDocument) {
+        try {
+          analysisDoc = await loadAnalysisDocument(configReport.analysisDocument);
+        } catch (analysisError) {
+          console.warn('Failed to load analysis document:', analysisError);
+          // Continue without analysis document
+        }
       }
       
       console.log('Direct config payload:', {
@@ -109,6 +148,11 @@ export default function NavigationPanel({
       
       console.log('Successfully fetched SWMS report');
       onReportSelect(fetchedReport, slot);
+      
+      // Load analysis document if available and callback exists
+      if (analysisDoc && onAnalysisDocumentLoad) {
+        onAnalysisDocumentLoad(analysisDoc);
+      }
       
     } catch (error) {
       console.error('Error fetching SWMS report:', error);
@@ -212,6 +256,7 @@ export default function NavigationPanel({
           ) : (
             filteredReports.map((report) => {
               const selected = isSelected(report);
+              const hasAnalysisDoc = report.analysisDocument;
               
               return (
                 <div
@@ -308,6 +353,15 @@ export default function NavigationPanel({
                           <h3 className="font-medium text-white text-xs whitespace-nowrap overflow-hidden text-ellipsis" title={report.name}>
                             {report.name}
                           </h3>
+                          {/* Analysis document indicator (only for single report check) */}
+                          {mode === 'single' && hasAnalysisDoc && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <svg className="w-3 h-3 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span className="text-xs text-emerald-400">Analysis included</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
