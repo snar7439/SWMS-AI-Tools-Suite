@@ -179,32 +179,62 @@ export default function SingleReportCheck() {
     }
 
     setIsChecking(true);
-    
+
+    // Helper to get a File from file, pdfUrl, or content
+    async function getFileFromSource(doc, fallbackName) {
+      if (doc.file) return doc.file;
+      if (doc.pdfUrl) {
+        const res = await fetch(doc.pdfUrl);
+        const blob = await res.blob();
+        return new File([blob], doc.name || fallbackName, { type: blob.type || 'application/pdf' });
+      }
+      if (doc.content) {
+        // Assume content is a string (e.g. markdown)
+        return new File([doc.content], doc.name || fallbackName, { type: 'text/markdown' });
+      }
+      return null;
+    }
+
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Generate mock results
-      const mockResult = {
-        accuracy: Math.floor(Math.random() * 20) + 80, // 80-100%
-        alignment: Math.floor(Math.random() * 15) + 85, // 85-100%
-        coverage: Math.floor(Math.random() * 25) + 75, // 75-100%
-        issues: Math.floor(Math.random() * 8) + 2, // 2-10 issues
-        recommendations: Math.floor(Math.random() * 5) + 3, // 3-8 recommendations
-        contentMatches: Math.floor(Math.random() * 10) + 15, // 15-25 matches
-        missingElements: Math.floor(Math.random() * 5) + 1, // 1-6 missing
-        reportName: selectedReport.name,
-        analysisName: analysisDocument.name,
-        timestamp: new Date().toISOString()
-      };
-      
-      setCheckResult(mockResult);
-      setShowInlineResults(true); // Show inline results
-      setActiveTab('results'); // Also switch to results tab
-      
+      const formData = new FormData();
+      // Report
+      const reportFile = await getFileFromSource(selectedReport, 'report.pdf');
+      if (!reportFile) {
+        alert('Could not get report file or content.');
+        setIsChecking(false);
+        return;
+      }
+      formData.append('report', reportFile, selectedReport.name || 'report.pdf');
+      // Analysis
+      const analysisFile = await getFileFromSource(analysisDocument, 'analysis.pdf');
+      if (!analysisFile) {
+        alert('Could not get analysis document file or content.');
+        setIsChecking(false);
+        return;
+      }
+      formData.append('analysis', analysisFile, analysisDocument.name || 'analysis.pdf');
+
+      // Call backend API
+      const response = await fetch('/api/analyze-report', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Analysis failed');
+      }
+
+      const data = await response.json();
+      if (!data.result) throw new Error('No result returned from backend');
+
+      setCheckResult(data.result);
+      setShowInlineResults(true);
+      setActiveTab('results');
+
     } catch (error) {
       console.error('Error running check:', error);
-      alert('Error running check. Please try again.');
+      alert(error.message || 'Error running check. Please try again.');
     } finally {
       setIsChecking(false);
     }

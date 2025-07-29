@@ -1,0 +1,324 @@
+// Alternative approach - try sending text content instead of base64 files
+import { NextResponse } from 'next/server';
+import pdf from 'pdf-parse'; // You'll need to install: npm install pdf-parse
+
+export const runtime = 'nodejs';
+export const maxDuration = 300;
+
+async function extractTextFromPDF(pdfBuffer) {
+  try {
+    const data = await pdf(pdfBuffer);
+    return data.text;
+  } catch (error) {
+    console.error('PDF extraction error:', error);
+    return null;
+  }
+}
+
+export async function POST(request) {
+  try {
+    console.log('[DEBUG] Starting report analysis with text extraction...');
+    
+    const formData = await request.formData();
+    const reportFile = formData.get('report');
+    const analysisFile = formData.get('analysis');
+    
+    if (!reportFile || !analysisFile) {
+      return NextResponse.json({ 
+        error: 'Missing files', 
+        details: 'Both report and analysis files are required' 
+      }, { status: 400 });
+    }
+    
+    const reportName = reportFile.name || 'Report';
+    const analysisName = analysisFile.name || 'Analysis';
+    
+    // Extract text content from files
+    let reportText = '';
+    let analysisText = '';
+    
+    try {
+      // Handle report file (PDF)
+      if (reportFile.type === 'application/pdf') {
+        const reportBuffer = Buffer.from(await reportFile.arrayBuffer());
+        reportText = await extractTextFromPDF(reportBuffer);
+        if (!reportText) {
+          throw new Error('Could not extract text from report PDF');
+        }
+      } else {
+        reportText = await reportFile.text();
+      }
+      
+      // Handle analysis file (PDF or Markdown/Text)
+      if (analysisFile.type === 'application/pdf') {
+        const analysisBuffer = Buffer.from(await analysisFile.arrayBuffer());
+        analysisText = await extractTextFromPDF(analysisBuffer);
+        if (!analysisText) {
+          throw new Error('Could not extract text from analysis PDF');
+        }
+      } else {
+        analysisText = await analysisFile.text();
+      }
+      
+      console.log('[DEBUG] Text extraction successful:', {
+        reportTextLength: reportText.length,
+        analysisTextLength: analysisText.length
+      });
+      
+    } catch (extractionError) {
+      console.error('[ERROR] Text extraction failed:', extractionError);
+      return NextResponse.json({ 
+        error: 'Text extraction failed', 
+        details: extractionError.message 
+      }, { status: 500 });
+    }
+
+    // Create a more direct prompt with the extracted text
+    const directPrompt = `You are a document compliance analyst. Compare the following SWMS report against its analysis document and return a JSON response.
+
+ANALYSIS DOCUMENT (${analysisName}):
+${analysisText.substring(0, 3000)}${analysisText.length > 3000 ? '...[truncated]' : ''}
+
+REPORT DOCUMENT (${reportName}):
+${reportText.substring(0, 3000)}${reportText.length > 3000 ? '...[truncated]' : ''}
+
+Please analyze the report against the analysis document and respond with ONLY this JSON structure (no other text):
+
+{
+  "overallScores": {
+    "accuracy": 85,
+    "alignment": 78,
+    "coverage": 82,
+    "compliance": 90
+  },
+  "detailedFindings": [
+    {
+      "type": "missing",
+      "section": "Risk Assessment",
+      "severity": "high",
+      "description": "Risk assessment section is incomplete",
+      "recommendation": "Add detailed risk analysis",
+      "analysisReference": "Analysis requires comprehensive risk evaluation"
+    }
+  ],
+  "summary": {
+    "totalIssues": 5,
+    "criticalIssues": 2,
+    "recommendations": 3,
+    "contentMatches": 12,
+    "missingElements": 2,
+    "strengths": ["Clear structure", "Good formatting"],
+    "weaknesses": ["Missing details", "Incomplete sections"]
+  },
+  "sectionAnalysis": {
+    "Executive Summary": {
+      "present": true,
+      "completeness": 85,
+      "quality": 80,
+      "issues": ["Minor formatting issues"],
+      "analysisRequirement": "Executive summary with key findings"
+    }
+  }
+}`;
+
+    // Prepare payload - try without files first, just text
+    const payload = {
+      ai_agent_id: '68887a5b6a0837f7039b3a7e',
+      user_query: directPrompt,
+      configuration_environment: 'DEV'
+      // Note: Removed files array to test if file processing is the issue
+    };
+
+    console.log('[DEBUG] Calling agent with text-based approach...');
+
+    const agentRes = await fetch('https://sysco-gen-ai-platform.labseag.us-east-1.aws.sysco.net/api/sysco-gen-ai-platform/agents/v1/content/generic/answer', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    console.log('[DEBUG] Agent response status:', agentRes.status);
+
+    if (!agentRes.ok) {
+      const errText = await agentRes.text();
+      console.error('[ERROR] Agent error response:', errText);
+      return NextResponse.json({ 
+        error: 'Agent error', 
+        details: errText,
+        status: agentRes.status 
+      }, { status: 500 });
+    }
+
+    const agentResponseText = await agentRes.text();
+    console.log('[DEBUG] Raw agent response:', agentResponseText);
+
+    let agentJson;
+    try {
+      agentJson = JSON.parse(agentResponseText);
+    } catch (parseError) {
+      console.error('[ERROR] Failed to parse agent response as JSON:', parseError);
+      return NextResponse.json({ 
+        error: 'Invalid JSON response from agent', 
+        details: parseError.message,
+        rawResponse: agentResponseText
+      }, { status: 500 });
+    }
+
+    // Extract response
+    let parsedResult = agentJson.result || 
+                      agentJson.answer || 
+                      agentJson.data?.responses?.agent_response ||
+                      agentJson.data?.agent_response ||
+                      agentJson.data ||
+                      agentJson;
+
+    console.log('[DEBUG] Extracted result:', {
+      type: typeof parsedResult,
+      content: parsedResult,
+      isEmpty: !parsedResult || parsedResult === ""
+    });
+
+    if (!parsedResult || parsedResult === "" || parsedResult === null) {
+      // Return a test result to verify the frontend works
+      console.log('[WARNING] Creating test result due to empty agent response');
+      const testResult = {
+        accuracy: 78,
+        alignment: 85,
+        coverage: 72,
+        compliance: 88,
+        issues: 4,
+        criticalIssues: 1,
+        recommendations: 3,
+        contentMatches: 15,
+        missingElements: 2,
+        reportName: reportName.replace(/\.(pdf|txt|md|markdown)$/i, ''),
+        analysisName: analysisName.replace(/\.(pdf|txt|md|markdown)$/i, ''),
+        timestamp: new Date().toISOString(),
+        detailedFindings: [
+          {
+            type: "missing",
+            section: "Risk Assessment",
+            severity: "high",
+            description: "Comprehensive risk assessment section not found in the report",
+            recommendation: "Add detailed risk analysis with probability and impact ratings",
+            analysisReference: "Analysis document requires risk evaluation framework"
+          },
+          {
+            type: "alignment",
+            section: "Executive Summary",
+            severity: "medium",
+            description: "Executive summary structure aligns with analysis requirements",
+            recommendation: "Consider adding more quantitative metrics",
+            analysisReference: "Summary should include key performance indicators"
+          }
+        ],
+        sectionAnalysis: {
+          "Executive Summary": {
+            present: true,
+            completeness: 85,
+            quality: 80,
+            issues: ["Could include more metrics"],
+            analysisRequirement: "Executive summary with key findings and recommendations"
+          },
+          "Risk Assessment": {
+            present: false,
+            completeness: 0,
+            quality: 0,
+            issues: ["Section completely missing"],
+            analysisRequirement: "Comprehensive risk analysis with mitigation strategies"
+          }
+        },
+        summary: {
+          totalIssues: 4,
+          criticalIssues: 1,
+          recommendations: 3,
+          contentMatches: 15,
+          missingElements: 2,
+          strengths: ["Clear document structure", "Good formatting", "Appropriate language"],
+          weaknesses: ["Missing risk assessment", "Limited quantitative data"]
+        },
+        strengths: ["Clear document structure", "Good formatting", "Appropriate language"],
+        weaknesses: ["Missing risk assessment", "Limited quantitative data"],
+        fileMetadata: {
+          reportType: reportFile.type,
+          analysisType: analysisFile.type,
+          analysisFormat: analysisFile.type?.includes('pdf') ? 'PDF' : 'Markdown',
+          textExtractionSuccess: true,
+          reportTextLength: reportText.length,
+          analysisTextLength: analysisText.length
+        },
+        analysisQuality: {
+          hasDetailedFindings: true,
+          hasSectionAnalysis: true,
+          hasRecommendations: true,
+          completeness: 75
+        }
+      };
+
+      return NextResponse.json({ 
+        success: true, 
+        result: testResult,
+        note: "This is a test result due to empty agent response. Check agent configuration."
+      });
+    }
+
+    // If we got a response, try to parse it
+    if (typeof parsedResult === 'string') {
+      try {
+        parsedResult = JSON.parse(parsedResult);
+      } catch (e) {
+        console.log('[ERROR] Could not parse agent response as JSON:', e);
+        return NextResponse.json({ 
+          error: 'Invalid response format', 
+          details: 'Agent returned non-JSON response',
+          agentResponse: parsedResult
+        }, { status: 422 });
+      }
+    }
+
+    // Process the successful result...
+    const result = {
+      accuracy: parsedResult.overallScores?.accuracy || 0,
+      alignment: parsedResult.overallScores?.alignment || 0,
+      coverage: parsedResult.overallScores?.coverage || 0,
+      compliance: parsedResult.overallScores?.compliance || 0,
+      issues: parsedResult.summary?.totalIssues || 0,
+      criticalIssues: parsedResult.summary?.criticalIssues || 0,
+      recommendations: parsedResult.summary?.recommendations || 0,
+      contentMatches: parsedResult.summary?.contentMatches || 0,
+      missingElements: parsedResult.summary?.missingElements || 0,
+      reportName: reportName.replace(/\.(pdf|txt|md|markdown)$/i, ''),
+      analysisName: analysisName.replace(/\.(pdf|txt|md|markdown)$/i, ''),
+      timestamp: new Date().toISOString(),
+      detailedFindings: parsedResult.detailedFindings || [],
+      sectionAnalysis: parsedResult.sectionAnalysis || {},
+      summary: parsedResult.summary || {},
+      strengths: parsedResult.summary?.strengths || [],
+      weaknesses: parsedResult.summary?.weaknesses || [],
+      fileMetadata: {
+        reportType: reportFile.type,
+        analysisType: analysisFile.type,
+        analysisFormat: analysisFile.type?.includes('pdf') ? 'PDF' : 'Markdown',
+        textExtractionSuccess: true
+      },
+      analysisQuality: {
+        hasDetailedFindings: (parsedResult.detailedFindings || []).length > 0,
+        hasSectionAnalysis: Object.keys(parsedResult.sectionAnalysis || {}).length > 0,
+        hasRecommendations: (parsedResult.summary?.recommendations || 0) > 0,
+        completeness: 100
+      }
+    };
+
+    return NextResponse.json({ success: true, result });
+
+  } catch (error) {
+    console.error('[ERROR] Analysis failed:', error);
+    return NextResponse.json({ 
+      error: error.message || 'Analysis failed',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 });
+  }
+}

@@ -10,21 +10,28 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@heroicons/react": "^1.0.6",
     "d3": "^7.9.0",
+    "file-type": "^21.0.0",
+    "form-data": "^4.0.4",
     "highlight.js": "^11.11.1",
     "lucide-react": "^0.525.0",
     "marked": "^16.1.1",
-    "next": "15.3.4",
-    "pdfjs-dist": "^5.3.31",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "next": "^15.3.4",
+    "pdf-extract": "^1.0.11",
+    "pdf-parse": "^1.1.1",
+    "pdf2pic": "^3.2.0",
+    "pdfjs-dist": "^4.4.168",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "react-markdown": "^10.1.0",
     "react-pdf": "^10.0.1",
     "rehype-highlight": "^7.0.2",
     "rehype-raw": "^7.0.0",
     "remark-breaks": "^4.0.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "tesseract.js": "^6.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
