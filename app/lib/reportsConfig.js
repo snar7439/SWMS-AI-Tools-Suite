@@ -57,6 +57,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/cool-item-cross-reference-all-item',
+    analysisDocument: {
+      path: '/Analysis Documents/mc1rc_analysis.md',
+      name: 'MC1RC Report Analysis',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"category":null,"custPrefVendor":null,"descrip":null,"prodId":null,"printerName":null,"reportValue":"mc1rc"}
   },
   {
@@ -157,11 +162,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/pallet-worksheet',
-    // analysisDocument: {
-    //   path: '/Analysis Documents/ob1rb_analysis.md',
-    //   name: 'OB1RB Report Analysis',
-    //   type: 'markdown'
-    // },
+    analysisDocument: {
+      path: '/Analysis Documents/ob1rb_analysis.md',
+      name: 'OB1RB Report Analysis',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1rb"}
   },
    {
@@ -171,6 +176,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/catchweight-recording',
+    analysisDocument: {
+      path: '/Analysis Documents/ob1rc_analysis.md',
+      name: 'OB1RC Report Analysis',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1rc"}
   },
   {
@@ -216,6 +226,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/cool-item-setup',
+    analysisDocument: {
+      path: '/Analysis Documents/mc1rc_analysis.md',
+      name: 'MC1RC Report Analysis',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"category":null,"custPrefVendor":null,"descrip":null,"prodId":null,"printerName":null,"reportValue":"mc1rc"}
   },
   {
@@ -225,6 +240,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/cool-item-cross-reference-items-not-setup',
+    analysisDocument: {
+      path: '/Analysis Documents/mc1rc_analysis.md',
+      name: 'MC1RC Report Analysis',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"category":null,"custPrefVendor":null,"descrip":null,"prodId":null,"printerName":null,"reportValue":"mc1rc"}
   },
   {
