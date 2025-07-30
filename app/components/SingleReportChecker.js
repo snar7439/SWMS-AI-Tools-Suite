@@ -266,7 +266,7 @@ export default function SingleReportCheck() {
   ];
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] bg-gray-900 overflow-hidden relative">
+    <div className="flex h-[calc(100vh-5rem)] bg-gray-900 overflow-y-auto relative">
       {/* Navigation Panel - Fixed height, no scrolling */}
       <div 
         className={`flex-shrink-0 bg-gray-800 border-r border-gray-700 h-full transition-all duration-300 ease-in-out ${
@@ -341,12 +341,12 @@ export default function SingleReportCheck() {
 
         {/* Tab Content - Takes remaining height */}
         {activeTab === 'check' && (
-          <div className="flex flex-col flex-1 min-h-0 overflow-x-auto min-w-0">
-            {/* Scrollable Main Content Area */}
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-              <div className="p-3 space-y-4">
-                {/* Upload Areas */}
-                <div className="h-96 overflow-x-auto min-w-0"> 
+          <div className="flex flex-col flex-1 min-h-0 overflow-x-auto overflow-y-auto min-w-0">
+            {/* Main Content Area - Now uses all available space */}
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="p-3 h-full">
+                {/* Upload Areas - Now uses full height available */}
+                <div className="h-full overflow-x-auto min-w-0 relative"> 
                   <div id="analysis-resize-container" className="flex gap-1.5 h-full min-w-[600px]">
                     {/* Report Section */}
                     <div 
@@ -452,11 +452,11 @@ export default function SingleReportCheck() {
                   )}
                 </div>
 
-                {/* Inline Results Section - Now scrollable with the main content */}
+                {/* Inline Results Section - Scrollable below viewers */}
                 {showInlineResults && checkResult && (
-                  <div className="border-2 border-gray-600 bg-gray-800 rounded-lg overflow-hidden">
+                  <div className="mt-4 border-2 border-gray-600 bg-gray-800 rounded-lg overflow-auto z-10 max-h-96">
                     {/* Results Header */}
-                    <div className="bg-gray-750 border-b border-gray-600 px-4 py-3">
+                    <div className="bg-gray-750 border-b border-gray-600 px-4 py-3 sticky top-0 z-20">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-2">
@@ -469,7 +469,6 @@ export default function SingleReportCheck() {
                             Analysis Complete
                           </span>
                         </div>
-                        
                         <div className="flex items-center gap-2">
                           <button
                             onClick={handleToggleInlineResults}
@@ -493,9 +492,8 @@ export default function SingleReportCheck() {
                         </div>
                       </div>
                     </div>
-
-                    {/* Results Content - No height restriction, lets natural content flow */}
-                    <div className="min-h-0">
+                    {/* Results Content - Scrollable */}
+                    <div className="flex-1 min-h-0 overflow-y-auto p-4">
                       <SingleReportResultsTab
                         selectedReport={selectedReport}
                         analysisDocument={analysisDocument}

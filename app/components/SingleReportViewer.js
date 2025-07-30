@@ -631,7 +631,7 @@ export default function SingleReportViewer({
                   {shouldShowMarkdown ? (
                     // Markdown Content Display
                     <div className="bg-gray-800 rounded-lg shadow-md p-6 mx-auto max-w-full">
-                      <div className="bg-gray-700 rounded-lg p-6 border border-gray-600 max-h-96 overflow-auto">
+                      <div className="bg-gray-700 rounded-lg p-6 border border-gray-600 max-h-full overflow-auto">
                         <div 
                           className="prose prose-sm prose-invert max-w-none leading-relaxed"
                           dangerouslySetInnerHTML={{ __html: markdownToHtml(markdownContent) }}
