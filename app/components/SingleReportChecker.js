@@ -341,9 +341,9 @@ export default function SingleReportCheck() {
 
         {/* Tab Content - Takes remaining height */}
         {activeTab === 'check' && (
-          <div className="flex flex-col flex-1 min-h-0 overflow-x-auto overflow-y-auto min-w-0">
+          <div className="flex flex-col flex-1 min-h-0 overflow-x-auto min-w-0">
             {/* Main Content Area - Now uses all available space */}
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               <div className="p-3 h-full">
                 {/* Upload Areas - Now uses full height available */}
                 <div className="h-full overflow-x-auto min-w-0 relative"> 
@@ -452,11 +452,11 @@ export default function SingleReportCheck() {
                   )}
                 </div>
 
-                {/* Inline Results Section - Scrollable below viewers */}
+                {/* Inline Results Section - Overlay style when visible */}
                 {showInlineResults && checkResult && (
-                  <div className="mt-4 border-2 border-gray-600 bg-gray-800 rounded-lg overflow-auto z-10 max-h-96">
+                  <div className="border border-gray-600 bg-gray-800 rounded-lg overflow-hidden shadow-lg">
                     {/* Results Header */}
-                    <div className="bg-gray-750 border-b border-gray-600 px-4 py-3 sticky top-0 z-20">
+                    <div className="bg-gray-750 border-b border-gray-600 px-4 py-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-2">
@@ -469,6 +469,7 @@ export default function SingleReportCheck() {
                             Analysis Complete
                           </span>
                         </div>
+                        
                         <div className="flex items-center gap-2">
                           <button
                             onClick={handleToggleInlineResults}
@@ -492,8 +493,9 @@ export default function SingleReportCheck() {
                         </div>
                       </div>
                     </div>
-                    {/* Results Content - Scrollable */}
-                    <div className="flex-1 min-h-0 overflow-y-auto p-4">
+
+                    {/* Results Content - Takes remaining height */}
+                    <div className="flex-1 min-h-0 overflow-hidden">
                       <SingleReportResultsTab
                         selectedReport={selectedReport}
                         analysisDocument={analysisDocument}
