@@ -123,9 +123,9 @@ export default function SingleReportViewer({
     let html = markdown;
     
     // Convert code blocks first (to avoid interference with other patterns)
-    html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, language, code) => {
-        const lang = language ? ` data-language="${language}"` : '';
-        return `<pre class="bg-gray-900 border border-gray-600 rounded-lg p-4 mb-6 overflow-x-auto shadow-inner"><code class="text-green-300 text-sm font-mono whitespace-pre block leading-relaxed"${lang}>${code.trim()}</code></pre>`;
+    html = html.replace(/```(?:\s*(\w+))?\s*([\s\S]*?)```/g, (match, language, code) => {
+      const lang = language ? ` data-language="${language}"` : '';
+      return `<pre class="bg-gray-900 border border-gray-600 rounded-lg p-4 mb-6 overflow-x-auto shadow-inner"><code class="text-green-300 text-sm font-mono whitespace-pre block leading-relaxed"${lang}>${code.trim()}</code></pre>`;
     });
     
     // Convert inline code (after code blocks to avoid conflicts)

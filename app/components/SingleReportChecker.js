@@ -5,6 +5,7 @@ import NavigationPanel from './NavigationPanel';
 import DragDropArea from './DragDropArea';
 import SingleReportResultsTab from './CheckResultsTab';
 import SingleReportViewer from './SingleReportViewer';
+import SQLQueryTester from './SQLQueryTester'; 
 
 export default function SingleReportCheck() {
   // State for navigation panel visibility
@@ -262,6 +263,7 @@ export default function SingleReportCheck() {
 
   const tabs = [
     { id: 'check', name: 'Report Check', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+    { id: 'sql', name: 'Query Testing', icon: 'M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4' },
     { id: 'results', name: 'Results', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' }
   ];
 
@@ -314,7 +316,12 @@ export default function SingleReportCheck() {
         <header className="flex-shrink-0 bg-gray-800 border-b border-gray-700 px-4 py-2">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-400">Upload a report and analysis document to validate compliance</p>
+              <p className="text-xs text-gray-400">
+                {activeTab === 'sql' 
+                  ? 'Test SQL queries from analysis documents'
+                  : 'Upload a report and analysis document to validate compliance'
+                }
+              </p>
             </div>
             
             {/* Tab Navigation - inline */}
@@ -571,6 +578,37 @@ export default function SingleReportCheck() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'sql' && (
+          <div className="flex-1 min-h-0 p-4">
+            {!analysisDocument ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center max-w-md">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-700 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">Analysis Document Required</h3>
+                  <p className="text-gray-400 text-sm mb-4">
+                    Load an analysis document first to extract and test SQL queries. The document should contain SQL queries in code blocks or with sql-- comments.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('check')}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+                  >
+                    Go to Report Check
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <SQLQueryTester
+                analysisDocument={analysisDocument}
+                report={selectedReport}
+              />
+            )}
           </div>
         )}
 
