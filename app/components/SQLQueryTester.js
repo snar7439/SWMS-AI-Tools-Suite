@@ -12,6 +12,24 @@ export default function SQLQueryTester({ analysisDocument, report }) {
   const [showCustomQuery, setShowCustomQuery] = useState(false);
   const [currentTab, setCurrentTab] = useState('extracted');
 
+  // Clear all results and state when analysis document changes
+  useEffect(() => {
+    if (analysisDocument) {
+      // Clear all previous state
+      setQueryResults({});
+      setExecutingQueries(new Set());
+      setExpandedQueries(new Set());
+      setCustomQuery('');
+      setCurrentTab('extracted');
+      
+      // Reset query statuses to pending
+      setExtractedQueries(prev => prev.map(query => ({
+        ...query,
+        status: 'pending'
+      })));
+    }
+  }, [analysisDocument?.id, analysisDocument?.name]); // Trigger when document ID or name changes
+
   // Extract SQL queries from analysis document content
   useEffect(() => {
     if (!analysisDocument) {
@@ -236,6 +254,18 @@ export default function SQLQueryTester({ analysisDocument, report }) {
     URL.revokeObjectURL(url);
   };
 
+  // Clear all results manually
+  const clearAllResults = () => {
+    setQueryResults({});
+    setExecutingQueries(new Set());
+    setExpandedQueries(new Set());
+    setCustomQuery('');
+    setExtractedQueries(prev => prev.map(query => ({
+      ...query,
+      status: 'pending'
+    })));
+  };
+
   const getStatusIcon = (status, isExecuting = false) => {
     if (isExecuting) {
       return <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>;
@@ -264,9 +294,25 @@ export default function SQLQueryTester({ analysisDocument, report }) {
           <div className="flex items-center gap-3">
             <Database className="w-5 h-5 text-blue-400" />
             <h2 className="text-lg font-semibold text-white">SQL Query Tester</h2>
+            {analysisDocument && (
+              <span className="px-2 py-1 bg-blue-900/30 text-blue-300 text-xs font-medium rounded">
+                {analysisDocument.name}
+              </span>
+            )}
           </div>
           
           <div className="flex items-center gap-3">
+            {/* Clear Results Button */}
+            {/* {(Object.keys(queryResults).length > 0 || customQuery.trim()) && (
+              <button
+                onClick={clearAllResults}
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white text-sm rounded-lg transition-colors"
+              >
+                <XCircle className="w-3 h-3" />
+                Clear All Results
+              </button>
+            )} */}
+
             {/* Connection Status */}
             <div className="flex items-center gap-2">
               <button
@@ -496,7 +542,7 @@ export default function SQLQueryTester({ analysisDocument, report }) {
               
               <div className="flex items-center justify-between">
                 <div className="text-xs text-gray-400">
-                  Only SELECT queries are allowed for security
+                  Only SELECT queries are allowed for security reasons
                 </div>
                 
                 <button
