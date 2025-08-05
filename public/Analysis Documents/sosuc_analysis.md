@@ -1,177 +1,602 @@
-# SOSUC Report Analysis Documentation
+# SWMS SOSUC Report Analysis and Validation Guide
 
-## 📝 Report Overview
+**Document Version**: 1.0  
+**Date**: August 4, 2025  
+**Repository**: swms-opco (develop branch)  
+**Author**: GitHub Copilot Analysis  
 
-### What does this report present?
-The SOSUC (SOS User Configuration) report displays user configuration settings for the SWMS (SYSCO Warehouse Management System) Order Selection system. It presents a tabular view of individual users and their specific operational preferences and flags.
+## Executive Summary
 
-### Report Output Format
-- **Width**: 80 columns
-- **Page Length**: 60 rows maximum
-- **File**: `sosuc.pc` (Pro*C source file)
-- **Default Output**: `sosuc` filename
+The SOSUC (SOS User Configuration) report is a critical SWMS (Sysco Warehouse Management System) report that displays configuration settings for users in the SOS (SWMS Order Selection) system. This report provides visibility into user-specific settings that control how order selection processes behave for individual users.
 
-### Intended Audience
-- **Primary**: Warehouse operations managers and supervisors
-- **Secondary**: IT administrators managing user configurations
-- **Tertiary**: Training coordinators setting up new users
+## Report Overview
 
-## 🔍 Core Logic
+### Purpose
+The SOSUC report displays user configuration data from the SOS system, showing individual user settings that control:
+- Item scanning requirements
+- Label printing preferences
+- Quantity entry settings
+- Training mode flags
+- Equipment assignments
+- Download optimization preferences
 
-### Primary Data Source
-The report queries two main tables:
-- `SOS_USR_CONFIG` - Contains user-specific configuration flags
-- `USR` - Contains user demographic information (names)
+### Technical Components
+- **Main Report**: `sosuc.pc` (687 lines) - Full-featured Oracle Pro*C report with globalization
+- **Simplified Report**: `sosucrpt.pc` (439 lines) - Streamlined version with basic formatting
+- **Forms Interface**: `sosuc1.fmb` - Oracle Forms interface (binary file)
 
-### SQL Query Structure
+### Database Tables
+- **Primary Table**: `SOS_USR_CONFIG` - User configuration settings
+- **Secondary Table**: `USR` - User master information for name lookups
+
+## Report Structure Analysis
+
+### Primary Data Source (sosuc.pc)
 ```sql
-SELECT uc.user_id, INITCAP(u.user_name), uc.primary_jc,
-       uc.must_scan_it, uc.print_fl_label, uc.enter_qty, 
-       uc.print_train_lbl, uc.nos_user, uc.download_opt_pull 
-FROM SOS_USR_CONFIG uc, USR u
-WHERE u.user_id = CONCAT('OPS$', uc.user_id)
-AND uc.user_id in (select user_id from SOS_USR_CONFIG [condition])
-ORDER BY u.user_name
+SELECT u.user_id, 
+       nvl(usr.user_name, 'USER NAME NOT FOUND') user_name,
+       u.job_code,
+       nvl(u.must_scan_itm, 'N') must_scan_itm,
+       nvl(u.print_fl_label, 'N') print_fl_label,
+       nvl(u.enter_qty, 'N') enter_qty,
+       nvl(u.print_train_lbl, 'N') print_train_lbl,
+       nvl(u.flag_nos_user, 'N') flag_nos_user,
+       nvl(u.flag_opt_pull, 'N') flag_opt_pull
+FROM sos_usr_config u, 
+     usr 
+WHERE u.user_id = usr.user_id(+)
+ORDER BY u.user_id
 ```
 
-### Data Processing Steps
-1. **Connection**: Establishes read-only Oracle connection
-2. **Filtering**: Applies optional conditions via command-line parameters
-3. **Sorting**: Orders results alphabetically by user name
-4. **Formatting**: Converts boolean flags to 2-character display codes
-5. **Pagination**: Breaks output into 60-line pages with headers
+### Column Layout
+| Column | Description | Data Type | Values |
+|--------|-------------|-----------|---------|
+| User ID | SOS User Identifier | VARCHAR2(30) | Alphanumeric |
+| User Name | Full Name from USR table | VARCHAR2(40) | Free text |
+| Primary Job Code | Job classification | VARCHAR2(6) | Job codes |
+| Must Scan Item | Item scanning requirement | CHAR(1) | Y/N |
+| Print Float Label | Float label printing | CHAR(1) | Y/N |
+| Enter Qty | Manual quantity entry | CHAR(1) | Y/N |
+| Training Label | Training mode labeling | CHAR(1) | Y/N |
+| New SOS User | New user indicator | CHAR(1) | Y/N |
+| Download Optimum Pull | Optimization setting | CHAR(1) | Y/N |
 
-### Flag Mapping
-The report displays 6 operational flags:
-- **M** (Must Scan Item): `must_scan_it`
-- **P** (Print Float Label): `print_fl_label` 
-- **E** (Enter Qty): `enter_qty`
-- **T** (Training Label): `print_train_lbl`
-- **N** (New SOS User): `nos_user`
-- **D** (Download Optimum Pull): `download_opt_pull`
+### Report Features
+- **Globalization Support**: Multi-language output with French translation capability
+- **Flexible Filtering**: Runtime condition support for selective reporting
+- **Multiple Formats**: Standard and simplified output options
+- **Error Handling**: Comprehensive Oracle Pro*C error management
 
-## 💼 Business Value
+## Validation Test Plan
 
-### Primary Use Cases
+### Pre-Validation Setup
 
-#### 1. **User Access Management**
-- Verify which users have access to SOS functionality
-- Audit user permission levels across the warehouse
-- Support compliance and security reviews
+#### Environment Requirements
+- Oracle database access with SELECT privileges on SOS_USR_CONFIG and USR tables
+- SQLcl or SQL*Plus client for query execution
+- Access to SWMS test/production environment
 
-#### 2. **Training Coordination**
-- Identify users flagged for training labels (T flag)
-- Track new users requiring additional oversight (N flag)
-- Plan training programs based on user configuration gaps
+#### Test Data Preparation
+```sql
+-- Verify table accessibility
+SELECT COUNT(*) FROM sos_usr_config;
+SELECT COUNT(*) FROM usr;
 
-#### 3. **Operational Efficiency**
-- Review scanning requirements (M flag) for accuracy compliance
-- Monitor label printing preferences (P flag) for resource planning
-- Assess quantity entry permissions (E flag) for workflow optimization
+-- Check for test users
+SELECT user_id FROM sos_usr_config WHERE ROWNUM <= 5;
+```
 
-#### 4. **System Configuration Audits**
-- Validate user settings align with job classifications (PRIJC column)
-- Ensure download optimization settings (D flag) match operational needs
-- Support troubleshooting of user-specific system issues
+### Test Case 1: Data Accuracy Validation
 
-### Decision Support
-- **Workforce Planning**: Understanding user capabilities and restrictions
-- **Process Improvement**: Identifying configuration patterns that impact efficiency
-- **Risk Management**: Ensuring proper controls are in place for critical operations
+#### Purpose
+Verify that the report accurately retrieves and displays data from the database.
 
-## ✅ Validation & Accuracy Checks
+#### SQL Validation Query
+```sql
+SELECT 
+    u.user_id,
+    NVL(usr.user_name, 'USER NAME NOT FOUND') AS user_name,
+    u.job_code,
+    NVL(u.must_scan_itm, 'N') AS must_scan_itm,
+    NVL(u.print_fl_label, 'N') AS print_fl_label,
+    NVL(u.enter_qty, 'N') AS enter_qty,
+    NVL(u.print_train_lbl, 'N') AS print_train_lbl,
+    NVL(u.flag_nos_user, 'N') AS flag_nos_user,
+    NVL(u.flag_opt_pull, 'N') AS flag_opt_pull
+FROM sos_usr_config u 
+LEFT OUTER JOIN usr ON u.user_id = usr.user_id
+ORDER BY u.user_id;
+```
 
-### Data Verification Methods
+#### Validation Steps
+1. Run the SQL query above
+2. Compare results with report output for same time period
+3. Verify all columns match exactly
+4. Check NULL handling shows proper default values
+5. Confirm sort order is by user_id
 
-#### 1. **User Count Validation**
+#### Expected Results
+- All user records from SOS_USR_CONFIG should appear
+- User names should resolve from USR table when available
+- NULL values should display appropriate defaults (N, USER NAME NOT FOUND)
+- Sort order should be alphabetical by user_id
+
+### Test Case 2: User Name Resolution Validation
+
+#### Purpose
+Verify proper handling of user name lookups and missing user records.
+
+#### SQL Validation Queries
+```sql
+-- Test users with valid names
+SELECT u.user_id, usr.user_name
+FROM sos_usr_config u 
+JOIN usr ON u.user_id = usr.user_id
+WHERE usr.user_name IS NOT NULL
+AND ROWNUM <= 10;
+
+-- Test users without valid USR records
+SELECT u.user_id, 
+       CASE WHEN usr.user_id IS NULL THEN 'USER NAME NOT FOUND' 
+            ELSE usr.user_name 
+       END AS displayed_name
+FROM sos_usr_config u 
+LEFT OUTER JOIN usr ON u.user_id = usr.user_id
+WHERE usr.user_id IS NULL
+AND ROWNUM <= 5;
+```
+
+#### Validation Steps
+1. Identify users with and without USR table entries
+2. Verify report shows actual names for valid users
+3. Confirm "USER NAME NOT FOUND" appears for orphaned SOS users
+4. Cross-reference with actual USR table data
+
+### Test Case 3: Configuration Flag Validation
+
+#### Purpose
+Verify proper display and default handling of configuration flags.
+
+#### SQL Validation Queries
+```sql
+-- Check flag value distribution
+SELECT 
+    must_scan_itm,
+    COUNT(*) as count_must_scan
+FROM sos_usr_config 
+GROUP BY must_scan_itm;
+
+SELECT 
+    print_fl_label,
+    COUNT(*) as count_print_label
+FROM sos_usr_config 
+GROUP BY print_fl_label;
+
+-- Verify NULL handling for each flag
+SELECT 
+    user_id,
+    must_scan_itm,
+    NVL(must_scan_itm, 'N') AS displayed_must_scan,
+    print_fl_label,
+    NVL(print_fl_label, 'N') AS displayed_print_label
+FROM sos_usr_config 
+WHERE must_scan_itm IS NULL 
+   OR print_fl_label IS NULL
+   OR enter_qty IS NULL
+   OR print_train_lbl IS NULL
+   OR flag_nos_user IS NULL
+   OR flag_opt_pull IS NULL;
+```
+
+#### Validation Steps
+1. Check flag value distributions match expectations
+2. Verify NULL values display as 'N' in report
+3. Validate only Y/N values appear in output
+4. Confirm all six flag columns are properly handled
+
+### Test Case 4: Sorting and Formatting Validation
+
+#### Purpose
+Verify correct sorting, column alignment, and report formatting.
+
+#### SQL Validation Query
+```sql
+-- Verify sort order
+SELECT user_id, ROW_NUMBER() OVER (ORDER BY user_id) as sort_order
+FROM sos_usr_config
+ORDER BY user_id;
+
+-- Check for potential formatting issues
+SELECT 
+    user_id,
+    LENGTH(user_id) as id_length,
+    LENGTH(NVL(usr.user_name, 'USER NAME NOT FOUND')) as name_length,
+    job_code,
+    LENGTH(job_code) as job_length
+FROM sos_usr_config u 
+LEFT OUTER JOIN usr ON u.user_id = usr.user_id
+WHERE LENGTH(user_id) > 10 
+   OR LENGTH(NVL(usr.user_name, 'USER NAME NOT FOUND')) > 40
+   OR LENGTH(job_code) > 6;
+```
+
+#### Validation Steps
+1. Verify alphabetical sorting by user_id
+2. Check column alignment in report output
+3. Identify any data that might cause formatting issues
+4. Validate header alignment with data columns
+
+### Test Case 5: Performance and Volume Testing
+
+#### Purpose
+Verify report performance with various data volumes and conditions.
+
+#### SQL Validation Queries
+```sql
+-- Check total record count
+SELECT COUNT(*) as total_users FROM sos_usr_config;
+
+-- Verify join performance
+SELECT COUNT(*) as matched_users
+FROM sos_usr_config u 
+JOIN usr ON u.user_id = usr.user_id;
+
+-- Check for performance issues
+EXPLAIN PLAN FOR
+SELECT u.user_id, usr.user_name, u.job_code,
+       NVL(u.must_scan_itm, 'N'), NVL(u.print_fl_label, 'N'),
+       NVL(u.enter_qty, 'N'), NVL(u.print_train_lbl, 'N'),
+       NVL(u.flag_nos_user, 'N'), NVL(u.flag_opt_pull, 'N')
+FROM sos_usr_config u 
+LEFT OUTER JOIN usr ON u.user_id = usr.user_id
+ORDER BY u.user_id;
+
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
+```
+
+#### Validation Steps
+1. Record execution time for full report
+2. Test with filtered conditions if supported
+3. Monitor database resource usage
+4. Verify acceptable performance for expected data volumes
+
+### Test Case 6: Error Handling Validation
+
+#### Purpose
+Verify proper handling of database errors and edge conditions.
+
+#### Validation Scenarios
+1. **Database Connection Issues**
+   - Test report behavior when database is unavailable
+   - Verify appropriate error messages
+
+2. **Permission Issues**
+   - Test with user lacking SELECT privileges
+   - Confirm security error handling
+
+3. **Data Corruption Scenarios**
+   - Test with unusual characters in user names
+   - Verify handling of very long data values
+
+#### SQL Test Queries
+```sql
+-- Test unusual characters
+SELECT user_id, user_name
+FROM usr 
+WHERE user_name LIKE '%[^A-Za-z0-9 ]%'
+   OR user_id LIKE '%[^A-Za-z0-9]%';
+
+-- Test data boundaries
+SELECT user_id, LENGTH(user_id) as id_len
+FROM sos_usr_config 
+WHERE LENGTH(user_id) > 20;
+```
+
+## Business Logic Validation
+
+### Configuration Flag Meanings
+1. **Must Scan Item (must_scan_itm)**: Controls whether users must scan items during selection
+2. **Print Float Label (print_fl_label)**: Determines if float labels are automatically printed
+3. **Enter Qty (enter_qty)**: Allows manual quantity entry during selection
+4. **Training Label (print_train_lbl)**: Enables training mode labels for new users
+5. **New SOS User (flag_nos_user)**: Identifies users new to the SOS system
+6. **Download Optimum Pull (flag_opt_pull)**: Enables optimized pull sequence downloading
+
+### Business Rule Validation
+```sql
+-- Verify business rules
+SELECT 
+    user_id,
+    job_code,
+    CASE 
+        WHEN flag_nos_user = 'Y' AND print_train_lbl = 'N' 
+        THEN 'WARNING: New user without training labels'
+        ELSE 'OK'
+    END AS business_rule_check
+FROM sos_usr_config
+WHERE flag_nos_user = 'Y';
+```
+
+### Configuration Dependencies
+```sql
+-- Check for logical inconsistencies
+SELECT 
+    user_id,
+    must_scan_itm,
+    enter_qty,
+    CASE 
+        WHEN must_scan_itm = 'N' AND enter_qty = 'N' 
+        THEN 'WARNING: No scanning and no manual entry allowed'
+        ELSE 'OK'
+    END AS consistency_check
+FROM sos_usr_config
+WHERE must_scan_itm = 'N' AND enter_qty = 'N';
+```
+
+## Advanced Validation Queries
+
+### Data Integrity Checks
+```sql
+-- Orphaned SOS configurations
+SELECT 'Orphaned SOS Config' as issue_type, COUNT(*) as count
+FROM sos_usr_config u 
+LEFT OUTER JOIN usr ON u.user_id = usr.user_id
+WHERE usr.user_id IS NULL
+
+UNION ALL
+
+-- Invalid job codes
+SELECT 'Invalid Job Codes' as issue_type, COUNT(*) as count
+FROM sos_usr_config u 
+LEFT OUTER JOIN job_code jc ON u.job_code = jc.jbcd_job_code
+WHERE u.job_code IS NOT NULL AND jc.jbcd_job_code IS NULL
+
+UNION ALL
+
+-- Duplicate user configurations
+SELECT 'Duplicate Users' as issue_type, COUNT(*) - COUNT(DISTINCT user_id) as count
+FROM sos_usr_config;
+```
+
+### Historical Data Analysis
+```sql
+-- User configuration changes over time (if audit table exists)
+SELECT 
+    TO_CHAR(add_date, 'YYYY-MM') as month,
+    COUNT(*) as config_changes
+FROM sos_usr_config_audit
+WHERE add_date >= ADD_MONTHS(SYSDATE, -12)
+GROUP BY TO_CHAR(add_date, 'YYYY-MM')
+ORDER BY month;
+```
+
+### Cross-System Validation
+```sql
+-- Verify SOS users have proper system access
+SELECT 
+    u.user_id,
+    CASE WHEN ua.user_id IS NULL THEN 'Missing Auth' ELSE 'Has Auth' END as auth_status
+FROM sos_usr_config u
+LEFT OUTER JOIN usrauth ua ON u.user_id = ua.user_id
+LEFT OUTER JOIN auth a ON ua.auth_id = a.auth_id AND a.auth_id = 'SOS'
+WHERE ua.user_id IS NULL OR a.auth_id IS NULL;
+```
+
+## Troubleshooting Guide
+
+### Common Issues
+
+#### Issue 1: Missing User Names
+**Symptom**: Report shows "USER NAME NOT FOUND" for valid users  
+**Cause**: User exists in SOS_USR_CONFIG but not in USR table  
+**Validation Query**:
+```sql
+SELECT u.user_id
+FROM sos_usr_config u 
+LEFT OUTER JOIN usr ON u.user_id = usr.user_id
+WHERE usr.user_id IS NULL;
+```
+**Resolution**: Add missing users to USR table or clean up orphaned SOS config records
+
+#### Issue 2: Unexpected Flag Values
+**Symptom**: Report shows values other than Y/N for configuration flags  
+**Cause**: Data corruption or manual data entry  
+**Validation Query**:
+```sql
+SELECT user_id, must_scan_itm
+FROM sos_usr_config
+WHERE must_scan_itm NOT IN ('Y', 'N') 
+   AND must_scan_itm IS NOT NULL;
+```
+**Resolution**: Update invalid flag values to Y or N
+
+#### Issue 3: Performance Issues
+**Symptom**: Report takes excessive time to run  
+**Cause**: Missing indexes or large data volume  
+**Validation Query**:
+```sql
+SELECT COUNT(*) FROM sos_usr_config;
+SELECT INDEX_NAME FROM USER_INDEXES WHERE TABLE_NAME = 'SOS_USR_CONFIG';
+```
+**Resolution**: Ensure proper indexing on user_id columns
+
+#### Issue 4: Globalization Problems
+**Symptom**: Special characters not displaying correctly  
+**Cause**: Character set or NLS parameter issues  
+**Validation Query**:
+```sql
+SELECT PARAMETER, VALUE 
+FROM NLS_SESSION_PARAMETERS 
+WHERE PARAMETER IN ('NLS_CHARACTERSET', 'NLS_LANGUAGE');
+```
+**Resolution**: Verify proper NLS settings and character set support
+
+## Report Execution Instructions
+
+### Running the Main Report (sosuc.pc)
 ```bash
-# Compare report user count with database query
-sqlplus -s user/pass@db <<EOF
-SELECT COUNT(*) FROM SOS_USR_CONFIG;
-EOF
+# Standard execution
+./sosuc
+
+# With output file
+./sosuc -o output_file.txt
+
+# With custom title
+./sosuc -t "SOS User Configuration Report"
+
+# With user filter
+./sosuc -u "USERID"
+
+# With line limit
+./sosuc -l 60
 ```
 
-#### 2. **Flag Accuracy Checks**
-- Cross-reference individual user flags with direct database queries
-- Verify that 'Y' values in database appear as proper 2-character codes in report
-- Confirm NULL values display as empty spaces (2 spaces)
+### Running the Simplified Report (sosucrpt.pc)
+```bash
+# Basic execution
+./sosucrpt
 
-#### 3. **Sorting Verification**
-- Ensure users appear in alphabetical order by `user_name`
-- Verify INITCAP function properly capitalizes names
-- Check that OPS$ prefix concatenation works correctly
+# With condition filter
+./sosucrpt "user_id LIKE 'SOS%'"
+```
 
-#### 4. **Header Information**
-- Validate date/time stamp matches report generation time
-- Confirm page numbering increments correctly
-- Verify company subtitle displays properly
+### Command Line Options
+- `-o filename`: Redirect output to specified file
+- `-t title`: Custom report title
+- `-u userid`: Filter by specific user ID
+- `-l number`: Set page length (30-80 lines)
+- `-c condition`: SQL WHERE condition for filtering
 
-### Expected Output Patterns
-- **Standard User**: `JSMITH01  John Smith                        PICK01  Y   N   Y   N   N   Y`
-- **Training User**: `NEWUSER1  Jane Doe                         TRAIN   Y   Y   N   Y   Y   N`
-- **Blank Fields**: Display as spaces, not NULL literals
+## Maintenance Recommendations
 
-### Common Issues to Check
-- **Missing Users**: Verify OPS$ prefix concatenation isn't excluding valid users
-- **Flag Misalignment**: Ensure 2-character spacing is maintained
-- **Truncated Names**: Check 36-character user name field limit
-- **Page Breaks**: Confirm headers appear on each new page
+### Regular Validation Schedule
+- **Daily**: Monitor report execution time and error logs
+- **Weekly**: Verify data consistency between SOS_USR_CONFIG and USR tables
+- **Monthly**: Review configuration flag distributions for anomalies
+- **Quarterly**: Performance baseline comparison and optimization review
 
-## 🧩 Related Code Context
+### Data Quality Monitoring
+```sql
+-- Daily data quality check
+SELECT 
+    COUNT(*) as total_records,
+    COUNT(CASE WHEN usr.user_id IS NULL THEN 1 END) as orphaned_records,
+    COUNT(CASE WHEN must_scan_itm NOT IN ('Y','N') AND must_scan_itm IS NOT NULL THEN 1 END) as invalid_flags
+FROM sos_usr_config u 
+LEFT OUTER JOIN usr ON u.user_id = usr.user_id;
+```
 
-### Core Dependencies
+### Index Recommendations
+```sql
+-- Verify critical indexes exist
+CREATE INDEX IF NOT EXISTS idx_sos_usr_config_user_id ON sos_usr_config(user_id);
+CREATE INDEX IF NOT EXISTS idx_usr_user_id ON usr(user_id);
+```
 
-#### 1. **Database Connection Module**
-- `ora_auto_connect()` function handles Oracle connectivity
-- Located in shared SWMS database library
-- Manages connection pooling and error handling
+### Automated Monitoring Scripts
+```sql
+-- Create monitoring view for daily checks
+CREATE OR REPLACE VIEW v_sosuc_data_quality AS
+SELECT 
+    'SOS Config Records' as metric,
+    COUNT(*) as value
+FROM sos_usr_config
+UNION ALL
+SELECT 
+    'Orphaned SOS Records',
+    COUNT(*)
+FROM sos_usr_config u 
+LEFT OUTER JOIN usr ON u.user_id = usr.user_id
+WHERE usr.user_id IS NULL
+UNION ALL
+SELECT 
+    'Invalid Flag Values',
+    COUNT(*)
+FROM sos_usr_config
+WHERE (must_scan_itm NOT IN ('Y','N') AND must_scan_itm IS NOT NULL)
+   OR (print_fl_label NOT IN ('Y','N') AND print_fl_label IS NOT NULL)
+   OR (enter_qty NOT IN ('Y','N') AND enter_qty IS NOT NULL)
+   OR (print_train_lbl NOT IN ('Y','N') AND print_train_lbl IS NOT NULL)
+   OR (flag_nos_user NOT IN ('Y','N') AND flag_nos_user IS NOT NULL)
+   OR (flag_opt_pull NOT IN ('Y','N') AND flag_opt_pull IS NOT NULL);
+```
 
-#### 2. **Condition Processing**
-- `oracle_retrieve_condition()` in `src/rpts/lib/ora_retrv_cond.pc`
-- Supports parameterized report filtering
-- Enables scheduled report execution with stored conditions
+## Technical Architecture
 
-#### 3. **Globalization Support**
-- `init_globalisation()` function supports multi-language labels
-- Retrieves localized field descriptions from configuration tables
-- `get_language_date()` formats dates per locale settings
+### File Locations
+- **Source Code**: `/rpts/sos/sosuc.pc` and `/rpts/sos/sosucrpt.pc`
+- **Forms**: `/frms/sos/sosuc1.fmb`
+- **Documentation**: This file (`SOSUC_Report_Analysis_and_Validation_Guide.md`)
 
-### Supporting Infrastructure
+### Dependencies
+- Oracle Pro*C compiler
+- SWMS common libraries (apcom, aplog)
+- Oracle database connectivity
+- SWMS globalization functions
 
-#### 1. **Report Framework**
-- Standard SWMS report header/footer formatting
-- Common pagination and print control logic
-- Shared error handling and signal management
+### Compilation Requirements
+```makefile
+# Typical compilation commands
+proc sosuc.pc
+cc -o sosuc sosuc.c -lapcom -laplog -lclntsh
+```
 
-#### 2. **Security Integration**
-- Unix user ID validation (`getlogin()`)
-- Read-only transaction mode for data protection
-- Signal handlers for graceful termination
+## Appendix A: Database Schema Reference
 
-#### 3. **Configuration Tables**
-- `SOS_USR_CONFIG`: Primary user configuration storage
-- `USR`: Standard SWMS user demographics
-- Globalization tables: Multi-language label storage
+### SOS_USR_CONFIG Table Structure
+```sql
+-- Key columns (based on source code analysis)
+USER_ID           VARCHAR2(30)    -- Primary key
+JOB_CODE          VARCHAR2(6)     -- Job classification
+MUST_SCAN_ITM     CHAR(1)         -- Y/N flag
+PRINT_FL_LABEL    CHAR(1)         -- Y/N flag
+ENTER_QTY         CHAR(1)         -- Y/N flag
+PRINT_TRAIN_LBL   CHAR(1)         -- Y/N flag
+FLAG_NOS_USER     CHAR(1)         -- Y/N flag
+FLAG_OPT_PULL     CHAR(1)         -- Y/N flag
+AUTO_ENTER_KEY    CHAR(1)         -- Y/N flag (newer addition)
+PALLET_JACK_ID    VARCHAR2(10)    -- Equipment assignment
+BOX_ID            VARCHAR2(10)    -- Box equipment
+```
 
-### Integration Points
+### USR Table Structure (Relevant Columns)
+```sql
+-- Key columns for user name resolution
+USER_ID           VARCHAR2(30)    -- Primary key (matches SOS_USR_CONFIG)
+USER_NAME         VARCHAR2(40)    -- Full user name
+SUPRVSR_USER_ID   VARCHAR2(30)    -- Supervisor reference
+LGRP_LBR_GRP      VARCHAR2(10)    -- Labor group
+```
 
-#### 1. **User Management System**
-- Links to broader SWMS user administration
-- Supports role-based access control
-- Integrates with training tracking systems
+## Appendix B: Sample Report Output
 
-#### 2. **Order Selection Workflow**
-- Configuration flags directly impact SOS operation behavior
-- Must Scan flags enforce data accuracy requirements
-- Label printing preferences affect warehouse efficiency
+### Standard Report Format
+```
+SOSUC        FILENAME                    SOS USER CONFIGURATION REPORT                    PAGE   1
+08/04/25     15:30:45                        SYSCO CORPORATION                           USERNAME
 
-#### 3. **Reporting Infrastructure**
-- Part of standard SWMS report suite
-- Supports automated scheduling and distribution
-- Integrates with warehouse management dashboards
+   USER ID         USER NAME                        PRIMARY   MUST SCAN   PRINT FLOAT   ENTER     TRAINING    NEW SOS   DOWNLOAD
+                                                   JOB CODE     ITEM        LABEL       QTY       LABEL       USER    OPTIMUM PULL
 
-### Maintenance Considerations
-- **Flag Additions**: New configuration options require code updates in multiple arrays
-- **Field Lengths**: Database schema changes may require format string updates  
-- **Localization**: New languages require globalization table entries
-- **Performance**: Large user bases may require query optimization or pagination improvements
+   OPERATOR1       John Smith                         SEL           Y             Y           N           N           N           Y
+   OPERATOR2       Jane Doe                           SEL           N             Y           Y           N           N           Y
+   SUPERVISOR1     Mike Manager                       MGR           N             N           N           N           N           N
+   TRAINEE1        USER NAME NOT FOUND                SEL           Y             Y           N           Y           Y           N
+```
+
+### Simplified Report Format
+```
+   USER ID         USER NAME                        JOB CODE    FLAG1   FLAG2   FLAG3   FLAG4
+
+   OPERATOR1       John Smith                          SEL         Y       Y       N       N
+   OPERATOR2       Jane Doe                            SEL         N       Y       Y       N
+   SUPERVISOR1     Mike Manager                        MGR         N       N       N       N
+```
+
+---
+
+**End of Document**
+
+This comprehensive validation guide provides QA engineers with the tools and procedures needed to thoroughly test and validate the SOSUC report, ensuring accurate and reliable SOS user configuration reporting in the SWMS environment.
+
+For questions or updates to this document, please contact the SWMS development team or update this document in the repository.

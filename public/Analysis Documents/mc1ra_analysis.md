@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **MC1RA** report is a **Reason Codes Overview Report** within the SWMS (Sysco Warehouse Management System) that provides a comprehensive listing of all reason codes used in the system. This report is critical for maintaining data integrity and ensuring proper categorization of various warehouse operations and transactions.
+**MC1RA** represents a dual-implementation maintenance reporting system within SWMS that covers both **Reason Codes Overview** (SQL version) and **Adjustment Type Overview** (Pro*C version) that provides a comprehensive listing of all reason codes used in the system. This report is critical for maintaining data integrity and ensuring proper categorization of various warehouse operations and transactions.
 
 ### Report Purpose
 - **Primary Function**: Lists all reason codes defined in the system organized by type and group
