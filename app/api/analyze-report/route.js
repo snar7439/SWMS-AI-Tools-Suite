@@ -1,6 +1,5 @@
-// Alternative approach - try sending text content instead of base64 files
 import { NextResponse } from 'next/server';
-import pdf from 'pdf-parse'; // You'll need to install: npm install pdf-parse
+import pdf from 'pdf-parse'; 
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;

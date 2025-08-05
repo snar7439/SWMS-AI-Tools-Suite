@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronRight, Play, Database, CheckCircle, XCircle, AlertCircle, Copy, Download, Eye, EyeOff } from 'lucide-react';
+import { ChevronDown, ChevronRight, Play, Database, CheckCircle, XCircle, AlertCircle, Copy, Download, Eye, EyeOff, X } from 'lucide-react';
 
-export default function SQLQueryTester({ analysisDocument, report }) {
+export default function SQLQueryTester({ 
+  analysisDocument, 
+  report, 
+  onToggleVisibility, 
+  isVisible = true, 
+  compact = false 
+}) {
   const [extractedQueries, setExtractedQueries] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
@@ -644,30 +650,36 @@ export default function SQLQueryTester({ analysisDocument, report }) {
       {/* Header */}
       <div className="flex-shrink-0 bg-gray-800 border-b border-gray-700 p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Database className="w-5 h-5 text-blue-400" />
-            <h2 className="text-lg font-semibold text-white">SQL Query Tester</h2>
-            {analysisDocument && (
-              <span className="px-2 py-1 bg-blue-900/30 text-blue-300 text-xs font-medium rounded">
-                {analysisDocument.name}
-              </span>
-            )}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <Database className="w-5 h-5 text-blue-400 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg font-semibold text-white truncate">SQL Query Tester</h2>
+                {analysisDocument && (
+                  <span className="px-2 py-1 bg-blue-900/30 text-blue-300 text-xs font-medium rounded flex-shrink-0">
+                    <span className="hidden sm:inline">{analysisDocument.name}</span>
+                    <span className="sm:hidden">Analysis</span>
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* Connection Status */}
             <div className="flex items-center gap-2">
               <button
                 onClick={testConnection}
                 disabled={isTestingConnection}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition-colors disabled:opacity-50"
+                title="Test database connection"
               >
                 {isTestingConnection ? (
                   <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                 ) : (
                   <Database className="w-3 h-3" />
                 )}
-                Test Connection
+                <span className="hidden md:inline">Test</span>
               </button>
               
               {connectionStatus && (
@@ -677,7 +689,9 @@ export default function SQLQueryTester({ analysisDocument, report }) {
                     : 'bg-red-900/30 text-red-300'
                 }`}>
                   {getStatusIcon(connectionStatus.success ? 'success' : 'error')}
-                  {connectionStatus.success ? 'Connected' : 'Failed'}
+                  <span className="hidden sm:inline">
+                    {connectionStatus.success ? 'Connected' : 'Failed'}
+                  </span>
                 </div>
               )}
             </div>
@@ -686,10 +700,23 @@ export default function SQLQueryTester({ analysisDocument, report }) {
             {Object.keys(queryResults).length > 0 && (
               <button
                 onClick={exportResults}
-                className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm rounded-lg transition-colors"
+                className="flex items-center gap-1 px-2 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-lg transition-colors"
+                title="Export results"
               >
                 <Download className="w-3 h-3" />
-                Export Results
+                <span className="hidden lg:inline">Export</span>
+              </button>
+            )}
+
+            {/* Hide Panel Button */}
+            {onToggleVisibility && (
+              <button
+                onClick={onToggleVisibility}
+                className="flex items-center gap-1 px-2 py-1.5 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded-lg transition-colors"
+                title="Hide query testing panel"
+              >
+                <X className="w-3 h-3" />
+                <span className="hidden xl:inline">Hide</span>
               </button>
             )}
           </div>
@@ -709,25 +736,30 @@ export default function SQLQueryTester({ analysisDocument, report }) {
         <div className="flex">
           <button
             onClick={() => setCurrentTab('extracted')}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors ${
               currentTab === 'extracted'
                 ? 'bg-gray-800 text-white border-b-2 border-blue-400'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
             <Eye className="w-4 h-4" />
-            Extracted Queries ({extractedQueries.length})
+            <span className="hidden sm:inline">Extracted</span>
+            <span className="sm:hidden">Queries</span>
+            <span className="bg-gray-600 text-gray-300 px-1 py-0.5 rounded text-xs">
+              {extractedQueries.length}
+            </span>
           </button>
           <button
             onClick={() => setCurrentTab('custom')}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors ${
               currentTab === 'custom'
                 ? 'bg-gray-800 text-white border-b-2 border-blue-400'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
             <Database className="w-4 h-4" />
-            Custom Query
+            <span className="hidden sm:inline">Custom</span>
+            <span className="sm:hidden">SQL</span>
           </button>
         </div>
       </div>
@@ -768,7 +800,7 @@ export default function SQLQueryTester({ analysisDocument, report }) {
                     onClick={() => toggleQueryExpansion(query.id)}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <button className="text-gray-400 hover:text-white">
+                      <button className="text-gray-400 hover:text-white flex-shrink-0">
                         {expandedQueries.has(query.id) ? 
                           <ChevronDown className="w-4 h-4" /> : 
                           <ChevronRight className="w-4 h-4" />
@@ -784,10 +816,12 @@ export default function SQLQueryTester({ analysisDocument, report }) {
                         </p>
                       </div>
                       
-                      {getStatusIcon(query.status, executingQueries.has(query.id))}
+                      <div className="flex-shrink-0">
+                        {getStatusIcon(query.status, executingQueries.has(query.id))}
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="flex items-center gap-2 ml-4 flex-shrink-0">
                       <button
                         onClick={(e) => { e.stopPropagation(); copyQuery(query.query); }}
                         className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded transition-colors"
@@ -802,7 +836,7 @@ export default function SQLQueryTester({ analysisDocument, report }) {
                         className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded transition-colors"
                       >
                         <Play className="w-3 h-3" />
-                        Run
+                        <span className="hidden sm:inline">Run</span>
                       </button>
                     </div>
                   </div>
@@ -817,8 +851,6 @@ export default function SQLQueryTester({ analysisDocument, report }) {
                           <code>{query.query}</code>
                         </pre>
                       </div>
-
-
 
                       {/* Validation Issues (if any) */}
                       {queryResults[query.id]?.validationIssues && (

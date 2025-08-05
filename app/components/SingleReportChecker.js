@@ -11,12 +11,19 @@ export default function SingleReportCheck() {
   // State for navigation panel visibility
   const [isNavPanelVisible, setIsNavPanelVisible] = useState(true);
   
-  // State for analysis document visibility
+  // State for analysis document visibility in report check tab
   const [isAnalysisVisible, setIsAnalysisVisible] = useState(true);
   
-  // State for resizable analysis document width
+  // State for query testing panel visibility in SQL tab
+  const [isQueryTestingVisible, setIsQueryTestingVisible] = useState(true);
+  
+  // State for resizable analysis document width (report check tab)
   const [analysisWidth, setAnalysisWidth] = useState(50); // percent, default 50%
   const [isResizing, setIsResizing] = useState(false);
+
+  // State for resizable query testing width (SQL tab)
+  const [queryTestingWidth, setQueryTestingWidth] = useState(50); // percent, default 50%
+  const [isResizingQuery, setIsResizingQuery] = useState(false);
 
   // State for inline results visibility
   const [showInlineResults, setShowInlineResults] = useState(false);
@@ -39,7 +46,7 @@ export default function SingleReportCheck() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isNavPanelVisible]);
 
-  // Mouse event handlers for resizing
+  // Mouse event handlers for resizing (report check tab)
   const handleResizeStart = (e) => {
     setIsResizing(true);
     document.body.style.cursor = 'col-resize';
@@ -47,17 +54,37 @@ export default function SingleReportCheck() {
 
   const handleResize = (e) => {
     if (!isResizing) return;
-    // Calculate new width based on mouse position
     const container = document.getElementById('analysis-resize-container');
     if (!container) return;
     const rect = container.getBoundingClientRect();
     let percent = ((rect.right - e.clientX) / rect.width) * 100;
-    percent = Math.max(20, Math.min(80, percent)); // Clamp between 20% and 80%
+    percent = Math.max(20, Math.min(80, percent));
     setAnalysisWidth(percent);
   };
 
   const handleResizeEnd = () => {
     setIsResizing(false);
+    document.body.style.cursor = '';
+  };
+
+  // Mouse event handlers for resizing (SQL tab)
+  const handleQueryResizeStart = (e) => {
+    setIsResizingQuery(true);
+    document.body.style.cursor = 'col-resize';
+  };
+
+  const handleQueryResize = (e) => {
+    if (!isResizingQuery) return;
+    const container = document.getElementById('query-resize-container');
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    let percent = ((e.clientX - rect.left) / rect.width) * 100;
+    percent = Math.max(20, Math.min(80, percent));
+    setQueryTestingWidth(percent);
+  };
+
+  const handleQueryResizeEnd = () => {
+    setIsResizingQuery(false);
     document.body.style.cursor = '';
   };
 
@@ -75,6 +102,21 @@ export default function SingleReportCheck() {
       window.removeEventListener('mouseup', handleResizeEnd);
     };
   }, [isResizing]);
+
+  // Attach mousemove and mouseup listeners for query resize
+  useEffect(() => {
+    if (isResizingQuery) {
+      window.addEventListener('mousemove', handleQueryResize);
+      window.addEventListener('mouseup', handleQueryResizeEnd);
+    } else {
+      window.removeEventListener('mousemove', handleQueryResize);
+      window.removeEventListener('mouseup', handleQueryResizeEnd);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleQueryResize);
+      window.removeEventListener('mouseup', handleQueryResizeEnd);
+    };
+  }, [isResizingQuery]);
   
   const [activeTab, setActiveTab] = useState('check');
   const [selectedReport, setSelectedReport] = useState(null);
@@ -257,6 +299,10 @@ export default function SingleReportCheck() {
     setIsAnalysisVisible(!isAnalysisVisible);
   };
 
+  const handleToggleQueryTesting = () => {
+    setIsQueryTestingVisible(!isQueryTestingVisible);
+  };
+
   const handleToggleInlineResults = () => {
     setShowInlineResults(!showInlineResults);
   };
@@ -341,7 +387,7 @@ export default function SingleReportCheck() {
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
                   </svg>
-                  <span>{tab.name}</span>
+                  <span className="hidden sm:inline">{tab.name}</span>
                 </button>
               ))}
             </nav>
@@ -501,7 +547,7 @@ export default function SingleReportCheck() {
                               className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4M14 4h6m0 0v6m0-6L10 14" />
                               </svg>
                               Full View
                             </button>
@@ -595,36 +641,127 @@ export default function SingleReportCheck() {
               activeTab === 'sql' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
             }`}
           >
-            <div className="flex-1 min-h-0 p-4 h-full">
-              {!analysisDocument ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center max-w-md">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-700 rounded-full flex items-center justify-center">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-                      </svg>
+            {!analysisDocument ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center max-w-md">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-700 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">Analysis Document Required</h3>
+                  <p className="text-gray-400 text-sm mb-4">
+                    Load an analysis document first to extract and test SQL queries. The document should contain SQL queries in code blocks or with sql-- comments.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('check')}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+                  >
+                    Go to Report Check
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col flex-1 min-h-0 overflow-x-auto min-w-0 h-full">
+                {/* Main Content Area - Fixed height with internal scrolling */}
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  <div className="p-3 h-full">
+                    {/* Split view: Report on left, SQL Query Testing on right */}
+                    <div className="h-full overflow-x-auto min-w-0 relative"> 
+                      <div id="query-resize-container" className="flex gap-1.5 h-full min-w-[600px]">
+                        {/* Report Section */}
+                        <div 
+                          style={{ 
+                            width: isQueryTestingVisible ? `${queryTestingWidth}%` : '100%' 
+                          }} 
+                          className="bg-gray-800 rounded-lg border border-gray-700 shadow-lg transition-all duration-300 flex flex-col min-w-0"
+                        >
+                          <div className="flex-1 p-2 min-h-0">
+                            {selectedReport ? (
+                              <div className="h-full flex flex-col">
+                                <div className="flex-1 min-h-0 border border-gray-600 rounded overflow-hidden">
+                                  <SingleReportViewer
+                                    report={selectedReport}
+                                    slot={0}
+                                    title=""
+                                    onReportReplace={handleReportSelect}
+                                    compact={true}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="h-full">
+                                <DragDropArea
+                                  onFileUpload={handleFileUpload}
+                                  slot={0}
+                                  title="SWMS Report"
+                                  sub="Select from list or drop report here"
+                                  mode="single"
+                                  compact={true}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Resize Handle */}
+                        {isQueryTestingVisible && (
+                          <div
+                            className="w-1 cursor-col-resize flex items-center justify-center hover:bg-gray-300 transition-colors rounded"
+                            onMouseDown={handleQueryResizeStart}
+                            style={{ zIndex: 10 }}
+                            title="Drag to resize"
+                          >
+                            <div className="w-0.5 h-8 bg-gray-500 rounded" />
+                          </div>
+                        )}
+
+                        {/* SQL Query Testing Section */}
+                        <div 
+                          style={{ 
+                            width: isQueryTestingVisible ? `${100 - queryTestingWidth}%` : '0%',
+                            opacity: isQueryTestingVisible ? 1 : 0
+                          }} 
+                          className="bg-gray-800 rounded-lg border border-gray-700 shadow-lg transition-all duration-300 flex flex-col min-w-0 overflow-hidden"
+                        >
+                          <div className="flex-1 p-2 min-h-0">
+                            <div className="h-full flex flex-col">
+                              <div className="flex-1 min-h-0 border border-gray-600 rounded overflow-hidden">
+                                <SQLQueryTester
+                                  analysisDocument={analysisDocument}
+                                  report={selectedReport}
+                                  onToggleVisibility={handleToggleQueryTesting}
+                                  isVisible={isQueryTestingVisible}
+                                  compact={true}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Show Query Testing Button */}
+                      {!isQueryTestingVisible && (
+                        <div className="absolute top-1/2 right-4 transform -translate-y-1/2 z-20">
+                          <button
+                            onClick={handleToggleQueryTesting}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-l-lg shadow-lg transition-all duration-200 flex items-center gap-2"
+                            title="Show Query Testing"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                            <span className="hidden lg:inline text-sm">Query Testing</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Analysis Document Required</h3>
-                    <p className="text-gray-400 text-sm mb-4">
-                      Load an analysis document first to extract and test SQL queries. The document should contain SQL queries in code blocks or with sql-- comments.
-                    </p>
-                    <button
-                      onClick={() => setActiveTab('check')}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
-                    >
-                      Go to Report Check
-                    </button>
                   </div>
                 </div>
-              ) : (
-                <SQLQueryTester
-                  analysisDocument={analysisDocument}
-                  report={selectedReport}
-                />
-              )}
-            </div>
+              </div>
+            )}
           </div>
-
+          
           {/* Results Tab */}
           <div 
             className={`absolute inset-0 transition-opacity duration-200 ${
