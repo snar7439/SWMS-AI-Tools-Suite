@@ -731,7 +731,9 @@ export default function SQLQueryTester({
         {connectionStatus && !connectionStatus.success && (
           <div className="mt-3 p-3 bg-red-900/20 border border-red-800 rounded-lg">
             <p className="text-red-300 text-sm font-medium">Database Connection Failed</p>
-            <p className="text-red-400 text-xs mt-1">{connectionStatus.error}</p>
+            <div className="text-red-400 text-xs mt-1 break-words whitespace-pre-wrap">
+              {connectionStatus.error}
+            </div>
           </div>
         )}
       </div>
@@ -980,11 +982,13 @@ export default function SQLQueryTester({
                           ) : (
                             <div className="bg-red-900/20 border border-red-800 rounded p-3">
                               <p className="text-red-300 text-sm font-medium">Query Failed</p>
-                              <p className="text-red-400 text-xs mt-1">{queryResults[query.id].error}</p>
+                              <div className="text-red-400 text-xs mt-1 break-words whitespace-pre-wrap">
+                                {queryResults[query.id].error}
+                              </div>
                               {queryResults[query.id].failedStatement && (
                                 <div className="mt-2">
                                   <p className="text-red-400 text-xs font-medium">Failed Statement {queryResults[query.id].failedStatement}:</p>
-                                  <pre className="text-red-300 text-xs mt-1 font-mono">
+                                  <pre className="text-red-300 text-xs mt-1 font-mono break-words whitespace-pre-wrap">
                                     <code>{queryResults[query.id].failedStatementText}</code>
                                   </pre>
                                 </div>
@@ -1176,11 +1180,13 @@ export default function SQLQueryTester({
                   ) : (
                     <div className="bg-red-900/20 border border-red-800 rounded p-4">
                       <p className="text-red-300 text-sm font-medium">Query Failed</p>
-                      <p className="text-red-400 text-xs mt-2">{queryResults['custom_query'].error}</p>
+                      <div className="text-red-400 text-xs mt-2 break-words whitespace-pre-wrap">
+                        {queryResults['custom_query'].error}
+                      </div>
                       {queryResults['custom_query'].failedStatement && (
                         <div className="mt-2">
                           <p className="text-red-400 text-xs font-medium">Failed Statement {queryResults['custom_query'].failedStatement}:</p>
-                          <pre className="text-red-300 text-xs mt-1 font-mono">
+                          <pre className="text-red-300 text-xs mt-1 font-mono break-words whitespace-pre-wrap">
                             <code>{queryResults['custom_query'].failedStatementText}</code>
                           </pre>
                         </div>
