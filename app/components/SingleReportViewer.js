@@ -539,7 +539,10 @@ export default function SingleReportViewer({
             </h3>
             {report && (
               <div className="flex items-center gap-2">
-                <p className="text-xs font-medium text-white truncate">
+                <p 
+                  className="text-xs font-medium text-white truncate max-w-[200px]" 
+                  title={report.name}
+                >
                   {report.name}
                 </p>
                 {shouldShowMarkdown && (

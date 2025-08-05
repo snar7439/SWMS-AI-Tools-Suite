@@ -657,7 +657,12 @@ export default function SQLQueryTester({
                 <h2 className="text-lg font-semibold text-white truncate">SQL Query Tester</h2>
                 {analysisDocument && (
                   <span className="px-2 py-1 bg-blue-900/30 text-blue-300 text-xs font-medium rounded flex-shrink-0">
-                    <span className="hidden sm:inline">{analysisDocument.name}</span>
+                    <span 
+                      className="hidden sm:inline max-w-[120px] truncate" 
+                      title={analysisDocument.name}
+                    >
+                      {analysisDocument.name}
+                    </span>
                     <span className="sm:hidden">Analysis</span>
                   </span>
                 )}
