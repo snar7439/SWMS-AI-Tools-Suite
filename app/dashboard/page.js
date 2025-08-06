@@ -74,6 +74,14 @@ export default function DashboardPage() {
       status: 'Available'
     },
     {
+      id: 'root-ripple',
+      title: 'Root Ripple',
+      description: 'AI-driven root cause analysis for faster operational troubleshooting',
+      icon: '🔍',
+      route: '/root-ripple',
+      status: 'Coming Soon'
+    },
+    {
       id: 'warehouse-simulation',
       title: 'Warehouse Simulation',
       description: 'Simulate warehouse operations with AI',
