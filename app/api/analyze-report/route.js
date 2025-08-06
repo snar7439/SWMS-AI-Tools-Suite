@@ -130,7 +130,7 @@ Please analyze the report against the analysis document and respond with ONLY th
 
     console.log('[DEBUG] Calling agent with text-based approach...');
 
-    const agentRes = await fetch('https://sysco-gen-ai-platform.labseag.us-east-1.aws.sysco.net/api/sysco-gen-ai-platform/agents/v1/content/generic/answer', {
+    const agentRes = await fetch('https://sage.paastry.sysco.net/api/sysco-gen-ai-platform/agents/v1/content/generic/answer', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',

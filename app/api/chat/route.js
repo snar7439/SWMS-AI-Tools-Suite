@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(req) {
   try {
     const body = await req.json();
-    const response = await fetch('https://sysco-gen-ai-platform.labseag.us-east-1.aws.sysco.net/api/sysco-gen-ai-platform/agents/v1/content/rag/answer', {
+    const response = await fetch('https://sage.paastry.sysco.net/api/sysco-gen-ai-platform/agents/v1/content/rag/answer', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
