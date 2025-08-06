@@ -76,10 +76,10 @@ export async function POST(request) {
     const directPrompt = `You are a document compliance analyst. Compare the following SWMS report against its analysis document and return a JSON response.
 
 ANALYSIS DOCUMENT (${analysisName}):
-${analysisText.substring(0, 3000)}${analysisText.length > 3000 ? '...[truncated]' : ''}
+${analysisText}
 
 REPORT DOCUMENT (${reportName}):
-${reportText.substring(0, 3000)}${reportText.length > 3000 ? '...[truncated]' : ''}
+${reportText}
 
 Please analyze the report against the analysis document and respond with ONLY this JSON structure (no other text):
 
@@ -120,12 +120,11 @@ Please analyze the report against the analysis document and respond with ONLY th
   }
 }`;
 
-    // Prepare payload - try without files first, just text
+    // Prepare payload - text
     const payload = {
       ai_agent_id: '68887a5b6a0837f7039b3a7e',
       user_query: directPrompt,
       configuration_environment: 'DEV'
-      // Note: Removed files array to test if file processing is the issue
     };
 
     console.log('[DEBUG] Calling agent with text-based approach...');
