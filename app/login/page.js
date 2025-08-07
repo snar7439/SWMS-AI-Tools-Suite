@@ -87,14 +87,14 @@ export default function LoginPage() {
       {/* Login Card */}
       <div className="rounded-3xl w-full max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl z-10 ml-1 sm:ml-3 md:ml-5 lg:ml-6 xl:ml-8 overflow-hidden" style={containerStyle}>
         {/* Header */}
-        <div className="px-6 py-6 sm:px-8 sm:py-6 lg:px-10 lg:py-8 xl:px-12 xl:py-10 bg-[#0690cf] text-white text-center">
+        <div className="px-6 py-4 sm:px-8 sm:py-4 lg:px-10 lg:py-5 xl:px-12 xl:py-6 bg-[#0690cf] text-white text-center">
           <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold">SWMS AI Tools Suite</h1>
           <p className="mt-2 text-sm lg:text-base xl:text-lg text-[#b3e3fa]">Sign in to access SWMS AI Tools</p>
         </div>
 
         {/* Form */}
-        <div className="px-6 py-6 sm:px-8 sm:py-6 lg:px-10 lg:py-8 xl:px-12 xl:py-10 bg-white bg-opacity-95">
-          <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-8">
+        <div className="px-6 py-4 sm:px-8 sm:py-4 lg:px-10 lg:py-5 xl:px-12 xl:py-6 bg-white bg-opacity-95">
+          <form onSubmit={handleSubmit} className="space-y-4 lg:space-y-5">
             {/* Environment Selection */}
             <div>
               <label htmlFor="environment" className="block text-sm lg:text-base xl:text-lg font-medium text-gray-700 mb-2">Environment</label>
@@ -209,7 +209,7 @@ export default function LoginPage() {
           </form>
 
           {/* Footer */}
-          <div className="mt-6 lg:mt-8 text-center">
+          <div className="mt-4 lg:mt-5 text-center">
             <p className="text-xs lg:text-sm text-gray-500">Secure connection to SWMS Service Layer</p>
             <div className="mt-2 flex items-center justify-center gap-1">
               <div className="w-2 h-2 lg:w-3 lg:h-3 bg-green-500 rounded-full"></div>
