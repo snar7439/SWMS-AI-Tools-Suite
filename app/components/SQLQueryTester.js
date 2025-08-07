@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronRight, Play, Database, CheckCircle, XCircle, AlertCircle, Copy, Download, Eye, EyeOff, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Play, Database, CheckCircle, XCircle, AlertCircle, Copy, Download, Eye, EyeOff, X, Search } from 'lucide-react';
 
 export default function SQLQueryTester({ 
   analysisDocument, 
@@ -17,6 +17,9 @@ export default function SQLQueryTester({
   const [customQuery, setCustomQuery] = useState('');
   const [showCustomQuery, setShowCustomQuery] = useState(false);
   const [currentTab, setCurrentTab] = useState('extracted');
+  const [checkingQueries, setCheckingQueries] = useState(new Set());
+  const [reportCheckResults, setReportCheckResults] = useState({});
+  const [expandedReportResults, setExpandedReportResults] = useState(new Set()); // New state for expanded report results
 
   // Clear all results and state when analysis document changes
   useEffect(() => {
@@ -27,6 +30,9 @@ export default function SQLQueryTester({
       setExpandedQueries(new Set());
       setCustomQuery('');
       setCurrentTab('extracted');
+      setCheckingQueries(new Set());
+      setReportCheckResults({});
+      setExpandedReportResults(new Set()); // Clear expanded report results
       
       // Reset query statuses to pending
       setExtractedQueries(prev => prev.map(query => ({
@@ -536,6 +542,19 @@ export default function SQLQueryTester({
     });
   };
 
+  // Toggle report result expansion
+  const toggleReportResultExpansion = (queryId) => {
+    setExpandedReportResults(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(queryId)) {
+        newSet.delete(queryId);
+      } else {
+        newSet.add(queryId);
+      }
+      return newSet;
+    });
+  };
+
   // Copy query to clipboard
   const copyQuery = async (query) => {
     try {
@@ -625,6 +644,101 @@ export default function SQLQueryTester({
     URL.revokeObjectURL(url);
   };
 
+  // Check query results against reports
+  const checkAgainstReport = async (queryId) => {
+    if (!report || !queryResults[queryId] || !queryResults[queryId].success) {
+      return;
+    }
+
+    setCheckingQueries(prev => new Set([...prev, queryId]));
+
+    try {
+      // Debug: Log the report structure
+      console.log('[DEBUG] Report structure:', {
+        hasFile: !!report.file,
+        hasPdfUrl: !!report.pdfUrl,
+        hasContent: !!report.content,
+        name: report.name,
+        reportKeys: Object.keys(report)
+      });
+
+      // Get the query and its results
+      const queryData = extractedQueries.find(q => q.id === queryId) || 
+                       { id: queryId, query: customQuery, description: 'Custom Query' };
+      const results = queryResults[queryId];
+
+      // Helper to get a File from file, pdfUrl, or content (similar to SingleReportChecker)
+      const getFileFromSource = async (doc, fallbackName) => {
+        if (doc.file) return doc.file;
+        if (doc.pdfUrl) {
+          const res = await fetch(doc.pdfUrl);
+          const blob = await res.blob();
+          return new File([blob], doc.name || fallbackName, { type: blob.type || 'application/pdf' });
+        }
+        if (doc.content) {
+          // Assume content is a string (e.g. markdown)
+          return new File([doc.content], doc.name || fallbackName, { type: 'text/markdown' });
+        }
+        return null;
+      };
+
+      // Prepare form data for the API
+      const formData = new FormData();
+      
+      // Add report file using the helper function
+      const reportFile = await getFileFromSource(report, 'report.pdf');
+      if (!reportFile) {
+        throw new Error('No report content available. Report must have file, pdfUrl, or content property.');
+      }
+      formData.append('report', reportFile, report.name || 'report.pdf');
+
+      // Add query data and results as JSON strings
+      formData.append('queryData', JSON.stringify(queryData));
+      formData.append('queryResults', JSON.stringify(results));
+
+      // Call the API (fix the endpoint URL)
+      const response = await fetch('/api/check-report', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `API request failed: ${response.status}`);
+      }
+
+      const responseData = await response.json();
+
+      if (!responseData.success) {
+        throw new Error(responseData.error || 'API returned unsuccessful response');
+      }
+
+      // Store the check results
+      setReportCheckResults(prev => ({
+        ...prev,
+        [queryId]: responseData.result
+      }));
+
+    } catch (error) {
+      console.error('Report check failed:', error);
+      setReportCheckResults(prev => ({
+        ...prev,
+        [queryId]: {
+          success: false,
+          error: error.message,
+          checkedAt: new Date().toISOString(),
+          queryId: queryId
+        }
+      }));
+    } finally {
+      setCheckingQueries(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(queryId);
+        return newSet;
+      });
+    }
+  };
+
   const getStatusIcon = (status, isExecuting = false) => {
     if (isExecuting) {
       return <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>;
@@ -638,6 +752,244 @@ export default function SQLQueryTester({
       default:
         return <AlertCircle className="w-4 h-4 text-gray-400" />;
     }
+  };
+
+  // Get overall accuracy color class
+  const getAccuracyColorClass = (accuracy) => {
+    if (accuracy >= 80) return 'text-green-400';
+    if (accuracy >= 60) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
+  // Render condensed report check results
+  const renderCondensedReportResults = (queryId) => {
+    const result = reportCheckResults[queryId];
+    if (!result || !result.success) return null;
+
+    const isExpanded = expandedReportResults.has(queryId);
+    const overallAccuracy = result.overallAccuracy || 0;
+
+    return (
+      <div className="mt-4 space-y-3">
+        {/* Condensed Summary */}
+        <div className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h5 className="text-sm font-medium text-blue-300">Report Accuracy Check</h5>
+            <button
+              onClick={() => toggleReportResultExpansion(queryId)}
+              className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors"
+            >
+              {isExpanded ? 
+                <>
+                  <ChevronDown className="w-3 h-3" />
+                  Hide Details
+                </> : 
+                <>
+                  <ChevronRight className="w-3 h-3" />
+                  View Details
+                </>
+              }
+            </button>
+          </div>
+
+          {/* Quick Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+            <div className="text-center p-3 bg-gray-750 rounded">
+              <div className={`text-xl font-bold ${getAccuracyColorClass(overallAccuracy)}`}>
+                {overallAccuracy}%
+              </div>
+              <div className="text-xs text-gray-400">Overall</div>
+            </div>
+            
+            {result.summary && (
+              <>
+                <div className="text-center p-3 bg-gray-750 rounded">
+                  <div className="text-xl font-bold text-green-400">
+                    {result.summary.matches || 0}
+                  </div>
+                  <div className="text-xs text-gray-400">Matches</div>
+                </div>
+                <div className="text-center p-3 bg-gray-750 rounded">
+                  <div className="text-xl font-bold text-yellow-400">
+                    {result.summary.discrepancies || 0}
+                  </div>
+                  <div className="text-xs text-gray-400">Issues</div>
+                </div>
+                <div className="text-center p-3 bg-gray-750 rounded">
+                  <div className="text-xl font-bold text-blue-400">
+                    {result.summary.totalChecks || 0}
+                  </div>
+                  <div className="text-xs text-gray-400">Checks</div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Quick Status */}
+          <div className="text-center">
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
+              overallAccuracy >= 80 
+                ? 'bg-green-900/30 text-green-300' 
+                : overallAccuracy >= 60 
+                ? 'bg-yellow-900/30 text-yellow-300' 
+                : 'bg-red-900/30 text-red-300'
+            }`}>
+              {overallAccuracy >= 80 ? (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  High Accuracy
+                </>
+              ) : overallAccuracy >= 60 ? (
+                <>
+                  <AlertCircle className="w-4 h-4" />
+                  Moderate Accuracy
+                </>
+              ) : (
+                <>
+                  <XCircle className="w-4 h-4" />
+                  Low Accuracy
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Expanded Details */}
+        {isExpanded && (
+          <div className="space-y-4">
+            {/* Detailed Accuracy Scores */}
+            <div className="bg-gray-800 border border-gray-600 rounded p-4">
+              <h6 className="text-sm font-medium text-blue-300 mb-3">Detailed Accuracy Scores</h6>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-white">
+                    {result.accuracyScore || 0}%
+                  </div>
+                  <div className="text-xs text-gray-400">Data Accuracy</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-white">
+                    {result.alignmentScore || 0}%
+                  </div>
+                  <div className="text-xs text-gray-400">Alignment</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-white">
+                    {result.dataConsistency || 0}%
+                  </div>
+                  <div className="text-xs text-gray-400">Consistency</div>
+                </div>
+                <div className="text-center">
+                  <div className={`text-lg font-bold ${getAccuracyColorClass(overallAccuracy)}`}>
+                    {overallAccuracy}%
+                  </div>
+                  <div className="text-xs text-gray-400">Overall</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Summary Details */}
+            {result.summary && (
+              <div className="bg-gray-800 border border-gray-600 rounded p-4">
+                <h6 className="text-sm font-medium text-blue-300 mb-3">Analysis Summary</h6>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-green-400">
+                      {result.summary.matches || 0}
+                    </div>
+                    <div className="text-xs text-gray-400">Matches</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-yellow-400">
+                      {result.summary.discrepancies || 0}
+                    </div>
+                    <div className="text-xs text-gray-400">Discrepancies</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-red-400">
+                      {result.summary.missing || 0}
+                    </div>
+                    <div className="text-xs text-gray-400">Missing</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-gray-300">
+                      {result.summary.totalChecks || 0}
+                    </div>
+                    <div className="text-xs text-gray-400">Total Checks</div>
+                  </div>
+                </div>
+                
+                {/* Strengths and Improvements */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  {result.summary.strengths && result.summary.strengths.length > 0 && (
+                    <div>
+                      <h7 className="text-xs font-medium text-green-300 mb-2 block">Strengths</h7>
+                      <ul className="text-xs text-gray-300 list-disc list-inside space-y-1">
+                        {result.summary.strengths.map((strength, idx) => (
+                          <li key={idx}>{strength}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {result.summary.improvements && result.summary.improvements.length > 0 && (
+                    <div>
+                      <h7 className="text-xs font-medium text-yellow-300 mb-2 block">Areas for Improvement</h7>
+                      <ul className="text-xs text-gray-300 list-disc list-inside space-y-1">
+                        {result.summary.improvements.map((improvement, idx) => (
+                          <li key={idx}>{improvement}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Detailed Findings */}
+            {result.findings && result.findings.length > 0 && (
+              <div className="bg-gray-800 border border-gray-600 rounded p-4">
+                <h6 className="text-sm font-medium text-blue-300 mb-3">Detailed Findings</h6>
+                <div className="space-y-3">
+                  {result.findings.map((finding, idx) => (
+                    <div key={idx} className={`p-3 rounded border ${
+                      finding.severity === 'high' ? 'bg-red-900/20 border-red-800' :
+                      finding.severity === 'medium' ? 'bg-yellow-900/20 border-yellow-800' :
+                      'bg-blue-900/20 border-blue-800'
+                    }`}>
+                      <div className="flex items-start justify-between mb-2">
+                        <span className={`px-2 py-1 text-xs font-medium rounded ${
+                          finding.type === 'match' ? 'bg-green-900/30 text-green-300' :
+                          finding.type === 'discrepancy' ? 'bg-yellow-900/30 text-yellow-300' :
+                          'bg-red-900/30 text-red-300'
+                        }`}>
+                          {finding.type}
+                        </span>
+                        <span className={`px-2 py-1 text-xs rounded ${
+                          finding.severity === 'high' ? 'bg-red-800 text-red-200' :
+                          finding.severity === 'medium' ? 'bg-yellow-800 text-yellow-200' :
+                          'bg-blue-800 text-blue-200'
+                        }`}>
+                          {finding.severity}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-300 mb-2">{finding.description}</p>
+                      {finding.impact && (
+                        <p className="text-xs text-gray-400 italic">Impact: {finding.impact}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="text-xs text-gray-500 text-center">
+              Checked: {new Date(result.checkedAt).toLocaleString()}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Check if connection is ready
@@ -978,6 +1330,39 @@ export default function SQLQueryTester({
                                   <p className="text-gray-400 text-sm">No data returned</p>
                                 </div>
                               )}
+
+                              {/* Check Against Report Button */}
+                              {report && (
+                                <div className="flex justify-center pt-3">
+                                  <button
+                                    onClick={() => checkAgainstReport(query.id)}
+                                    disabled={checkingQueries.has(query.id) || !queryResults[query.id]?.success}
+                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
+                                  >
+                                    {checkingQueries.has(query.id) ? (
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    ) : (
+                                      <Search className="w-4 h-4" />
+                                    )}
+                                    Check Against Report
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Condensed Report Check Results */}
+                              {reportCheckResults[query.id] && reportCheckResults[query.id].success && renderCondensedReportResults(query.id)}
+
+                              {/* Report Check Error */}
+                              {reportCheckResults[query.id] && !reportCheckResults[query.id].success && (
+                                <div className="mt-4">
+                                  <div className="bg-red-900/20 border border-red-800 rounded p-3">
+                                    <p className="text-red-300 text-sm font-medium">Report Check Failed</p>
+                                    <div className="text-red-400 text-xs mt-1 break-words whitespace-pre-wrap">
+                                      {reportCheckResults[query.id].error}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <div className="bg-red-900/20 border border-red-800 rounded p-3">
@@ -1174,6 +1559,39 @@ export default function SQLQueryTester({
                       {queryResults['custom_query'].data && queryResults['custom_query'].data.length === 0 && (
                         <div className="bg-gray-800 border border-gray-600 rounded p-4 text-center">
                           <p className="text-gray-400 text-sm">No data returned</p>
+                        </div>
+                      )}
+
+                      {/* Check Against Report Button */}
+                      {report && (
+                        <div className="flex justify-center pt-3">
+                          <button
+                            onClick={() => checkAgainstReport('custom_query')}
+                            disabled={checkingQueries.has('custom_query') || !queryResults['custom_query']?.success}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
+                          >
+                            {checkingQueries.has('custom_query') ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            ) : (
+                              <Search className="w-4 h-4" />
+                            )}
+                            Check Against Report
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Condensed Report Check Results for Custom Query */}
+                      {reportCheckResults['custom_query'] && reportCheckResults['custom_query'].success && renderCondensedReportResults('custom_query')}
+
+                      {/* Report Check Error for Custom Query */}
+                      {reportCheckResults['custom_query'] && !reportCheckResults['custom_query'].success && (
+                        <div className="mt-4">
+                          <div className="bg-red-900/20 border border-red-800 rounded p-3">
+                            <p className="text-red-300 text-sm font-medium">Report Check Failed</p>
+                            <div className="text-red-400 text-xs mt-1 break-words whitespace-pre-wrap">
+                              {reportCheckResults['custom_query'].error}
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>

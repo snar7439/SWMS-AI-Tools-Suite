@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import pdf from 'pdf-parse'; 
 
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+export const maxDuration = 30000000;
 
 async function extractTextFromPDF(pdfBuffer) {
   try {
@@ -16,7 +16,7 @@ async function extractTextFromPDF(pdfBuffer) {
 
 export async function POST(request) {
   try {
-    console.log('[DEBUG] Starting report analysis with text extraction...');
+    console.log('[DEBUG] Starting report analysis with JSON structure...');
     
     const formData = await request.formData();
     const reportFile = formData.get('report');
@@ -72,62 +72,27 @@ export async function POST(request) {
       }, { status: 500 });
     }
 
-    // Create a more direct prompt with the extracted text
-    const directPrompt = `You are a document compliance analyst. Compare the following SWMS report against its analysis document and return a JSON response.
+    // Send extracted texts in simple JSON format
+    const structuredData = {
+      report: {
+        name: reportName,
+        content: reportText
+      },
+      analysis: {
+        name: analysisName,
+        content: analysisText
+      }
+    };
 
-ANALYSIS DOCUMENT (${analysisName}):
-${analysisText}
-
-REPORT DOCUMENT (${reportName}):
-${reportText}
-
-Please analyze the report against the analysis document and respond with ONLY this JSON structure (no other text):
-
-{
-  "overallScores": {
-    "accuracy": 85,
-    "alignment": 78,
-    "coverage": 82,
-    "compliance": 90
-  },
-  "detailedFindings": [
-    {
-      "type": "missing",
-      "section": "Risk Assessment",
-      "severity": "high",
-      "description": "Risk assessment section is incomplete",
-      "recommendation": "Add detailed risk analysis",
-      "analysisReference": "Analysis requires comprehensive risk evaluation"
-    }
-  ],
-  "summary": {
-    "totalIssues": 5,
-    "criticalIssues": 2,
-    "recommendations": 3,
-    "contentMatches": 12,
-    "missingElements": 2,
-    "strengths": ["Clear structure", "Good formatting"],
-    "weaknesses": ["Missing details", "Incomplete sections"]
-  },
-  "sectionAnalysis": {
-    "Executive Summary": {
-      "present": true,
-      "completeness": 85,
-      "quality": 80,
-      "issues": ["Minor formatting issues"],
-      "analysisRequirement": "Executive summary with key findings"
-    }
-  }
-}`;
-
-    // Prepare payload - text
+    // Prepare payload with the extracted texts
     const payload = {
       ai_agent_id: '68887a5b6a0837f7039b3a7e',
-      user_query: directPrompt,
+      user_query: JSON.stringify(structuredData),
       configuration_environment: 'DEV'
     };
 
-    console.log('[DEBUG] Calling agent with text-based approach...');
+    console.log('[DEBUG] Simple JSON payload sent to agent:', JSON.stringify(structuredData));
+    console.log('[DEBUG] Calling agent with simplified JSON approach...');
 
     const agentRes = await fetch('https://sage.paastry.sysco.net/api/sysco-gen-ai-platform/agents/v1/content/generic/answer', {
       method: 'POST',
@@ -180,7 +145,7 @@ Please analyze the report against the analysis document and respond with ONLY th
     });
 
     if (!parsedResult || parsedResult === "" || parsedResult === null) {
-      // Return a test result to verify the frontend works
+      // Enhanced test result with JSON structure metadata
       console.log('[WARNING] Creating test result due to empty agent response');
       const testResult = {
         accuracy: 78,
@@ -246,38 +211,54 @@ Please analyze the report against the analysis document and respond with ONLY th
           analysisFormat: analysisFile.type?.includes('pdf') ? 'PDF' : 'Markdown',
           textExtractionSuccess: true,
           reportTextLength: reportText.length,
-          analysisTextLength: analysisText.length
+          analysisTextLength: analysisText.length,
+          dataStructure: 'JSON', // New field to indicate structured approach
+          payloadSize: JSON.stringify(structuredData).length
         },
         analysisQuality: {
           hasDetailedFindings: true,
           hasSectionAnalysis: true,
           hasRecommendations: true,
-          completeness: 75
+          completeness: 75,
+          structuredInput: true // Indicates JSON input was used
         }
       };
 
       return NextResponse.json({ 
         success: true, 
         result: testResult,
-        note: "This is a test result due to empty agent response. Check agent configuration."
+        note: "Test result with JSON structure. Check agent configuration.",
+        inputStructure: "JSON"
       });
     }
 
     // If we got a response, try to parse it
     if (typeof parsedResult === 'string') {
-      try {
-        parsedResult = JSON.parse(parsedResult);
-      } catch (e) {
-        console.log('[ERROR] Could not parse agent response as JSON:', e);
-        return NextResponse.json({ 
-          error: 'Invalid response format', 
-          details: 'Agent returned non-JSON response',
-          agentResponse: parsedResult
-        }, { status: 422 });
+      const trimmed = parsedResult.trim();
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+          parsedResult = JSON.parse(trimmed);
+        } catch (e) {
+          console.log('[ERROR] Could not parse agent response as JSON:', e);
+          return NextResponse.json({
+            success: false,
+            agentRawResponse: trimmed,
+            note: "Agent returned plain text instead of structured JSON. Displaying raw response.",
+            inputStructure: "JSON"
+          });
+        }
+      } else {
+        console.log('[WARNING] Agent returned plain text instead of JSON');
+        return NextResponse.json({
+          success: false,
+          agentRawResponse: trimmed,
+          note: "Agent returned plain text instead of structured JSON. Displaying raw response.",
+          inputStructure: "JSON"
+        });
       }
     }
 
-    // Process the successful result...
+    // Process the successful result with enhanced metadata
     const result = {
       accuracy: parsedResult.overallScores?.accuracy || 0,
       alignment: parsedResult.overallScores?.alignment || 0,
@@ -300,17 +281,24 @@ Please analyze the report against the analysis document and respond with ONLY th
         reportType: reportFile.type,
         analysisType: analysisFile.type,
         analysisFormat: analysisFile.type?.includes('pdf') ? 'PDF' : 'Markdown',
-        textExtractionSuccess: true
+        textExtractionSuccess: true,
+        dataStructure: 'JSON',
+        payloadSize: JSON.stringify(structuredData).length
       },
       analysisQuality: {
         hasDetailedFindings: (parsedResult.detailedFindings || []).length > 0,
         hasSectionAnalysis: Object.keys(parsedResult.sectionAnalysis || {}).length > 0,
         hasRecommendations: (parsedResult.summary?.recommendations || 0) > 0,
-        completeness: 100
+        completeness: 100,
+        structuredInput: true
       }
     };
 
-    return NextResponse.json({ success: true, result });
+    return NextResponse.json({ 
+      success: true, 
+      result,
+      inputStructure: "JSON"
+    });
 
   } catch (error) {
     console.error('[ERROR] Analysis failed:', error);
