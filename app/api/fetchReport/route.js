@@ -8,6 +8,8 @@ export async function POST(request) {
 
     // Get authentication info from cookies
     const authenticatedUsername = request.cookies.get('swms-username')?.value;
+    const environment = request.cookies.get('swms-environment')?.value || 'lx739q21'; // Default fallback
+    const siteId = request.cookies.get('swms-site-id')?.value || environment.toUpperCase();
     const allSessionCookies = request.cookies.get('swms-session-all')?.value;
     
     // Also get individual cookies in case we need them
@@ -24,6 +26,8 @@ export async function POST(request) {
 
     console.log('Available cookies for report fetching:', {
       authenticatedUsername,
+      environment,
+      siteId,
       allSessionCookies,
       individualCookies: Object.keys(individualCookies),
       cookieDetails: individualCookies,
@@ -51,7 +55,8 @@ export async function POST(request) {
       throw new Error(`No report configuration found for reportValue: ${receivedPayload.reportValue}`);
     }
     
-    const swmsUrl = `${process.env.REPORTS_API_URL || 'https://lx739q21-swms-service-layer.swms-np.us-east-1.aws.sysco.net'}${reportConfig.reportPath}`;
+    // Build dynamic URL based on environment
+    const swmsUrl = `https://${environment}-swms-service-layer.swms-np.us-east-1.aws.sysco.net${reportConfig.reportPath}`;
 
     // Use the authenticated username for the payload, with OPS$ prefix if not already present
     const formattedUsername = authenticatedUsername.startsWith('OPS$') ? authenticatedUsername : `OPS$${authenticatedUsername}`;
@@ -80,8 +85,8 @@ export async function POST(request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'syy-site-id': 'LX739Q21',
-        'x-opco-number': 'lx739q21',
+        'syy-site-id': siteId,
+        'x-opco-number': environment,
         'x-session-user-id': formattedUsername,
         'x-swms-version': '61.0.0',
         'accept-language': 'en-US',

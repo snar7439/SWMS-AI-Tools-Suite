@@ -1,8 +1,12 @@
 // app/api/test-thin/route.js
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request) {
   try {
+    // Get environment from user's session cookies
+    const environment = request.cookies.get('swms-environment')?.value || 'lx739q21';
+    console.log('Using environment for database connection:', environment);
+    
     // Try to import thin connection with correct path for App Router
     const thinConnection = (await import('../../lib/database/oracle-thin.js')).default;
     
@@ -10,20 +14,13 @@ export async function GET() {
     const status = thinConnection.getStatus();
     console.log('Thin connection status:', status);
 
-    if (!status.configValid) {
-      return NextResponse.json({
-        success: false,
-        error: status.configError,
-        status: status
-      }, { status: 500 });
-    }
-
-    // Test connection
-    const testResult = await thinConnection.testConnection();
+    // Test connection with specific environment
+    const testResult = await thinConnection.testConnection(environment);
     
     return NextResponse.json({
       success: testResult.success,
-      message: testResult.success ? 'Database connection successful' : 'Connection failed',
+      message: testResult.success ? `Database connection successful to ${environment}` : 'Connection failed',
+      environment: environment,
       timestamp: testResult.timestamp,
       error: testResult.error,
       mode: testResult.mode,
@@ -42,6 +39,10 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    // Get environment from user's session cookies
+    const environment = request.cookies.get('swms-environment')?.value || 'lx739q21';
+    console.log('Using environment for database query:', environment);
+    
     const thinConnection = (await import('../../lib/database/oracle-thin.js')).default;
     const { query } = await request.json();
     
@@ -60,7 +61,7 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    const result = await thinConnection.executeQuery(query);
+    const result = await thinConnection.executeQuery(query, [], environment);
     
     return NextResponse.json({
       success: result.success,
@@ -68,7 +69,8 @@ export async function POST(request) {
       metadata: result.metadata,
       error: result.error || null,
       rowCount: result.data ? result.data.length : 0,
-      mode: result.mode
+      mode: result.mode,
+      environment: environment
     });
   } catch (error) {
     console.error('API Error:', error);

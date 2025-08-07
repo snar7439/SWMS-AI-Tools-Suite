@@ -5,15 +5,17 @@ export async function POST(request) {
     const requestBody = await request.json();
     console.log('Received login request body:', requestBody);
     
-    const { username, password } = requestBody;
+    const { username, password, environment } = requestBody;
     
     // Clean and validate inputs
     const cleanUsername = username ? username.trim() : '';
     const cleanPassword = password ? password.trim() : '';
+    const cleanEnvironment = environment ? environment.trim() : 'lx739q21'; // Default fallback
     
     console.log('Extracted and cleaned credentials:', {
       originalUsername: username,
       cleanUsername: cleanUsername,
+      environment: cleanEnvironment,
       password: cleanPassword ? '***' : 'undefined',
       usernameType: typeof cleanUsername,
       usernameLength: cleanUsername.length,
@@ -77,14 +79,18 @@ export async function POST(request) {
       throw new Error('Payload validation failed: userId or password is null/undefined');
     }
 
+    // Build dynamic URLs based on environment
+    const swmsServiceUrl = `https://${cleanEnvironment}-swms-service-layer.swms-np.us-east-1.aws.sysco.net`;
+    const siteId = cleanEnvironment.toUpperCase();
+    
     const swmsLoginRes = await fetch(
-      "https://lx739q21-swms-service-layer.swms-np.us-east-1.aws.sysco.net/auth/login",
+      `${swmsServiceUrl}/auth/login`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "syy-site-id": "LX739Q21",
-          "x-opco-number": "lx739q21",
+          "syy-site-id": siteId,
+          "x-opco-number": cleanEnvironment,
           "x-swms-version": "61.0.0",
           "x-session-user-id": withoutOpsPrefix,
           "accept": "application/json",
@@ -166,7 +172,7 @@ export async function POST(request) {
           suggestions: [
             "Verify your SWMS username and password are correct",
             "Check if SWMS server is accessible",
-            "Ensure you have access to LX739Q21 environment"
+            "Ensure you have access to the selected environment: " + siteId
           ]
         }),
         { 
@@ -237,8 +243,10 @@ export async function POST(request) {
       });
     }
     
-    // Also add the username cookie
+    // Also add the username and environment cookies
     cookiesToSet.push(`swms-username=${withOpsPrefix}; Path=/; HttpOnly; SameSite=Lax`);
+    cookiesToSet.push(`swms-environment=${cleanEnvironment}; Path=/; HttpOnly; SameSite=Lax`);
+    cookiesToSet.push(`swms-site-id=${siteId}; Path=/; HttpOnly; SameSite=Lax`);
     
     // Create a combined cookie string for session storage
     const combinedCookieString = allCookiesForSession.join('; ');
@@ -255,6 +263,8 @@ export async function POST(request) {
       success: true,
       message: "Login successful",
       username: withOpsPrefix,
+      environment: cleanEnvironment,
+      siteId: siteId,
       cookiesSet: allCookiesForSession.length
     }), {
       status: 200,

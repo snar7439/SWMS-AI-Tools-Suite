@@ -24,7 +24,16 @@ class ThinOracleConnection {
     this.initializeConfig();
   }
 
-  getEnvironmentVariables() {
+  // Build dynamic connection string based on environment
+  buildConnectionString(environment = null) {
+    const defaultEnv = 'lx739q21'; // Default fallback
+    const env = environment || defaultEnv;
+    
+    // Build dynamic connection string
+    return `${env}-db.swms-np.us-east-1.aws.sysco.net:1521/swm1`;
+  }
+
+  getEnvironmentVariables(environment = null) {
     const user = process.env.ORACLE_USER || 
                  process.env.ORACLE_DB_USER || 
                  process.env.DB_USER ||
@@ -35,17 +44,22 @@ class ThinOracleConnection {
                      process.env.DB_PASSWORD ||
                      process.env.ORACLE_PASS;
 
-    const connectionString = process.env.ORACLE_CONNECTION_STRING || 
-                            process.env.ORACLE_DB_CONNECT_STRING || 
-                            process.env.ORACLE_CONNECT_STRING ||
-                            process.env.DB_CONNECTION_STRING ||
-                            process.env.DATABASE_URL;
+    // Use environment-specific connection string if environment is provided
+    const connectionString = environment 
+                            ? this.buildConnectionString(environment)
+                            : (process.env.ORACLE_CONNECTION_STRING || 
+                               process.env.ORACLE_DB_CONNECT_STRING || 
+                               process.env.ORACLE_CONNECT_STRING ||
+                               process.env.DB_CONNECTION_STRING ||
+                               process.env.DATABASE_URL ||
+                               this.buildConnectionString());
 
     return { user, password, connectionString };
   }
 
-  initializeConfig() {
+  initializeConfig(environment = null) {
     try {
+      this.envVars = this.getEnvironmentVariables(environment);
       this.validateEnvironment();
       
       // For Thin mode, we can use either format
@@ -61,7 +75,8 @@ class ThinOracleConnection {
       };
       
       this.isConfigValid = true;
-      console.log('Oracle Thin mode configuration initialized successfully');
+      console.log(`Oracle Thin mode configuration initialized successfully for environment: ${environment || 'default'}`);
+      console.log(`Connection string: ${this.envVars.connectionString}`);
     } catch (error) {
       this.configError = error.message;
       this.isConfigValid = false;
@@ -89,7 +104,12 @@ class ThinOracleConnection {
   }
 
   // Simple direct connection test (no pool)
-  async testDirectConnection() {
+  async testDirectConnection(environment = null) {
+    // If environment is provided, reinitialize configuration
+    if (environment) {
+      this.initializeConfig(environment);
+    }
+    
     if (!this.isConfigValid) {
       return {
         success: false,
@@ -134,7 +154,12 @@ class ThinOracleConnection {
     }
   }
 
-  async executeQuery(sql, binds = []) {
+  async executeQuery(sql, binds = [], environment = null) {
+    // If environment is provided, reinitialize configuration
+    if (environment) {
+      this.initializeConfig(environment);
+    }
+    
     if (!this.isConfigValid) {
       return {
         success: false,
@@ -180,8 +205,8 @@ class ThinOracleConnection {
     }
   }
 
-  async testConnection() {
-    return await this.testDirectConnection();
+  async testConnection(environment = null) {
+    return await this.testDirectConnection(environment);
   }
 
   getStatus() {
