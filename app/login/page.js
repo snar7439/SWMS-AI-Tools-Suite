@@ -106,6 +106,7 @@ export default function LoginPage() {
                 </div>
                 <input
                   id="environment"
+                  autoFocus
                   type="text"
                   required
                   value={credentials.environment}
@@ -130,7 +131,6 @@ export default function LoginPage() {
                 </div>
                 <input
                   id="username"
-                  autoFocus
                   type="text"
                   required
                   value={credentials.username}
