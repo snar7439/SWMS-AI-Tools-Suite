@@ -79,7 +79,7 @@ export default function DashboardPage() {
       description: 'AI-driven root cause analysis for faster operational troubleshooting',
       icon: '🔍',
       route: '/root-ripple',
-      status: 'Coming Soon'
+      status: 'Available'
     },
     {
       id: 'warehouse-simulation',

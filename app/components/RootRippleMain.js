@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Upload, X, CheckCircle, Clock, AlertCircle, Zap, Database, Search, Brain, FileText } from 'lucide-react';
+import { Upload, X, CheckCircle, Clock, AlertCircle, Zap, Database, Search, Brain, FileText, Server } from 'lucide-react';
+import { getEnvironmentsByType, ENVIRONMENT_TYPES } from '../config/environments.js';
+import SSHFileTransfer from './SSHFileTransfer.js';
 
 export default function RootRippleMain({ headerHeight }) {
   const [environmentType, setEnvironmentType] = useState(''); // 'production' or 'development'
-  const [selectedEnvironment, setSelectedEnvironment] = useState('');
+  const [selectedEnvironment, setSelectedEnvironment] = useState(null);
   const [showEnvDropdown, setShowEnvDropdown] = useState(false);
   const [issueDescription, setIssueDescription] = useState('');
   const [timeOccurred, setTimeOccurred] = useState('');
@@ -15,6 +17,12 @@ export default function RootRippleMain({ headerHeight }) {
   const [showStepModal, setShowStepModal] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [analysisResults, setAnalysisResults] = useState(null);
+  
+  // SSH Transfer related state
+  const [showSSHTransfer, setShowSSHTransfer] = useState(false);
+  const [sshTransferComplete, setSSHTransferComplete] = useState(false);
+  const [sshResults, setSSHResults] = useState(null);
+  const [skipSSHTransfer, setSkipSSHTransfer] = useState(false);
   
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -33,31 +41,24 @@ export default function RootRippleMain({ headerHeight }) {
     };
   }, []);
 
-  const productionEnvironments = [
-    { id: 'prod-us-east', name: 'Production US East', icon: '🔴', description: 'Primary production environment' },
-    { id: 'prod-us-west', name: 'Production US West', icon: '🔴', description: 'West coast production environment' },
-    { id: 'prod-eu', name: 'Production EU', icon: '🔴', description: 'European production environment' },
-    { id: 'prod-asia', name: 'Production Asia', icon: '🔴', description: 'Asia-Pacific production environment' }
-  ];
-
-  const developmentEnvironments = [
-    { id: 'dev-main', name: 'Development Main', icon: '🟢', description: 'Main development workspace' },
-    { id: 'staging', name: 'Staging Environment', icon: '🟡', description: 'Pre-production testing' },
-    { id: 'testing', name: 'Testing Environment', icon: '🔵', description: 'Quality assurance testing' },
-    { id: 'uat', name: 'UAT Environment', icon: '🟣', description: 'User acceptance testing' },
-    { id: 'integration', name: 'Integration Environment', icon: '🟠', description: 'System integration testing' },
-    { id: 'performance', name: 'Performance Environment', icon: '🟤', description: 'Performance and load testing' },
-    { id: 'sandbox', name: 'Sandbox Environment', icon: '⚪', description: 'Experimental testing space' }
-  ];
+  // Cleanup effect when component unmounts
+  useEffect(() => {
+    return () => {
+      // Cleanup temporary files when component unmounts
+      if (analysisResults && analysisResults.sessionId) {
+        cleanupLogs(analysisResults.sessionId);
+      }
+    };
+  }, [analysisResults]);
 
   const getCurrentEnvironments = () => {
-    return environmentType === 'production' ? productionEnvironments : developmentEnvironments;
+    return getEnvironmentsByType(environmentType);
   };
 
   const analysisSteps = [
-    { id: 'connect-env', title: 'Connecting to Environment', icon: Zap, description: 'Establishing secure connection to your selected environment...', color: 'from-purple-500 to-pink-500' },
     { id: 'connect-db', title: 'Accessing Database', icon: Database, description: 'Connecting to system databases and retrieving metadata...', color: 'from-blue-500 to-cyan-500' },
-    { id: 'retrieve-logs', title: 'Collecting Log Data', icon: FileText, description: 'Gathering relevant log entries from the specified time period...', color: 'from-green-500 to-emerald-500' },
+    { id: 'save-table-logs', title: 'Saving Table Logs', icon: FileText, description: 'Gathering and saving relevant log entries from database tables...', color: 'from-green-500 to-emerald-500' },
+    { id: 'ssh-transfer', title: 'Retrieving Remote Log Files', icon: Server, description: 'Connecting via SSH to collect additional log files...', color: 'from-purple-500 to-indigo-500' },
     { id: 'analyze-data', title: 'AI Analysis in Progress', icon: Brain, description: 'Advanced AI algorithms are processing patterns and anomalies...', color: 'from-orange-500 to-red-500' },
     { id: 'generate-insights', title: 'Generating Solutions', icon: Search, description: 'Compiling root cause analysis and solution recommendations...', color: 'from-indigo-500 to-purple-500' }
   ];
@@ -102,12 +103,102 @@ export default function RootRippleMain({ headerHeight }) {
     setAttachedImages(prev => prev.filter(img => img.id !== imageId));
   };
 
-  const startAnalysis = () => {
+  const cleanupLogs = async (sessionId) => {
+    if (!sessionId) return;
+    
+    try {
+      // Cleanup database logs
+      const response = await fetch(`/api/retrieve-logs?sessionId=${sessionId}`, {
+        method: 'DELETE',
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        console.log('Temporary log files cleaned up successfully');
+      } else {
+        console.warn('Failed to cleanup temporary files:', result.error);
+      }
+
+      // Cleanup SSH files if they exist
+      try {
+        const sshResponse = await fetch(`/api/ssh-transfer?sessionId=${sessionId}`, {
+          method: 'DELETE',
+        });
+        
+        const sshResult = await sshResponse.json();
+        if (sshResult.success) {
+          console.log('SSH temporary files cleaned up successfully');
+        }
+      } catch (sshError) {
+        console.warn('SSH cleanup warning (might not exist):', sshError.message);
+      }
+      
+    } catch (error) {
+      console.error('Error during cleanup:', error);
+    }
+  };
+
+  // SSH Transfer handlers
+  const handleSSHTransferSuccess = (data) => {
+    console.log('SSH transfer successful:', data);
+    setSSHResults(data);
+    setSSHTransferComplete(true);
+    setShowSSHTransfer(false);
+    
+    // Continue with AI analysis
+    continueAnalysisAfterSSH(data);
+  };
+
+  const handleSSHTransferError = (error) => {
+    console.error('SSH transfer failed:', error);
+    // Still allow user to continue without SSH logs
+  };
+
+  const handleSkipSSHTransfer = () => {
+    console.log('SSH transfer skipped by user');
+    setSkipSSHTransfer(true);
+    setShowSSHTransfer(false);
+    
+    // Continue with AI analysis without SSH logs
+    continueAnalysisAfterSSH(null);
+  };
+
+  const continueAnalysisAfterSSH = (sshData) => {
+    // Step 4: AI Analysis in Progress
+    setTimeout(() => setCurrentStep(4), 1000);
+    
+    // Step 5: Generating Solutions
+    setTimeout(() => setCurrentStep(5), 4000);
+    
+    // Complete analysis
+    setTimeout(() => {
+      setShowStepModal(false);
+      setAnalysisComplete(true);
+      setAnalysisResults({
+        ...mockResults,
+        logSummary: analysisResults?.logSummary || {},
+        sshLogs: sshData || null,
+        sshSkipped: skipSSHTransfer,
+        sessionId: analysisResults?.sessionId || `session_${Date.now()}`,
+        environment: selectedEnvironment
+      });
+      setIsAnalyzing(false);
+      // Scroll to top of results
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+    }, 7000);
+  };
+
+  const startAnalysis = async () => {
     if (!environmentType || !selectedEnvironment || !issueDescription || !timeOccurred) return;
     
     setIsAnalyzing(true);
     setCurrentStep(0);
     setAnalysisComplete(false);
+    setSSHTransferComplete(false);
+    setSSHResults(null);
+    setSkipSSHTransfer(false);
 
     // Show first step immediately
     setTimeout(() => {
@@ -115,31 +206,90 @@ export default function RootRippleMain({ headerHeight }) {
       setShowStepModal(true);
     }, 500);
 
-    // Progress through steps
-    analysisSteps.forEach((_, index) => {
-      setTimeout(() => {
-        if (index < analysisSteps.length - 1) {
-          setCurrentStep(index + 2);
-        } else {
-          // Complete analysis
-          setTimeout(() => {
-            setShowStepModal(false);
-            setAnalysisComplete(true);
-            setAnalysisResults(mockResults);
-            setIsAnalyzing(false);
-            // Scroll to top of results
+    try {
+      // Step 1: Connecting to Environment
+      setTimeout(() => setCurrentStep(2), 1000);
+
+      // Step 2: Accessing Database and retrieving logs
+      setTimeout(async () => {
+        setCurrentStep(3);
+        
+        try {
+          // Call the log retrieval API
+          const response = await fetch('/api/retrieve-logs', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              environment: selectedEnvironment,
+              environmentType: environmentType,
+              issueTimeFrom: timeOccurred,
+              issueTimeTo: null, // You could add an end time field if needed
+              sessionId: `session_${Date.now()}_${selectedEnvironment.id || selectedEnvironment}`
+            }),
+          });
+
+          const logResult = await response.json();
+          
+          if (logResult.success) {
+            console.log('Database logs retrieved successfully:', logResult.summary);
+            
+            // Store database log results
+            setAnalysisResults({
+              ...mockResults,
+              logSummary: {
+                ...logResult.summary,
+                timeRange: logResult.timeRange
+              },
+              sessionId: logResult.sessionId,
+              environment: logResult.environment
+            });
+            
+            // Step 3: SSH Transfer - show SSH component
             setTimeout(() => {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }, 100);
+              setCurrentStep(3);
+              setShowStepModal(false);
+              setShowSSHTransfer(true);
+            }, 2000);
+            
+          } else {
+            throw new Error(logResult.error || 'Failed to retrieve logs');
+          }
+          
+        } catch (error) {
+          console.error('Error during log retrieval:', error);
+          // Still show SSH transfer option even if database logs failed
+          setAnalysisResults({
+            ...mockResults,
+            logRetrievalError: error.message,
+            note: 'Database log retrieval failed, but SSH transfer is still available'
+          });
+          
+          setTimeout(() => {
+            setCurrentStep(3);
+            setShowStepModal(false);
+            setShowSSHTransfer(true);
           }, 2000);
         }
-      }, (index + 1) * 3000);
-    });
+      }, 3000);
+
+    } catch (error) {
+      console.error('Error during analysis:', error);
+      setIsAnalyzing(false);
+      setShowStepModal(false);
+      // You might want to show an error message to the user here
+    }
   };
 
-  const resetForm = () => {
+  const resetForm = async () => {
+    // Cleanup temporary files if we have analysis results with a session ID
+    if (analysisResults && analysisResults.sessionId) {
+      await cleanupLogs(analysisResults.sessionId);
+    }
+    
     setEnvironmentType('');
-    setSelectedEnvironment('');
+    setSelectedEnvironment(null);
     setIssueDescription('');
     setTimeOccurred('');
     setAttachedImages([]);
@@ -149,11 +299,17 @@ export default function RootRippleMain({ headerHeight }) {
     setShowEnvDropdown(false);
     setAnalysisComplete(false);
     setAnalysisResults(null);
+    
+    // Reset SSH transfer state
+    setShowSSHTransfer(false);
+    setSSHTransferComplete(false);
+    setSSHResults(null);
+    setSkipSSHTransfer(false);
   };
 
   const handleEnvironmentTypeChange = (type) => {
     setEnvironmentType(type);
-    setSelectedEnvironment(''); // Reset selected environment when type changes
+    setSelectedEnvironment(null); // Reset selected environment when type changes
     setShowEnvDropdown(false);
   };
 
@@ -213,9 +369,9 @@ export default function RootRippleMain({ headerHeight }) {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <button
-                onClick={() => handleEnvironmentTypeChange('production')}
+                onClick={() => handleEnvironmentTypeChange(ENVIRONMENT_TYPES.PRODUCTION)}
                 className={`p-6 rounded-2xl border-2 transition-all duration-200 text-left cursor-pointer ${
-                  environmentType === 'production'
+                  environmentType === ENVIRONMENT_TYPES.PRODUCTION
                     ? 'border-red-300 bg-red-50 shadow-lg transform scale-105'
                     : 'border-gray-200 bg-white hover:border-red-200 hover:bg-red-25 hover:shadow-md'
                 }`}
@@ -230,9 +386,9 @@ export default function RootRippleMain({ headerHeight }) {
               </button>
 
               <button
-                onClick={() => handleEnvironmentTypeChange('development')}
+                onClick={() => handleEnvironmentTypeChange(ENVIRONMENT_TYPES.DEVELOPMENT)}
                 className={`p-6 rounded-2xl border-2 transition-all duration-200 text-left cursor-pointer ${
-                  environmentType === 'development'
+                  environmentType === ENVIRONMENT_TYPES.DEVELOPMENT
                     ? 'border-green-300 bg-green-50 shadow-lg transform scale-105'
                     : 'border-gray-200 bg-white hover:border-green-200 hover:bg-green-25 hover:shadow-md'
                 }`}
@@ -271,14 +427,14 @@ export default function RootRippleMain({ headerHeight }) {
                       {selectedEnvironment ? (
                         <>
                           <span className="text-xl">
-                            {getCurrentEnvironments().find(env => env.id === selectedEnvironment)?.icon}
+                            {getCurrentEnvironments().find(env => env.id === selectedEnvironment.id)?.icon}
                           </span>
                           <div>
                             <p className="font-semibold text-gray-900">
-                              {getCurrentEnvironments().find(env => env.id === selectedEnvironment)?.name}
+                              {getCurrentEnvironments().find(env => env.id === selectedEnvironment.id)?.name}
                             </p>
                             <p className="text-sm text-gray-600">
-                              {getCurrentEnvironments().find(env => env.id === selectedEnvironment)?.description}
+                              {getCurrentEnvironments().find(env => env.id === selectedEnvironment.id)?.description}
                             </p>
                           </div>
                         </>
@@ -309,11 +465,11 @@ export default function RootRippleMain({ headerHeight }) {
                       <button
                         key={env.id}
                         onClick={() => {
-                          setSelectedEnvironment(env.id);
+                          setSelectedEnvironment(env);
                           setShowEnvDropdown(false);
                         }}
                         className={`w-full p-4 text-left hover:bg-gray-50 transition-colors first:rounded-t-2xl last:rounded-b-2xl border-b border-gray-100 last:border-b-0 cursor-pointer ${
-                          selectedEnvironment === env.id ? 'bg-purple-50 border-purple-200' : ''
+                          selectedEnvironment?.id === env.id ? 'bg-purple-50 border-purple-200' : ''
                         }`}
                       >
                         <div className="flex items-center space-x-3">
@@ -339,7 +495,7 @@ export default function RootRippleMain({ headerHeight }) {
               <div className="space-y-8">
                 <div>
                   <label className="block text-lg font-bold text-gray-900 mb-3">
-                    Issue Description *
+                    Issue Description
                   </label>
                   <textarea
                     value={issueDescription}
@@ -352,7 +508,7 @@ export default function RootRippleMain({ headerHeight }) {
 
                 <div>
                   <label className="block text-lg font-bold text-gray-900 mb-3">
-                    Time When Issue Occurred *
+                    Time When Issue Occurred
                   </label>
                   <div className="relative">
                     <input
@@ -365,6 +521,20 @@ export default function RootRippleMain({ headerHeight }) {
                       placeholder="Click to select date and time"
                     />
                   </div>
+                  {timeOccurred && (
+                    <div className="mt-3 flex items-center text-sm text-gray-600">
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      <span>Issue occurred: {new Date(timeOccurred).toLocaleString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      })}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -514,6 +684,155 @@ export default function RootRippleMain({ headerHeight }) {
               </div>
             </div>
 
+            {/* Log Summary (if available) */}
+            {analysisResults.logSummary && (
+              <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-8">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mr-4">
+                    <Database className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900">Database Log Analysis</h3>
+                </div>
+                
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-6 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl">
+                      <p className="text-3xl font-bold text-indigo-700 mb-1">{analysisResults.logSummary.swmsLogCount}</p>
+                      <p className="text-sm font-medium text-indigo-600">SWMS Log Records</p>
+                    </div>
+                    <div className="text-center p-6 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl">
+                      <p className="text-3xl font-bold text-purple-700 mb-1">{analysisResults.logSummary.rfLogCount}</p>
+                      <p className="text-sm font-medium text-purple-600">RF Log Records</p>
+                    </div>
+                    <div className="text-center p-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl">
+                      <p className="text-3xl font-bold text-blue-700 mb-1">{analysisResults.logSummary.totalRecords}</p>
+                      <p className="text-sm font-medium text-blue-600">Total Records</p>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6 bg-gradient-to-r from-indigo-50 to-purple-50 border-l-4 border-indigo-500 rounded-2xl">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <strong className="text-indigo-900">Environment:</strong>
+                        <span className="ml-2 text-indigo-700">{analysisResults.logSummary.environment} ({analysisResults.logSummary.isProd ? 'Production' : 'Development'})</span>
+                      </div>
+                      {analysisResults.sessionId && (
+                        <div>
+                          <strong className="text-indigo-900">Session ID:</strong>
+                          <span className="ml-2 text-indigo-700 font-mono text-xs">{analysisResults.sessionId}</span>
+                        </div>
+                      )}
+                    </div>
+                    {analysisResults.logSummary.timeRange && (
+                      <div className="mt-4 pt-4 border-t border-indigo-200">
+                        <strong className="text-indigo-900">Time Range Retrieved:</strong>
+                        <div className="mt-2 text-indigo-700 text-sm">
+                          <div><strong>From:</strong> {new Date(analysisResults.logSummary.timeRange.from).toLocaleString()}</div>
+                          <div><strong>To:</strong> {new Date(analysisResults.logSummary.timeRange.to).toLocaleString()}</div>
+                          <div className="text-indigo-600 italic mt-1">{analysisResults.logSummary.timeRange.description}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {analysisResults.logRetrievalError && (
+                    <div className="p-6 bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-500 rounded-2xl">
+                      <div className="flex items-center mb-2">
+                        <AlertCircle className="w-5 h-5 text-yellow-600 mr-2" />
+                        <strong className="text-yellow-800">Log Retrieval Warning:</strong>
+                      </div>
+                      <p className="text-yellow-700 text-sm">{analysisResults.logRetrievalError}</p>
+                      {analysisResults.note && (
+                        <p className="text-yellow-600 text-sm mt-2 italic">{analysisResults.note}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* SSH Log Transfer Results */}
+            {(analysisResults.sshLogs || analysisResults.sshSkipped) && (
+              <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-8">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center mr-4">
+                    <Server className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900">Remote Log File Transfer</h3>
+                </div>
+                
+                {analysisResults.sshLogs ? (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="text-center p-6 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl">
+                        <p className="text-3xl font-bold text-purple-700 mb-1">{analysisResults.sshLogs.downloadedFiles?.length || 0}</p>
+                        <p className="text-sm font-medium text-purple-600">Log Files Retrieved</p>
+                      </div>
+                      <div className="text-center p-6 bg-gradient-to-br from-indigo-100 to-blue-100 rounded-2xl">
+                        <p className="text-3xl font-bold text-indigo-700 mb-1">
+                          {analysisResults.sshLogs.processedLogs?.totalSize ? 
+                            `${(analysisResults.sshLogs.processedLogs.totalSize / 1024 / 1024).toFixed(1)}MB` : 
+                            'N/A'
+                          }
+                        </p>
+                        <p className="text-sm font-medium text-indigo-600">Total Size</p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-6 bg-gradient-to-r from-purple-50 to-indigo-50 border-l-4 border-purple-500 rounded-2xl">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <strong className="text-purple-900">SSH Host:</strong>
+                          <span className="ml-2 text-purple-700">{analysisResults.sshLogs.environment?.host}</span>
+                        </div>
+                        <div>
+                          <strong className="text-purple-900">Transfer Status:</strong>
+                          <span className="ml-2 text-green-700 font-semibold">✓ Successful</span>
+                        </div>
+                      </div>
+                      
+                      {analysisResults.sshLogs.downloadedFiles && analysisResults.sshLogs.downloadedFiles.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-purple-200">
+                          <strong className="text-purple-900">Retrieved Files:</strong>
+                          <div className="mt-2 space-y-1">
+                            {analysisResults.sshLogs.downloadedFiles.map((file, index) => (
+                              <div key={index} className="text-purple-700 text-sm flex justify-between">
+                                <span>{file.fileName} ({file.type})</span>
+                                <span className="text-purple-600">{(file.size / 1024).toFixed(1)}KB</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {analysisResults.sshLogs.errors && analysisResults.sshLogs.errors.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-purple-200">
+                          <strong className="text-orange-800">Transfer Warnings:</strong>
+                          <div className="mt-2 space-y-1">
+                            {analysisResults.sshLogs.errors.map((error, index) => (
+                              <div key={index} className="text-orange-700 text-sm">
+                                <span className="font-mono">{error.path}</span>: {error.error}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-6 bg-gradient-to-r from-gray-50 to-blue-50 border-l-4 border-gray-400 rounded-2xl">
+                    <div className="flex items-center mb-2">
+                      <AlertCircle className="w-5 h-5 text-gray-600 mr-2" />
+                      <strong className="text-gray-800">SSH Transfer Skipped</strong>
+                    </div>
+                    <p className="text-gray-700 text-sm">
+                      Remote log files were not retrieved via SSH. Analysis was performed using database logs only.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Solution */}
             <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-8">
               <div className="flex items-center mb-6">
@@ -583,6 +902,25 @@ export default function RootRippleMain({ headerHeight }) {
             <button className="px-8 py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white rounded-2xl hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 transition-all duration-200 font-semibold text-lg transform hover:scale-105 shadow-lg cursor-pointer">
               📊 Export Analysis Report
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* SSH File Transfer Modal */}
+      {showSSHTransfer && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" style={{ paddingTop: `${headerHeight + 20}px` }}>
+          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full mx-4 max-h-[85vh] overflow-y-auto">
+            <div className="h-2 bg-gradient-to-r from-purple-500 to-indigo-500"></div>
+            
+            <div className="p-6">
+              <SSHFileTransfer
+                environment={selectedEnvironment}
+                timeOccurred={timeOccurred}
+                onTransferSuccess={handleSSHTransferSuccess}
+                onTransferError={handleSSHTransferError}
+                onSkipTransfer={handleSkipSSHTransfer}
+              />
+            </div>
           </div>
         </div>
       )}
