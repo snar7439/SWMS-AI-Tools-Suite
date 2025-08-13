@@ -275,30 +275,42 @@ class ThinOracleConnection {
   // Clean up temporary files
   async cleanupTempFiles(sessionId = null) {
     try {
-      const targetDir = sessionId ? path.join(this.tempDataDir, sessionId) : this.tempDataDir;
-      
-      if (fs.existsSync(targetDir)) {
-        fs.rmSync(targetDir, { recursive: true, force: true });
-        console.log(`Cleaned up temporary files from: ${targetDir}`);
-        return { success: true, message: 'Temporary files cleaned up successfully' };
+      if (sessionId) {
+        // Clean up specific session directory
+        const targetDir = path.join(this.tempDataDir, sessionId);
+        
+        if (fs.existsSync(targetDir)) {
+          fs.rmSync(targetDir, { recursive: true, force: true });
+          console.log(`Cleaned up session directory: ${targetDir}`);
+          return { success: true, message: `Session directory cleaned up: ${sessionId}`, deletedDirectories: 1 };
+        } else {
+          return { success: true, message: 'No temporary files to clean up', deletedDirectories: 0 };
+        }
+      } else {
+        // Clean up entire temp directory
+        if (fs.existsSync(this.tempDataDir)) {
+          fs.rmSync(this.tempDataDir, { recursive: true, force: true });
+          console.log(`Cleaned up all temporary files from: ${this.tempDataDir}`);
+          return { success: true, message: 'All temporary files cleaned up successfully' };
+        }
+        
+        return { success: true, message: 'No temporary files to clean up' };
       }
-      
-      return { success: true, message: 'No temporary files to clean up' };
     } catch (error) {
       console.error('Error cleaning up temporary files:', error);
       return { success: false, error: error.message };
     }
   }
 
-  // Calculate time range: 2 hours before and 30 minutes after the given time
+  // Calculate time range: 30 minutes before and 15 minutes after the given time
   calculateTimeRange(issueTime) {
     const issueDate = new Date(issueTime);
     
-    // 2 hours before the issue time
-    const startTime = new Date(issueDate.getTime() - (2 * 60 * 60 * 1000));
+    // 30 minutes before the issue time
+    const startTime = new Date(issueDate.getTime() - (30 * 60 * 1000));
     
-    // 30 minutes after the issue time
-    const endTime = new Date(issueDate.getTime() + (30 * 60 * 1000));
+    // 15 minutes after the issue time
+    const endTime = new Date(issueDate.getTime() + (15 * 60 * 1000));
     
     return {
       startTime: startTime,

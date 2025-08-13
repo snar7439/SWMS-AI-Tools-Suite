@@ -45,7 +45,7 @@ export async function POST(request) {
     }
 
     console.log(`Starting log retrieval for environment: ${envId} (${environmentType})`);
-    console.log(`Issue time: ${issueTimeFrom} (will retrieve 2 hours before to 30 minutes after)`);
+    console.log(`Issue time: ${issueTimeFrom} (will retrieve 30 minutes before to 15 minutes after)`);
 
     // Convert time string to Date object
     const issueTime = new Date(issueTimeFrom);
@@ -190,16 +190,23 @@ export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('sessionId');
+    const cleanupAll = searchParams.get('cleanupAll') === 'true';
 
-    if (!sessionId) {
+    if (!sessionId && !cleanupAll) {
       return NextResponse.json(
-        { success: false, error: 'Session ID is required' },
+        { success: false, error: 'Session ID is required unless cleanupAll=true' },
         { status: 400 }
       );
     }
 
-    const result = await oracleConnection.cleanupTempFiles(sessionId);
-    
+    if (cleanupAll) {
+      // Clean up all temporary files
+      const result = await oracleConnection.cleanupTempFiles(null);
+      return NextResponse.json(result);
+    }
+
+    // Clean up specific session and find related SSH sessions
+    const result = await cleanupSessionAndRelated(sessionId);
     return NextResponse.json(result);
 
   } catch (error) {
@@ -208,5 +215,88 @@ export async function DELETE(request) {
       success: false,
       error: error.message
     }, { status: 500 });
+  }
+}
+
+// Helper function to clean up a session and find related SSH sessions
+async function cleanupSessionAndRelated(sessionId) {
+  const fs = require('fs').promises;
+  const path = require('path');
+  
+  try {
+    const tempLogsDir = path.join(process.cwd(), 'temp_logs');
+    const deletedDirs = [];
+    let totalDeleted = 0;
+
+    // First, clean up the main session using the oracle connection
+    const mainResult = await oracleConnection.cleanupTempFiles(sessionId);
+    if (mainResult.deletedDirectories > 0) {
+      totalDeleted += mainResult.deletedDirectories;
+    }
+
+    // Now find and clean up all SSH sessions that might be related
+    // Strategy: Look for SSH sessions that were created around the same time
+    if (await fs.access(tempLogsDir).then(() => true).catch(() => false)) {
+      const allDirs = await fs.readdir(tempLogsDir);
+      
+      // Extract timestamp from the main session ID
+      let mainTimestamp = null;
+      if (sessionId.startsWith('session_')) {
+        const parts = sessionId.split('_');
+        if (parts.length >= 2) {
+          mainTimestamp = parseInt(parts[1]);
+        }
+      }
+      
+      if (mainTimestamp) {
+        // Look for SSH sessions within a 10-minute window (600,000 ms)
+        const timeWindow = 10 * 60 * 1000; // 10 minutes
+        
+        for (const dir of allDirs) {
+          if (dir.startsWith('ssh_session_')) {
+            const sshParts = dir.split('_');
+            if (sshParts.length >= 3) {
+              const sshTimestamp = parseInt(sshParts[2]);
+              
+              // If the SSH session was created within the time window, delete it
+              if (Math.abs(sshTimestamp - mainTimestamp) <= timeWindow) {
+                try {
+                  const fullDirPath = path.join(tempLogsDir, dir);
+                  const stat = await fs.stat(fullDirPath);
+                  
+                  if (stat.isDirectory()) {
+                    await fs.rm(fullDirPath, { recursive: true, force: true });
+                    deletedDirs.push(dir);
+                    totalDeleted++;
+                    console.log(`Cleaned up related SSH session: ${dir}`);
+                  }
+                } catch (dirError) {
+                  console.warn(`Error cleaning SSH session ${dir}:`, dirError.message);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    const message = totalDeleted > 0 
+      ? `Successfully cleaned up ${totalDeleted} session directory(ies)${deletedDirs.length > 0 ? ` including SSH sessions: ${deletedDirs.join(', ')}` : ''}`
+      : 'No temporary files found to clean up';
+
+    return {
+      success: true,
+      message: message,
+      deletedDirectories: totalDeleted,
+      sshSessionsDeleted: deletedDirs.length,
+      sshSessions: deletedDirs
+    };
+
+  } catch (error) {
+    console.error('Error in cleanupSessionAndRelated:', error);
+    return {
+      success: false,
+      error: error.message
+    };
   }
 }

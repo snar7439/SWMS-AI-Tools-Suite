@@ -6,7 +6,7 @@ import { swmsReports } from '../lib/reportsConfig';
 export default function NavigationPanel({ 
   selectedReports, 
   onReportSelect, 
-  onAnalysisDocumentLoad, // New prop for loading analysis documents
+  onAnalysisDocumentLoad, // New prop for loading verification documents
   mode = 'comparison',
   isVisible = true,
   onToggleVisibility 
@@ -29,12 +29,12 @@ export default function NavigationPanel({
     }
   }, []);
 
-  // Function to load analysis document from public folder
+  // Function to load verification document from public folder
   const loadAnalysisDocument = async (analysisDocConfig) => {
     try {
       const response = await fetch(analysisDocConfig.path);
       if (!response.ok) {
-        throw new Error(`Failed to fetch analysis document: ${response.statusText}`);
+        throw new Error(`Failed to fetch verification document: ${response.statusText}`);
       }
       
       const content = await response.text();
@@ -51,7 +51,7 @@ export default function NavigationPanel({
       
       return analysisDoc;
     } catch (error) {
-      console.error('Error loading analysis document:', error);
+      console.error('Error loading verification document:', error);
       throw error;
     }
   };
@@ -77,7 +77,7 @@ export default function NavigationPanel({
     try {
       setLoading(true);
       
-      console.log('Loading report and analysis document...');
+      console.log('Loading report and verification document...');
       
       // Use the authenticated currentUser instead of sessionStorage
       const formattedUserId = currentUser.startsWith('OPS$') ? currentUser : `OPS$${currentUser}`;
@@ -88,14 +88,14 @@ export default function NavigationPanel({
         throw new Error(`Report configuration not found for: ${report.id}`);
       }
       
-      // Load analysis document if it exists
+      // Load verification document if it exists
       let analysisDoc = null;
       if (configReport.analysisDocument) {
         try {
           analysisDoc = await loadAnalysisDocument(configReport.analysisDocument);
         } catch (analysisError) {
-          console.warn('Failed to load analysis document:', analysisError);
-          // Continue without analysis document
+          console.warn('Failed to load verification document:', analysisError);
+          // Continue without verification document
         }
       }
       
@@ -149,7 +149,7 @@ export default function NavigationPanel({
       console.log('Successfully fetched SWMS report');
       onReportSelect(fetchedReport, slot);
       
-      // Load analysis document if available and callback exists
+      // Load verification document if available and callback exists
       if (analysisDoc && onAnalysisDocumentLoad) {
         onAnalysisDocumentLoad(analysisDoc);
       }
@@ -353,13 +353,13 @@ export default function NavigationPanel({
                           <h3 className="font-medium text-white text-xs whitespace-nowrap overflow-hidden text-ellipsis" title={report.name}>
                             {report.name}
                           </h3>
-                          {/* Analysis document indicator (only for single report check) */}
+                          {/* Verification document indicator (only for single report check) */}
                           {mode === 'single' && hasAnalysisDoc && (
                             <div className="flex items-center gap-1 mt-1">
                               <svg className="w-3 h-3 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
-                              <span className="text-xs text-emerald-400">Analysis included</span>
+                              <span className="text-xs text-emerald-400">Verification included</span>
                             </div>
                           )}
                         </div>

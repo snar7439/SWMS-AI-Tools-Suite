@@ -96,7 +96,7 @@ export default function DragDropArea({ onFileUpload, slot, title, sub, mode = 'c
     setIsUploading(true);
     
     try {
-      // For analysis documents, check if it's markdown
+      // For verification documents, check if it's markdown
       if (mode === 'single' && slot === 'analysis') {
         const isMarkdown = file.type === 'text/markdown' || 
                           file.type === 'text/x-markdown' ||
@@ -124,13 +124,13 @@ export default function DragDropArea({ onFileUpload, slot, title, sub, mode = 'c
           const report = {
             id: `manual_${Date.now()}`,
             name: file.name.replace('.pdf', ''),
-            type: 'PDF Analysis',
+            type: 'PDF Verification',
             pdfUrl: pdfUrl,
             isManualUpload: true,
             file: file
           };
           
-          console.log('PDF analysis file uploaded:', report);
+          console.log('PDF verification file uploaded:', report);
           onFileUpload(report, slot);
         }
       } else {
@@ -267,11 +267,11 @@ export default function DragDropArea({ onFileUpload, slot, title, sub, mode = 'c
             </div>
             
             <h4 className="text-sm font-medium text-white text-center mb-2">
-              {mode === 'single' && slot === 'analysis' ? 'Drop Analysis Document' : 'Drop PDF here'}
+              {mode === 'single' && slot === 'analysis' ? 'Drop Verification Document' : 'Drop PDF here'}
             </h4>
             <p className="text-xs text-gray-400 text-center mb-3">
               {mode === 'single' && slot === 'analysis' 
-                ? 'Drag and drop your analysis document (PDF or Markdown), or click to browse'
+                ? 'Drag and drop your verification document (PDF or Markdown), or click to browse'
                 : 'Select from the report list, drag and drop your PDF file here, or click to browse'
               }
             </p>

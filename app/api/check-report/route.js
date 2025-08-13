@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import pdf from 'pdf-parse';
+import { HfInference } from '@huggingface/inference';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -96,7 +97,7 @@ ACTUAL QUERY RESULTS FROM DATABASE:
 ${resultsText}
 
 REPORT CONTENT TO VERIFY:
-${reportContent.substring(0, 5000)}${reportContent.length > 5000 ? '...(truncated)' : ''}
+${reportContent}
 
 INSTRUCTIONS:
 1. Compare the query results with information in the report
@@ -129,60 +130,145 @@ INSTRUCTIONS:
   }
 }`;
 
-    // Call the agent
-    const payload = {
-      ai_agent_id: '68887a5b6a0837f7039b3a7e',
-      user_query: prompt,
-      configuration_environment: 'DEV'
-    };
+    // Call Hugging Face API using the official client
+    const HF_TOKEN = process.env.HF_TOKEN;
+    const HF_MODEL = process.env.HF_MODEL;
 
-    console.log('[DEBUG] Calling agent for report accuracy check...');
-
-    const agentRes = await fetch('https://sage.paastry.sysco.net/api/sysco-gen-ai-platform/agents/v1/content/generic/answer', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    console.log('[DEBUG] Agent response status:', agentRes.status);
-
-    if (!agentRes.ok) {
-      const errText = await agentRes.text();
-      console.error('[ERROR] Agent error response:', errText);
-      return NextResponse.json({ 
-        error: 'Agent error', 
-        details: errText,
-        status: agentRes.status 
+    if (!HF_TOKEN) {
+      return NextResponse.json({
+        error: 'Server misconfigured: missing HF_TOKEN'
       }, { status: 500 });
     }
 
-    const agentResponseText = await agentRes.text();
-    console.log('[DEBUG] Raw agent response:', agentResponseText);
+    if (!HF_MODEL) {
+      return NextResponse.json({
+        error: 'Server misconfigured: missing HF_MODEL'
+      }, { status: 500 });
+    }
 
-    let agentJson;
+    console.log('[DEBUG] Using Hugging Face model:', HF_MODEL);
+
+    // Initialize variables outside try block to avoid scope issues
+    let parsedResult = null;
+
     try {
-      agentJson = JSON.parse(agentResponseText);
-    } catch (parseError) {
-      console.error('[ERROR] Failed to parse agent response as JSON:', parseError);
+      const hf = new HfInference(HF_TOKEN);
+      
+      console.log('[DEBUG] Calling Hugging Face API for report accuracy check...');
+
+      // Use textGeneration for most models, or chatCompletion for chat models
+      let response;
+      let generatedText = '';
+
+      // Check if it's a chat model (models with "chat" or "instruct" in the name)
+      const isChatModel = HF_MODEL.toLowerCase().includes('chat') || 
+                         HF_MODEL.toLowerCase().includes('instruct') || 
+                         HF_MODEL.toLowerCase().includes('gemma') ||
+                         HF_MODEL.toLowerCase().includes('gpt-oss') ||
+                         HF_MODEL.toLowerCase().includes('conversational');
+
+      if (isChatModel) {
+        // Use chat completion for conversational models
+        response = await hf.chatCompletion({
+          model: HF_MODEL,
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 2048,
+          temperature: 0.3,
+        });
+        
+        if (response && response.choices && response.choices.length > 0) {
+          generatedText = response.choices[0].message.content;
+        }
+      } else {
+        // Use text generation for other models, with fallback to chat completion
+        try {
+          response = await hf.textGeneration({
+            model: HF_MODEL,
+            inputs: prompt,
+            parameters: {
+              max_new_tokens: 2048,
+              temperature: 0.3,
+              top_p: 0.9,
+              repetition_penalty: 1.1,
+              return_full_text: false
+            }
+          });
+          
+          generatedText = response.generated_text;
+        } catch (textGenError) {
+          console.log('[WARNING] Text generation failed, trying chat completion:', textGenError.message);
+          
+          // Fallback to chat completion if text generation fails
+          response = await hf.chatCompletion({
+            model: HF_MODEL,
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: 2048,
+            temperature: 0.3,
+          });
+          
+          if (response && response.choices && response.choices.length > 0) {
+            generatedText = response.choices[0].message.content;
+          }
+        }
+      }
+
+      console.log('[DEBUG] Hugging Face response received');
+      console.log('[DEBUG] Generated text length:', generatedText?.length || 0);
+
+      if (!generatedText) {
+        console.log('[WARNING] No generated text found in response, using fallback');
+      }
+
+      // Parse the generated text as JSON
+      if (generatedText) {
+        try {
+          // Try to extract JSON from the generated text
+          const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsedResult = JSON.parse(jsonMatch[0]);
+          } else {
+            console.log('[WARNING] No JSON found in generated text:', generatedText.substring(0, 200));
+          }
+        } catch (parseError) {
+          console.error('[ERROR] Failed to parse generated text as JSON:', parseError);
+          console.log('[DEBUG] Generated text sample:', generatedText.substring(0, 500));
+        }
+      }
+
+    } catch (hfError) {
+      console.error('[ERROR] Hugging Face API call failed:', hfError);
+      
+      // Check if it's a model not found error
+      if (hfError.message && hfError.message.includes('404')) {
+        return NextResponse.json({
+          error: 'Model not found or not accessible',
+          details: `The model "${HF_MODEL}" was not found. Please check the model name or try a different model.`,
+          suggestions: [
+            'microsoft/DialoGPT-medium',
+            'gpt2',
+            'google/flan-t5-base',
+            'facebook/bart-large-cnn'
+          ]
+        }, { status: 404 });
+      }
+
+      // Check if it's a model loading error
+      if (hfError.message && hfError.message.includes('loading')) {
+        return NextResponse.json({
+          error: 'Model is loading',
+          details: 'Please wait a moment for the model to load and try again.',
+          retryAfter: 60
+        }, { status: 503 });
+      }
+
       return NextResponse.json({ 
-        error: 'Invalid JSON response from agent', 
-        details: parseError.message,
-        rawResponse: agentResponseText
-      }, { status: 500 });
+        error: 'Hugging Face API error', 
+        details: hfError.message || 'Unknown error occurred',
+        model: HF_MODEL
+      }, { status: 502 });
     }
 
-    // Extract the result
-    let parsedResult = agentJson.result || 
-                      agentJson.answer || 
-                      agentJson.data?.responses?.agent_response ||
-                      agentJson.data?.agent_response ||
-                      agentJson.data ||
-                      agentJson;
-
-    console.log('[DEBUG] Extracted result:', {
+    console.log('[DEBUG] Parsed result:', {
       type: typeof parsedResult,
       content: parsedResult,
       isEmpty: !parsedResult || parsedResult === ""
@@ -190,7 +276,7 @@ INSTRUCTIONS:
 
     if (!parsedResult || parsedResult === "" || parsedResult === null) {
       // Return a fallback result to verify the frontend works
-      console.log('[WARNING] Creating fallback result due to empty agent response');
+      console.log('[WARNING] Creating fallback result due to empty Hugging Face response');
       const fallbackResult = {
         accuracyScore: 75,
         alignmentScore: 80,
@@ -200,10 +286,10 @@ INSTRUCTIONS:
           {
             type: "analysis",
             severity: "medium",
-            description: "Agent response was empty, using fallback analysis",
+            description: "Hugging Face model response was empty, using fallback analysis",
             queryData: "Query executed successfully",
             reportData: "Report content available",
-            impact: "Unable to perform detailed comparison due to agent response issue"
+            impact: "Unable to perform detailed comparison due to model response issue"
           }
         ],
         summary: {
@@ -212,7 +298,7 @@ INSTRUCTIONS:
           discrepancies: 0,
           missing: 1,
           strengths: ["Query executed successfully", "Report content accessible"],
-          improvements: ["Agent configuration needs review", "Response parsing improvements needed"]
+          improvements: ["Hugging Face model configuration needs review", "Response parsing improvements needed"]
         }
       };
 
@@ -222,7 +308,8 @@ INSTRUCTIONS:
           ...fallbackResult,
           checkedAt: new Date().toISOString(),
           queryId: parsedQueryData.id || 'unknown',
-          note: "This is a fallback result due to empty agent response. Check agent configuration."
+          note: "This is a fallback result due to empty model response. Check Hugging Face model configuration.",
+          model: HF_MODEL
         }
       });
     }
@@ -232,11 +319,11 @@ INSTRUCTIONS:
       try {
         parsedResult = JSON.parse(parsedResult);
       } catch (e) {
-        console.log('[ERROR] Could not parse agent response as JSON:', e);
+        console.log('[ERROR] Could not parse Hugging Face response as JSON:', e);
         return NextResponse.json({ 
           error: 'Invalid response format', 
-          details: 'Agent returned non-JSON response',
-          agentResponse: parsedResult
+          details: 'Hugging Face model returned non-JSON response',
+          modelResponse: parsedResult
         }, { status: 422 });
       }
     }
@@ -252,6 +339,7 @@ INSTRUCTIONS:
       summary: parsedResult.summary || {},
       checkedAt: new Date().toISOString(),
       queryId: parsedQueryData.id || 'unknown',
+      model: HF_MODEL,
       reportMetadata: {
         reportType: reportFile.type,
         reportName: reportFile.name,

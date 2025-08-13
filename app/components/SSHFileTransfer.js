@@ -33,8 +33,8 @@ export default function SSHFileTransfer({
 
   const formatTimeRange = (issueTime) => {
     const issueDate = new Date(issueTime);
-    const startTime = new Date(issueDate.getTime() - (2 * 60 * 60 * 1000)); // 2 hours before
-    const endTime = new Date(issueDate.getTime() + (30 * 60 * 1000)); // 30 minutes after
+    const startTime = new Date(issueDate.getTime() - (30 * 60 * 1000)); // 30 minutes before
+    const endTime = new Date(issueDate.getTime() + (15 * 60 * 1000)); // 15 minutes after
     
     return {
       start: startTime.toISOString(),
@@ -128,7 +128,7 @@ export default function SSHFileTransfer({
             </span>
             <p className="text-gray-900">{timeRange.display}</p>
             <p className="text-xs text-gray-500 mt-1">
-              2 hours before issue time to 30 minutes after
+              30 minutes before issue time to 15 minutes after
             </p>
           </div>
         </div>
@@ -263,7 +263,7 @@ export default function SSHFileTransfer({
             <h4 className="text-blue-800 font-medium text-sm">SSH Connection Details</h4>
             <p className="text-blue-700 text-sm mt-1">
               This will connect to <strong>{environment.host || 'the selected environment'}</strong> and download 
-              the log file <strong>/var/log/swms.log</strong> for the specified time range (2 hours before to 30 minutes after the issue time). 
+              the log file <strong>/var/log/swms.log</strong> for the specified time range (30 minutes before to 15 minutes after the issue time). 
               If you don't have SSH access, you can skip this step and continue with database logs only.
             </p>
           </div>

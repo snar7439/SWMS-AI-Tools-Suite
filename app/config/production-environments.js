@@ -15,9 +15,9 @@
 const productionEnvironments = [
   {
     id: 'lx001',
-    name: 'Production 001',
+    name: 'Opco 001',
     icon: '🔴',
-    description: 'Production environment 001',
+    description: 'Jackson',
     region: 'na',
     priority: 'primary',
     envId: '001',
@@ -31,9 +31,9 @@ const productionEnvironments = [
   },
   {
     id: 'lx002',
-    name: 'Production 002',
+    name: 'Opco 002',
     icon: '🔴',
-    description: 'Production environment 002',
+    description: 'Atlanta-Primary',
     region: 'na',
     priority: 'primary',
     envId: '002',
@@ -47,9 +47,9 @@ const productionEnvironments = [
   },
   {
     id: 'lx003',
-    name: 'Production 003',
+    name: 'Opco 003',
     icon: '🔴',
-    description: 'Production environment 003',
+    description: 'Jacksonville',
     region: 'na',
     priority: 'primary',
     envId: '003',
@@ -63,9 +63,9 @@ const productionEnvironments = [
   },
   {
     id: 'lx005',
-    name: 'Production 005',
+    name: 'Opco 005',
     icon: '🔴',
-    description: 'Production environment 005',
+    description: 'Intermountain',
     region: 'na',
     priority: 'primary',
     envId: '005',
@@ -76,7 +76,39 @@ const productionEnvironments = [
     logPaths: {
       swms: '/var/log/swms.log'
     }
-  }
+  },
+  {
+    id: 'lx006',
+    name: 'Opco 006',
+    icon: '🔴',
+    description: 'North Texas',
+    region: 'na',
+    priority: 'primary',
+    envId: '006',
+    endpoint: 'https://lx006.na.sysco.net',
+    database: 'swmsdb006.na.sysco.net:1521/swm1',
+    host: 'lx006.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },
+  {
+    id: 'lx067',
+    name: 'Opco 067',
+    icon: '🔴',
+    description: 'Houston',
+    region: 'na',
+    priority: 'primary',
+    envId: '067',
+    endpoint: 'https://lx067.na.sysco.net',
+    database: 'swmsdb067.na.sysco.net:1521/swm1',
+    host: 'lx067.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },
 ];
 
 /**

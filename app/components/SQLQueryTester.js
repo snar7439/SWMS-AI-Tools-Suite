@@ -142,30 +142,23 @@ export default function SQLQueryTester({
 
       // Improved regex patterns with better boundary detection
       const patterns = [
-        // Pattern 1: sql-- comment format with better boundary detection
+        // Pattern 1: Standard SQL code blocks (most common) - more flexible
         {
-          regex: /sql--[^\n]*\n((?:(?!sql--|```|^[A-Z]+\s*:|\n\s*\n)[^\n]*\n?)*?)(?=\n\s*\n|\n[A-Z]+\s*:|sql--|```|$)/gi,
-          name: 'sql-- comment format'
+          regex: /```(?:sql)?\s*\n([\s\S]*?)```/gi,
+          name: 'SQL code blocks',
+          splitStatements: true
         },
-        // Pattern 2: Standard SQL code blocks
+        // Pattern 2: sql-- comment format with better boundary detection
         {
-          regex: /```sql\s*\n([\s\S]*?)```/gi,
-          name: 'SQL code blocks'
+          regex: /sql--[^\n]*\n((?:(?!sql--|```|^#{1,6}\s|^[A-Z][^a-z]*:|\n\s*\n)[^\n]*\n?)*?)(?=\n\s*\n|^#{1,6}\s|sql--|```|$)/gmi,
+          name: 'sql-- comment format',
+          splitStatements: true
         },
-        // Pattern 3: SQL code blocks without language specifier
+        // Pattern 3: Multi-line SQL queries with proper termination (more flexible)
         {
-          regex: /```\s*\n((?:SELECT|WITH|EXPLAIN|DESCRIBE|SHOW)[\s\S]*?)```/gmi,
-          name: 'Generic code blocks with SQL'
-        },
-        // Pattern 4: Multi-line SQL queries with proper termination
-        {
-          regex: /(?:^|\n)((?:SELECT|WITH|EXPLAIN|DESCRIBE|SHOW)(?:\s|\n)+[\s\S]*?)(?=\n\s*(?:SELECT|WITH|EXPLAIN|DESCRIBE|SHOW|\n|$)|;|$)/gmi,
-          name: 'Multi-line SQL queries'
-        },
-        // Pattern 5: Single line SQL with semicolon
-        {
-          regex: /(?:^|\n)((?:SELECT|WITH|EXPLAIN|DESCRIBE|SHOW)[^;\n]*;)/gmi,
-          name: 'Single line SQL with semicolon'
+          regex: /(?:^|\n)((?:SELECT|WITH|EXPLAIN|DESCRIBE|SHOW|INSERT|UPDATE|DELETE)[\s\S]*?)(?=\n\s*(?:SELECT|WITH|EXPLAIN|DESCRIBE|SHOW|INSERT|UPDATE|DELETE|#{1,6}\s|\n|$)|;[\s\n]*$)/gmi,
+          name: 'Multi-line SQL queries',
+          splitStatements: false
         }
       ];
 
@@ -923,7 +916,7 @@ export default function SQLQueryTester({
                 <div className="grid md:grid-cols-2 gap-4">
                   {result.summary.strengths && result.summary.strengths.length > 0 && (
                     <div>
-                      <h7 className="text-xs font-medium text-green-300 mb-2 block">Strengths</h7>
+                      <h6 className="text-xs font-medium text-green-300 mb-2 block">Strengths</h6>
                       <ul className="text-xs text-gray-300 list-disc list-inside space-y-1">
                         {result.summary.strengths.map((strength, idx) => (
                           <li key={idx}>{strength}</li>
@@ -934,7 +927,7 @@ export default function SQLQueryTester({
                   
                   {result.summary.improvements && result.summary.improvements.length > 0 && (
                     <div>
-                      <h7 className="text-xs font-medium text-yellow-300 mb-2 block">Areas for Improvement</h7>
+                      <h6 className="text-xs font-medium text-yellow-300 mb-2 block">Areas for Improvement</h6>
                       <ul className="text-xs text-gray-300 list-disc list-inside space-y-1">
                         {result.summary.improvements.map((improvement, idx) => (
                           <li key={idx}>{improvement}</li>
@@ -1083,7 +1076,7 @@ export default function SQLQueryTester({
         {connectionStatus && !connectionStatus.success && (
           <div className="mt-3 p-3 bg-red-900/20 border border-red-800 rounded-lg">
             <p className="text-red-300 text-sm font-medium">Database Connection Failed</p>
-            <div className="text-red-400 text-xs mt-1 break-words whitespace-pre-wrap">
+            <div className="text-red-400 text-xs mt-1 break-words">
               {connectionStatus.error}
             </div>
           </div>
@@ -1203,12 +1196,14 @@ export default function SQLQueryTester({
                   {/* Expanded Content */}
                   {expandedQueries.has(query.id) && (
                     <div className="border-t border-gray-600 p-4 space-y-4">
-                      {/* Query Code */}
+                      {/* Query Code with proper wrapping */}
                       <div>
                         <h5 className="text-sm font-medium text-gray-300 mb-2">SQL Query:</h5>
-                        <pre className="bg-gray-800 border border-gray-600 rounded p-3 text-sm text-green-300 overflow-x-auto">
-                          <code>{query.query}</code>
-                        </pre>
+                        <div className="bg-gray-800 border border-gray-600 rounded p-3">
+                          <pre className="text-sm text-green-300 whitespace-pre-wrap break-words overflow-x-auto">
+                            <code>{query.query}</code>
+                          </pre>
+                        </div>
                       </div>
 
                       {/* Validation Issues (if any) */}
@@ -1251,9 +1246,11 @@ export default function SQLQueryTester({
                                         <span className="text-xs font-medium text-gray-300">Statement {idx + 1}</span>
                                         <span className="text-xs text-gray-400">{statementResult.rowCount} rows</span>
                                       </div>
-                                      <pre className="text-xs text-gray-400 mb-2 font-mono">
-                                        <code>{statementResult.statement}</code>
-                                      </pre>
+                                      <div className="bg-gray-800 border border-gray-600 rounded p-2 mb-2">
+                                        <pre className="text-xs text-gray-400 font-mono whitespace-pre-wrap break-words">
+                                          <code>{statementResult.statement}</code>
+                                        </pre>
+                                      </div>
                                       
                                       {statementResult.data && statementResult.data.length > 0 && (
                                         <div className="bg-gray-800 border border-gray-600 rounded overflow-x-auto max-h-32">
@@ -1357,7 +1354,7 @@ export default function SQLQueryTester({
                                 <div className="mt-4">
                                   <div className="bg-red-900/20 border border-red-800 rounded p-3">
                                     <p className="text-red-300 text-sm font-medium">Report Check Failed</p>
-                                    <div className="text-red-400 text-xs mt-1 break-words whitespace-pre-wrap">
+                                    <div className="text-red-400 text-xs mt-1 break-words">
                                       {reportCheckResults[query.id].error}
                                     </div>
                                   </div>
@@ -1367,15 +1364,17 @@ export default function SQLQueryTester({
                           ) : (
                             <div className="bg-red-900/20 border border-red-800 rounded p-3">
                               <p className="text-red-300 text-sm font-medium">Query Failed</p>
-                              <div className="text-red-400 text-xs mt-1 break-words whitespace-pre-wrap">
+                              <div className="text-red-400 text-xs mt-1 break-words">
                                 {queryResults[query.id].error}
                               </div>
                               {queryResults[query.id].failedStatement && (
                                 <div className="mt-2">
                                   <p className="text-red-400 text-xs font-medium">Failed Statement {queryResults[query.id].failedStatement}:</p>
-                                  <pre className="text-red-300 text-xs mt-1 font-mono break-words whitespace-pre-wrap">
-                                    <code>{queryResults[query.id].failedStatementText}</code>
-                                  </pre>
+                                  <div className="bg-gray-800 border border-gray-600 rounded p-2 mt-1">
+                                    <pre className="text-red-300 text-xs font-mono whitespace-pre-wrap break-words">
+                                      <code>{queryResults[query.id].failedStatementText}</code>
+                                    </pre>
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -1402,6 +1401,7 @@ export default function SQLQueryTester({
                   onChange={(e) => setCustomQuery(e.target.value)}
                   placeholder="SELECT column1, column2 FROM your_table WHERE condition = 'value';"
                   className="w-full h-40 bg-gray-700 border border-gray-600 rounded-lg p-3 text-green-300 font-mono text-sm resize-vertical focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  style={{ wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}
                 />
                 
                 {/* Query Validation Preview */}
@@ -1488,9 +1488,11 @@ export default function SQLQueryTester({
                                 <span className="text-xs font-medium text-gray-300">Statement {idx + 1}</span>
                                 <span className="text-xs text-gray-400">{statementResult.rowCount} rows</span>
                               </div>
-                              <pre className="text-xs text-gray-400 mb-2 font-mono">
-                                <code>{statementResult.statement}</code>
-                              </pre>
+                              <div className="bg-gray-800 border border-gray-600 rounded p-2 mb-2">
+                                <pre className="text-xs text-gray-400 font-mono whitespace-pre-wrap break-words">
+                                  <code>{statementResult.statement}</code>
+                                </pre>
+                              </div>
                               
                               {statementResult.data && statementResult.data.length > 0 && (
                                 <div className="bg-gray-800 border border-gray-600 rounded overflow-x-auto max-h-32">
@@ -1588,7 +1590,7 @@ export default function SQLQueryTester({
                         <div className="mt-4">
                           <div className="bg-red-900/20 border border-red-800 rounded p-3">
                             <p className="text-red-300 text-sm font-medium">Report Check Failed</p>
-                            <div className="text-red-400 text-xs mt-1 break-words whitespace-pre-wrap">
+                            <div className="text-red-400 text-xs mt-1 break-words">
                               {reportCheckResults['custom_query'].error}
                             </div>
                           </div>
@@ -1598,15 +1600,17 @@ export default function SQLQueryTester({
                   ) : (
                     <div className="bg-red-900/20 border border-red-800 rounded p-4">
                       <p className="text-red-300 text-sm font-medium">Query Failed</p>
-                      <div className="text-red-400 text-xs mt-2 break-words whitespace-pre-wrap">
+                      <div className="text-red-400 text-xs mt-2 break-words">
                         {queryResults['custom_query'].error}
                       </div>
                       {queryResults['custom_query'].failedStatement && (
                         <div className="mt-2">
                           <p className="text-red-400 text-xs font-medium">Failed Statement {queryResults['custom_query'].failedStatement}:</p>
-                          <pre className="text-red-300 text-xs mt-1 font-mono break-words whitespace-pre-wrap">
-                            <code>{queryResults['custom_query'].failedStatementText}</code>
-                          </pre>
+                          <div className="bg-gray-800 border border-gray-600 rounded p-2 mt-1">
+                            <pre className="text-red-300 text-xs font-mono whitespace-pre-wrap break-words">
+                              <code>{queryResults['custom_query'].failedStatementText}</code>
+                            </pre>
+                          </div>
                         </div>
                       )}
                     </div>

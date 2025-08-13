@@ -586,13 +586,13 @@ export default function SingleReportViewer({
               </button>
             )}
 
-            {/* Hide Button - only show for analysis slot and when onToggleVisibility is provided */}
+            {/* Hide Button - only show for verification slot and when onToggleVisibility is provided */}
             {isAnalysisSlot && onToggleVisibility && (
               <button
                 type="button"
                 onClick={onToggleVisibility}
                 className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-gray-700 hover:bg-emerald-600 text-gray-300 hover:text-white border border-gray-600 hover:border-emerald-700 transition-colors shadow-sm"
-                title="Hide analysis document"
+                title="Hide verification document"
               >
                 <svg
                   className="w-3.5 h-3.5"
@@ -834,7 +834,7 @@ export default function SingleReportViewer({
               </p>
               <div className="flex items-center justify-center">
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${colorScheme.emptyBadge}`}>
-                  {isAnalysisSlot ? 'Analysis Document' : 'Report A'}
+                  {isAnalysisSlot ? 'Verification Document' : 'Report A'}
                 </span>
               </div>
             </div>

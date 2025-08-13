@@ -105,7 +105,7 @@ export async function POST(request) {
     const downloadedFiles = [];
     const errors = [];
 
-    // Download each log file
+    // Use grep for time-based filtering when possible
     for (const logPath of logPaths) {
       try {
         const fileName = path.basename(logPath.remotePath);
@@ -113,22 +113,45 @@ export async function POST(request) {
         // Save file with environment ID prefix
         const localPath = path.join(tempDir, `${envId}_${fileName}`);
         
-        console.log(`Downloading ${logPath.remotePath} to ${localPath}`);
+        console.log(`Processing ${logPath.remotePath}`);
         
-        await downloadFile(sftp, logPath.remotePath, localPath);
+        // Try to use grep for time-based filtering first
+        const filteredContent = await grepLogFile(conn, logPath.remotePath, timeRange);
         
-        downloadedFiles.push({
-          type: logPath.type,
-          remotePath: logPath.remotePath,
-          localPath: localPath,
-          fileName: `${envId}_${logPath.type}_${fileName}`,
-          originalFileName: fileName,
-          size: await getFileSize(localPath)
-        });
-        
-        console.log(`Successfully downloaded ${fileName} as ${envId}_${fileName}`);
+        if (filteredContent && filteredContent.trim()) {
+          // Save filtered content to local file
+          await fs.writeFile(localPath, filteredContent);
+          
+          downloadedFiles.push({
+            type: logPath.type,
+            remotePath: logPath.remotePath,
+            localPath: localPath,
+            fileName: `${envId}_${logPath.type}_${fileName}`,
+            originalFileName: fileName,
+            size: await getFileSize(localPath),
+            filtered: true
+          });
+          
+          console.log(`Successfully filtered and downloaded ${fileName} using grep`);
+        } else {
+          // Fallback to full file download if grep filtering fails
+          console.log(`Grep filtering failed for ${logPath.remotePath}, downloading full file`);
+          await downloadFile(sftp, logPath.remotePath, localPath);
+          
+          downloadedFiles.push({
+            type: logPath.type,
+            remotePath: logPath.remotePath,
+            localPath: localPath,
+            fileName: `${envId}_${logPath.type}_${fileName}`,
+            originalFileName: fileName,
+            size: await getFileSize(localPath),
+            filtered: false
+          });
+          
+          console.log(`Successfully downloaded ${fileName} (full file)`);
+        }
       } catch (error) {
-        console.error(`Failed to download ${logPath.remotePath}:`, error.message);
+        console.error(`Failed to process ${logPath.remotePath}:`, error.message);
         errors.push({
           path: logPath.remotePath,
           error: error.message
@@ -154,7 +177,8 @@ export async function POST(request) {
       downloadedFiles: downloadedFiles.map(f => ({
         type: f.type,
         fileName: f.fileName,
-        size: f.size
+        size: f.size,
+        filtered: f.filtered || false
       })),
       processedLogs: processedLogs,
       errors: errors.length > 0 ? errors : undefined,
@@ -162,7 +186,8 @@ export async function POST(request) {
         host: host,
         name: environment.name || environment
       },
-      timeRange: timeRange
+      timeRange: timeRange,
+      grepFilteringUsed: downloadedFiles.some(f => f.filtered)
     });
 
   } catch (error) {
@@ -188,7 +213,6 @@ export async function POST(request) {
 
 // Helper function to determine log file paths based on environment
 function getLogPaths(environment, timeRange) {
-  const envId = environment.envId || environment.id || environment;
   const logPaths = [];
 
   // Use the simplified log paths from environment configuration
@@ -196,7 +220,7 @@ function getLogPaths(environment, timeRange) {
     swms: '/var/log/swms.log'
   };
 
-  // Add the main log file
+  // Main log file - we'll use time-based grep filtering
   Object.entries(basePaths).forEach(([type, basePath]) => {
     logPaths.push({
       type: type,
@@ -204,46 +228,91 @@ function getLogPaths(environment, timeRange) {
     });
   });
 
-  // Also try to get dated/rotated log files for the time range
-  const startDate = new Date(timeRange.start);
-  const endDate = new Date(timeRange.end);
-  
-  const currentDate = new Date(startDate);
-  
-  while (currentDate <= endDate) {
-    const dateStr = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
-    const altDateStr = currentDate.getFullYear() + 
-                      String(currentDate.getMonth() + 1).padStart(2, '0') + 
-                      String(currentDate.getDate()).padStart(2, '0'); // YYYYMMDD
-    
-    Object.entries(basePaths).forEach(([type, basePath]) => {
-      // Try different date formats commonly used in log rotation
-      const dirName = path.dirname(basePath);
-      const fileName = path.basename(basePath, '.log');
-      
-      // Try: swms.log.2024-07-07
-      logPaths.push({
-        type: `${type}_dated_dash`,
-        remotePath: `${basePath}.${dateStr}`
-      });
-      
-      // Try: swms.20240707.log  
-      logPaths.push({
-        type: `${type}_dated_format`,
-        remotePath: path.join(dirName, `${fileName}.${altDateStr}.log`)
-      });
-      
-      // Try: swms.log.20240707
-      logPaths.push({
-        type: `${type}_dated_simple`,
-        remotePath: `${basePath}.${altDateStr}`
-      });
-    });
-    
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-
   return logPaths;
+}
+
+// Helper function to use grep for time-based log filtering
+function grepLogFile(conn, remotePath, timeRange) {
+  return new Promise((resolve, reject) => {
+    try {
+      const startTime = new Date(timeRange.start);
+      const endTime = new Date(timeRange.end);
+      
+      // Format times for grep patterns
+      const startHour = startTime.getHours().toString().padStart(2, '0');
+      const startMinute = startTime.getMinutes().toString().padStart(2, '0');
+      const endHour = endTime.getHours().toString().padStart(2, '0');
+      const endMinute = endTime.getMinutes().toString().padStart(2, '0');
+      
+      // Get month abbreviation for SWMS log format (e.g., "Jul", "Aug")
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const startMonth = months[startTime.getMonth()];
+      const endMonth = months[endTime.getMonth()];
+      const startDay = startTime.getDate().toString().padStart(2, ' ');
+      const endDay = endTime.getDate().toString().padStart(2, ' ');
+      
+      // Build grep command to filter by time range
+      // This handles SWMS log format: "Jul  7 00:02:56"
+      let grepCommand;
+      
+      if (startTime.toDateString() === endTime.toDateString()) {
+        // Same day - filter by hour and minute range
+        grepCommand = `grep -E "^${startMonth}\\s+${startDay}\\s+([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]" "${remotePath}" | awk '{
+          time = $3;
+          split(time, t, ":");
+          hour = int(t[1]);
+          minute = int(t[2]);
+          totalMinutes = hour * 60 + minute;
+          startMinutes = ${startHour} * 60 + ${startMinute};
+          endMinutes = ${endHour} * 60 + ${endMinute};
+          if (totalMinutes >= startMinutes && totalMinutes <= endMinutes) print $0;
+        }'`;
+      } else {
+        // Multiple days - more complex filtering
+        grepCommand = `grep -E "^(${startMonth}\\s+${startDay}|${endMonth}\\s+${endDay})\\s+([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]" "${remotePath}"`;
+      }
+      
+      console.log(`Executing grep command: ${grepCommand}`);
+      
+      conn.exec(grepCommand, (err, stream) => {
+        if (err) {
+          console.log(`Grep command failed: ${err.message}, will fallback to full file download`);
+          resolve(null);
+          return;
+        }
+        
+        let output = '';
+        let errorOutput = '';
+        
+        stream.on('close', (code, signal) => {
+          if (code === 0 || code === 1) {
+            // Code 0: matches found, Code 1: no matches found (both acceptable)
+            resolve(output);
+          } else {
+            console.log(`Grep command exited with code ${code}, will fallback to full file download`);
+            resolve(null);
+          }
+        });
+        
+        stream.on('data', (data) => {
+          output += data.toString();
+        });
+        
+        stream.stderr.on('data', (data) => {
+          errorOutput += data.toString();
+        });
+        
+        stream.on('error', (err) => {
+          console.log(`Grep stream error: ${err.message}, will fallback to full file download`);
+          resolve(null);
+        });
+      });
+    } catch (error) {
+      console.log(`Grep setup error: ${error.message}, will fallback to full file download`);
+      resolve(null);
+    }
+  });
 }
 
 // Helper function to download a file via SFTP
@@ -379,21 +448,66 @@ export async function DELETE(request) {
       );
     }
 
-    const tempDir = path.join(process.cwd(), 'temp_logs', sessionId);
-    
+    const tempLogsDir = path.join(process.cwd(), 'temp_logs');
+    const targetDir = path.join(tempLogsDir, sessionId);
+    const deletedDirs = [];
+
     try {
-      await fs.rm(tempDir, { recursive: true, force: true });
-      console.log(`Cleaned up SSH session files: ${sessionId}`);
-      
+      // Clean up the specific session directory
+      if (await fs.access(targetDir).then(() => true).catch(() => false)) {
+        await fs.rm(targetDir, { recursive: true, force: true });
+        deletedDirs.push(sessionId);
+        console.log(`Cleaned up SSH session directory: ${sessionId}`);
+      }
+
+      // If this is a regular session, also clean up related SSH sessions
+      if (sessionId.startsWith('session_') && await fs.access(tempLogsDir).then(() => true).catch(() => false)) {
+        // Extract environment ID from regular session: session_<timestamp>_<envId>
+        const parts = sessionId.split('_');
+        if (parts.length >= 3) {
+          const envId = parts.slice(2).join('_'); // Handle envIds that might contain underscores
+          
+          const allDirs = await fs.readdir(tempLogsDir);
+          
+          for (const dir of allDirs) {
+            const fullDirPath = path.join(tempLogsDir, dir);
+            
+            try {
+              const stat = await fs.stat(fullDirPath);
+              // Check if it's a directory and matches SSH session pattern for the same environment
+              if (stat.isDirectory() && 
+                  dir.startsWith('ssh_session_') && 
+                  dir.endsWith('_' + envId)) {
+                
+                await fs.rm(fullDirPath, { recursive: true, force: true });
+                deletedDirs.push(dir);
+                console.log(`Cleaned up related SSH session directory: ${dir}`);
+              }
+            } catch (statError) {
+              // Ignore errors reading individual directories
+              continue;
+            }
+          }
+        }
+      }
+
+      const message = deletedDirs.length > 0 
+        ? `Cleaned up ${deletedDirs.length} session directory(ies): ${deletedDirs.join(', ')}`
+        : `Session directory ${sessionId} already cleaned or doesn't exist`;
+
       return NextResponse.json({
         success: true,
-        message: `SSH session files cleaned up: ${sessionId}`
+        message: message,
+        deletedDirectories: deletedDirs.length,
+        sessionIds: deletedDirs
       });
+
     } catch (error) {
       // Directory might not exist, which is fine
       return NextResponse.json({
         success: true,
-        message: `SSH session files already cleaned or don't exist: ${sessionId}`
+        message: `Session files already cleaned or don't exist: ${sessionId}`,
+        deletedDirectories: 0
       });
     }
 

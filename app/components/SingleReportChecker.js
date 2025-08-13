@@ -11,13 +11,13 @@ export default function SingleReportCheck() {
   // State for navigation panel visibility
   const [isNavPanelVisible, setIsNavPanelVisible] = useState(true);
   
-  // State for analysis document visibility in report check tab
+  // State for verification document visibility in report check tab
   const [isAnalysisVisible, setIsAnalysisVisible] = useState(true);
   
   // State for query testing panel visibility in SQL tab
   const [isQueryTestingVisible, setIsQueryTestingVisible] = useState(true);
   
-  // State for resizable analysis document width (report check tab)
+  // State for resizable verification document width (report check tab)
   const [analysisWidth, setAnalysisWidth] = useState(50); // percent, default 50%
   const [isResizing, setIsResizing] = useState(false);
 
@@ -130,10 +130,10 @@ export default function SingleReportCheck() {
     console.log('Report selected:', report);
   };
 
-  // Handles analysis document loading from NavigationPanel
+  // Handles verification document loading from NavigationPanel
   const handleAnalysisDocumentLoad = (analysisDoc) => {
     setAnalysisDocument(analysisDoc);
-    console.log('Analysis document loaded from NavigationPanel:', analysisDoc);
+    console.log('Verification document loaded from NavigationPanel:', analysisDoc);
   };
 
   const handleFileUpload = (reportOrFile, slot) => {
@@ -161,7 +161,7 @@ export default function SingleReportCheck() {
           };
           
           setAnalysisDocument(analysisDoc);
-          console.log('Analysis document uploaded:', analysisDoc);
+          console.log('Verification document uploaded:', analysisDoc);
         } else if (file.type === 'application/pdf') {
           // Handle PDF file
           const pdfUrl = URL.createObjectURL(file);
@@ -175,9 +175,9 @@ export default function SingleReportCheck() {
           };
           
           setAnalysisDocument(analysisDoc);
-          console.log('Analysis document uploaded:', analysisDoc);
+          console.log('Verification document uploaded:', analysisDoc);
         } else {
-          alert('Please upload a PDF or Markdown file for the analysis document');
+          alert('Please upload a PDF or Markdown file for the verification document');
           return;
         }
       } else {
@@ -207,7 +207,7 @@ export default function SingleReportCheck() {
       
       if (slot === 'analysis') {
         setAnalysisDocument(report);
-        console.log('Analysis document uploaded:', report);
+        console.log('Verification document uploaded:', report);
       } else {
         setSelectedReport(report);
         console.log('Report uploaded:', report);
@@ -217,7 +217,7 @@ export default function SingleReportCheck() {
 
   const handleRunCheck = async () => {
     if (!selectedReport || !analysisDocument) {
-      alert('Please select both a report and an analysis document');
+      alert('Please select both a report and a verification document');
       return;
     }
 
@@ -251,7 +251,7 @@ export default function SingleReportCheck() {
       // Analysis
       const analysisFile = await getFileFromSource(analysisDocument, 'analysis.pdf');
       if (!analysisFile) {
-        alert('Could not get analysis document file or content.');
+        alert('Could not get verification document file or content.');
         setIsChecking(false);
         return;
       }
@@ -265,7 +265,7 @@ export default function SingleReportCheck() {
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || 'Analysis failed');
+        throw new Error(err.error || 'Verification failed');
       }
 
       const data = await response.json();
@@ -364,10 +364,10 @@ export default function SingleReportCheck() {
             <div>
               <p className="text-xs text-gray-400">
                 {activeTab === 'sql' 
-                  ? 'Test SQL queries from analysis documents'
+                  ? 'Test SQL queries from verification documents'
                   : activeTab === 'results'
                   ? 'View analysis results and compliance check details'
-                  : 'Upload a report and analysis document to validate compliance'
+                  : 'Upload a report and verification document to validate compliance'
                 }
               </p>
             </div>
@@ -484,8 +484,8 @@ export default function SingleReportCheck() {
                               <DragDropArea
                                 onFileUpload={handleFileUpload}
                                 slot="analysis"
-                                title="Analysis Document"
-                                sub="Drop analysis document here"
+                                title="Verification Document"
+                                sub="Drop verification document here"
                                 mode="single"
                                 onToggleVisibility={handleToggleAnalysis}
                                 isVisible={isAnalysisVisible}
@@ -503,7 +503,7 @@ export default function SingleReportCheck() {
                         <button
                           onClick={handleToggleAnalysis}
                           className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-l-lg shadow-lg transition-all duration-200 flex items-center gap-2"
-                          title="Show Analysis Document"
+                          title="Show Verification Document"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -527,7 +527,7 @@ export default function SingleReportCheck() {
                               <h3 className="text-lg font-semibold text-white">Check Results</h3>
                             </div>
                             <span className="px-3 py-1 bg-green-900/30 text-green-300 text-sm font-medium rounded-full">
-                              Analysis Complete
+                              Verification Complete
                             </span>
                           </div>
                           
@@ -649,9 +649,9 @@ export default function SingleReportCheck() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">Analysis Document Required</h3>
+                  <h3 className="text-lg font-semibold text-white mb-2">Verification Document Required</h3>
                   <p className="text-gray-400 text-sm mb-4">
-                    Load an analysis document first to extract and test SQL queries. The document should contain SQL queries in code blocks or with sql-- comments.
+                    Load a verification document first to extract and test SQL queries. The document should contain SQL queries in code blocks or with sql-- comments.
                   </p>
                   <button
                     onClick={() => setActiveTab('check')}
