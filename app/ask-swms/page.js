@@ -164,32 +164,10 @@ export default function AskSWMSChatbot() {
     const userInput = inputValue;
     setInputValue('');
     setIsLoading(true);
-    setIsThinking(true);
+    setIsThinking(true); // Start thinking immediately
 
     try {
-      // Use Promise with setTimeout that continues in background
-      const thinkingPromise = new Promise(resolve => {
-        setTimeout(() => {
-          setIsThinking(false);
-          resolve();
-        }, 1000 + Math.random() * 1000);
-      });
-      
-      await thinkingPromise;
-
-      // Create bot message placeholder
-      const botMessageId = Date.now() + 1;
-      const botMessage = {
-        id: botMessageId,
-        type: 'bot',
-        content: '',
-        isComplete: false,
-      };
-
-      setMessages(prev => [...prev, botMessage]);
-      setStreamingMessageId(botMessageId);
-
-      // Call the proxy API route
+      // Call the proxy API route immediately
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -212,6 +190,21 @@ export default function AskSWMSChatbot() {
         fullResponse = 'Sorry, I could not get a response from the backend.';
       }
 
+      // Only stop thinking when we have the response and are about to start streaming
+      setIsThinking(false);
+
+      // Create bot message placeholder
+      const botMessageId = Date.now() + 1;
+      const botMessage = {
+        id: botMessageId,
+        type: 'bot',
+        content: '',
+        isComplete: false,
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+      setStreamingMessageId(botMessageId);
+
       // Start typing animation - continues in background using setInterval
       typeMessage(botMessageId, fullResponse, () => {
         setMessages(prev => prev.map(msg =>
@@ -222,7 +215,7 @@ export default function AskSWMSChatbot() {
 
     } catch (error) {
       console.error('Error sending message:', error);
-      setIsThinking(false);
+      setIsThinking(false); // Stop thinking on error
       
       const errorResponse = {
         id: Date.now() + 1,
@@ -274,32 +267,10 @@ export default function AskSWMSChatbot() {
 
     // Generate new bot response for the edited message
     setIsLoading(true);
-    setIsThinking(true);
+    setIsThinking(true); // Start thinking immediately
 
     try {
-      // Use Promise with setTimeout that continues in background
-      const thinkingPromise = new Promise(resolve => {
-        setTimeout(() => {
-          setIsThinking(false);
-          resolve();
-        }, 1000 + Math.random() * 1000);
-      });
-      
-      await thinkingPromise;
-
-      // Create bot message placeholder
-      const botMessageId = Date.now();
-      const botMessage = {
-        id: botMessageId,
-        type: 'bot',
-        content: '',
-        isComplete: false,
-      };
-
-      setMessages(prev => [...prev, botMessage]);
-      setStreamingMessageId(botMessageId);
-
-      // Call the proxy API route for the edited message
+      // Call the proxy API route for the edited message immediately
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -322,6 +293,21 @@ export default function AskSWMSChatbot() {
         fullResponse = 'Sorry, I could not get a response from the backend.';
       }
 
+      // Only stop thinking when we have the response and are about to start streaming
+      setIsThinking(false);
+
+      // Create bot message placeholder
+      const botMessageId = Date.now();
+      const botMessage = {
+        id: botMessageId,
+        type: 'bot',
+        content: '',
+        isComplete: false,
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+      setStreamingMessageId(botMessageId);
+
       // Start typing animation - continues in background using setInterval
       typeMessage(botMessageId, fullResponse, () => {
         setMessages(prev => prev.map(msg =>
@@ -332,7 +318,7 @@ export default function AskSWMSChatbot() {
 
     } catch (error) {
       console.error('Error sending edited message:', error);
-      setIsThinking(false);
+      setIsThinking(false); // Stop thinking on error
       
       const errorResponse = {
         id: Date.now(),
