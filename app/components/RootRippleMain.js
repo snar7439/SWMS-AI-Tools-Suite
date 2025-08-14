@@ -167,31 +167,134 @@ export default function RootRippleMain({ headerHeight }) {
     continueAnalysisAfterSSH(null);
   };
 
-  const continueAnalysisAfterSSH = (sshData) => {
+  const continueAnalysisAfterSSH = async (sshData) => {
     // Step 4: AI Analysis in Progress
     setTimeout(() => setCurrentStep(4), 1000);
     
-    // Step 5: Generating Solutions
-    setTimeout(() => setCurrentStep(5), 4000);
-    
-    // Complete analysis
-    setTimeout(() => {
-      setShowStepModal(false);
-      setAnalysisComplete(true);
-      setAnalysisResults({
-        ...mockResults,
-        logSummary: analysisResults?.logSummary || {},
-        sshLogs: sshData || null,
-        sshSkipped: skipSSHTransfer,
-        sessionId: analysisResults?.sessionId || `session_${Date.now()}`,
-        environment: selectedEnvironment
+    try {
+      // Prepare form data for the LLM analysis
+      const formData = new FormData();
+      formData.append('issueDescription', issueDescription);
+      formData.append('timeOccurred', timeOccurred);
+      formData.append('environmentType', environmentType);
+      formData.append('environment', JSON.stringify(selectedEnvironment));
+      formData.append('logSummary', JSON.stringify(analysisResults?.logSummary || {}));
+      formData.append('sessionId', analysisResults?.sessionId || `session_${Date.now()}`);
+      
+      // Add attached images to form data
+      attachedImages.forEach((image, index) => {
+        if (image.file) {
+          formData.append(`image_${index}`, image.file);
+        }
       });
-      setIsAnalyzing(false);
-      // Scroll to top of results
+
+      // Step 5: Generating Solutions
+      setTimeout(() => setCurrentStep(5), 2000);
+
+      console.log('Calling LLM for root cause analysis...');
+      
+      // Call the root cause analysis API
+      const response = await fetch('/api/root-cause-analysis', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      if (result.success && result.analysis) {
+        console.log('LLM Analysis successful:', result.analysis);
+        
+        // Transform LLM analysis to match our expected format
+        const llmAnalysis = result.analysis.issueAnalysis;
+        
+        // Helper functions for mapping LLM response
+        const determineSeverity = (confidenceLevel) => {
+          switch(confidenceLevel?.toLowerCase()) {
+            case 'high': return 'High';
+            case 'medium': return 'Medium';
+            case 'low': return 'Low';
+            default: return 'Medium';
+          }
+        };
+        
+        const mapConfidenceToPercentage = (confidenceLevel) => {
+          switch(confidenceLevel?.toLowerCase()) {
+            case 'high': return 85;
+            case 'medium': return 65;
+            case 'low': return 35;
+            default: return 50;
+          }
+        };
+        
+        const extractLogSummary = (relevantEvidence) => {
+          return relevantEvidence.map(evidence => 
+            `${evidence.type?.toUpperCase() || 'INFO'}: ${evidence.description} (${evidence.source})`
+          ).slice(0, 5); // Limit to 5 entries
+        };
+        
+        // Complete analysis with LLM results
+        setTimeout(() => {
+          setShowStepModal(false);
+          setAnalysisComplete(true);
+          setAnalysisResults({
+            // Map LLM analysis to our expected structure
+            rootCause: llmAnalysis.rootCauseAnalysis?.primaryCause || 'Root cause analysis completed',
+            severity: determineSeverity(llmAnalysis.confidenceLevel),
+            confidence: mapConfidenceToPercentage(llmAnalysis.confidenceLevel),
+            affectedComponents: llmAnalysis.rootCauseAnalysis?.affectedComponents || ['Analysis Service'],
+            timeline: llmAnalysis.timeWindow?.issueTime || timeOccurred,
+            solution: {
+              immediate: llmAnalysis.recommendations?.immediate || 'Review analysis results and take appropriate action',
+              longTerm: llmAnalysis.recommendations?.longTerm || 'Implement monitoring and preventive measures'
+            },
+            relatedLogs: extractLogSummary(llmAnalysis.relevantEvidence || []),
+            
+            // Additional data from our analysis
+            llmAnalysis: llmAnalysis,
+            logSummary: analysisResults?.logSummary || {},
+            sshLogs: sshData || null,
+            sshSkipped: skipSSHTransfer,
+            sessionId: analysisResults?.sessionId || `session_${Date.now()}`,
+            environment: selectedEnvironment,
+            analysisMetadata: result.metadata
+          });
+          setIsAnalyzing(false);
+          
+          // Scroll to top of results
+          setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 100);
+        }, 1000);
+        
+      } else {
+        throw new Error(result.error || 'LLM analysis failed');
+      }
+      
+    } catch (error) {
+      console.error('LLM Analysis failed:', error);
+      
+      // Fallback to mock results if LLM fails
       setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
-    }, 7000);
+        setShowStepModal(false);
+        setAnalysisComplete(true);
+        setAnalysisResults({
+          ...mockResults,
+          rootCause: `Analysis service temporarily unavailable. Original issue: ${issueDescription}`,
+          logSummary: analysisResults?.logSummary || {},
+          sshLogs: sshData || null,
+          sshSkipped: skipSSHTransfer,
+          sessionId: analysisResults?.sessionId || `session_${Date.now()}`,
+          environment: selectedEnvironment,
+          analysisError: error.message
+        });
+        setIsAnalyzing(false);
+        
+        // Scroll to top of results
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
+      }, 2000);
+    }
   };
 
   const startAnalysis = async () => {
@@ -323,7 +426,11 @@ export default function RootRippleMain({ headerHeight }) {
       issue: {
         description: issueDescription,
         timeOccurred: timeOccurred,
-        reportedAt: new Date(timeOccurred).toLocaleString()
+        reportedAt: new Date(timeOccurred).toLocaleString(),
+        attachedImages: attachedImages.map(img => ({
+          name: img.name,
+          size: img.file?.size || 0
+        }))
       },
       analysis: {
         rootCause: analysisResults.rootCause,
@@ -339,7 +446,25 @@ export default function RootRippleMain({ headerHeight }) {
       systemLogs: analysisResults.relatedLogs,
       databaseLogs: analysisResults.logSummary || null,
       sshLogs: analysisResults.sshLogs || null,
-      sessionId: analysisResults.sessionId
+      sessionId: analysisResults.sessionId,
+      
+      // Include LLM analysis details if available
+      aiAnalysis: analysisResults.llmAnalysis ? {
+        summary: analysisResults.llmAnalysis.summary,
+        timeWindow: analysisResults.llmAnalysis.timeWindow,
+        relevantEvidence: analysisResults.llmAnalysis.relevantEvidence,
+        rootCauseAnalysis: analysisResults.llmAnalysis.rootCauseAnalysis,
+        confidenceLevel: analysisResults.llmAnalysis.confidenceLevel,
+        confidenceReasoning: analysisResults.llmAnalysis.confidenceReasoning,
+        recommendations: analysisResults.llmAnalysis.recommendations,
+        additionalDataNeeded: analysisResults.llmAnalysis.additionalDataNeeded
+      } : null,
+      
+      // Include analysis metadata
+      analysisMetadata: analysisResults.analysisMetadata || null,
+      
+      // Include any error information
+      analysisError: analysisResults.analysisError || null
     };
 
     // Convert to JSON string with formatting
@@ -576,6 +701,7 @@ export default function RootRippleMain({ headerHeight }) {
                       value={timeOccurred}
                       onChange={(e) => setTimeOccurred(e.target.value)}
                       onClick={() => timeInputRef.current?.showPicker?.()}
+                      max={new Date().toISOString().slice(0, 16)}
                       className="w-full p-4 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 text-gray-900 bg-white/50 cursor-pointer"
                       placeholder="Click to select date and time"
                     />
@@ -802,6 +928,88 @@ export default function RootRippleMain({ headerHeight }) {
           {/* Detailed Log Information (Conditional) */}
           {showDetailedLogs && (
             <div className="space-y-8">
+              {/* LLM Analysis Details */}
+              {analysisResults.llmAnalysis && (
+                <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-8">
+                  <div className="flex items-center mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mr-4">
+                      <Brain className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900">AI Analysis Details</h3>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center p-6 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl">
+                        <p className="text-3xl font-bold text-purple-700 mb-1">{analysisResults.llmAnalysis.confidenceLevel}</p>
+                        <p className="text-sm font-medium text-purple-600">AI Confidence</p>
+                      </div>
+                      <div className="text-center p-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl">
+                        <p className="text-3xl font-bold text-blue-700 mb-1">{analysisResults.llmAnalysis.relevantEvidence?.length || 0}</p>
+                        <p className="text-sm font-medium text-blue-600">Evidence Points</p>
+                      </div>
+                      <div className="text-center p-6 bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl">
+                        <p className="text-3xl font-bold text-green-700 mb-1">{analysisResults.llmAnalysis.rootCauseAnalysis?.evidenceTrail?.length || 0}</p>
+                        <p className="text-sm font-medium text-green-600">Evidence Trail Steps</p>
+                      </div>
+                    </div>
+                    
+                    {/* AI Reasoning */}
+                    {analysisResults.llmAnalysis.rootCauseAnalysis?.reasoning && (
+                      <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 border-l-4 border-purple-500 rounded-2xl">
+                        <h4 className="font-bold text-purple-900 mb-3">AI Reasoning Process:</h4>
+                        <p className="text-purple-800 leading-relaxed">{analysisResults.llmAnalysis.rootCauseAnalysis.reasoning}</p>
+                      </div>
+                    )}
+                    
+                    {/* Evidence Timeline */}
+                    {analysisResults.llmAnalysis.relevantEvidence && analysisResults.llmAnalysis.relevantEvidence.length > 0 && (
+                      <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-2xl">
+                        <h4 className="font-bold text-blue-900 mb-4">Evidence Timeline:</h4>
+                        <div className="space-y-3">
+                          {analysisResults.llmAnalysis.relevantEvidence.map((evidence, index) => (
+                            <div key={index} className="flex items-start space-x-3 p-3 bg-white/60 rounded-lg">
+                              <div className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${
+                                evidence.type === 'error' ? 'bg-red-500' :
+                                evidence.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                              }`}></div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-semibold text-blue-800">{evidence.source}</span>
+                                  <span className="text-xs text-blue-600">{evidence.type}</span>
+                                </div>
+                                <p className="text-blue-900 text-sm mb-1">{evidence.description}</p>
+                                <p className="text-blue-700 text-xs italic">{evidence.relevance}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Confidence Reasoning */}
+                    {analysisResults.llmAnalysis.confidenceReasoning && (
+                      <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-2xl">
+                        <h4 className="font-bold text-green-900 mb-3">Confidence Assessment:</h4>
+                        <p className="text-green-800 leading-relaxed">{analysisResults.llmAnalysis.confidenceReasoning}</p>
+                      </div>
+                    )}
+                    
+                    {/* Additional Data Needed */}
+                    {analysisResults.llmAnalysis.additionalDataNeeded && analysisResults.llmAnalysis.additionalDataNeeded.length > 0 && (
+                      <div className="p-6 bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-500 rounded-2xl">
+                        <h4 className="font-bold text-yellow-900 mb-3">Additional Data Needed:</h4>
+                        <ul className="list-disc list-inside space-y-1">
+                          {analysisResults.llmAnalysis.additionalDataNeeded.map((item, index) => (
+                            <li key={index} className="text-yellow-800">{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Database Log Details */}
               {analysisResults.logSummary && (
                 <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-8">

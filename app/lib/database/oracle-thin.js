@@ -482,7 +482,7 @@ class ThinOracleConnection {
         timeRange: timeRange ? { 
           from: timeRange.startTimeString, 
           to: timeRange.endTimeString,
-          description: '2 hours before to 30 minutes after issue time'
+          description: '30 minutes before to 15 minutes after issue time'
         } : null,
         logs: {}
       };

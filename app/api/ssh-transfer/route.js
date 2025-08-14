@@ -253,7 +253,6 @@ function grepLogFile(conn, remotePath, timeRange) {
       const endDay = endTime.getDate().toString().padStart(2, ' ');
       
       // Build grep command to filter by time range
-      // This handles SWMS log format: "Jul  7 00:02:56"
       let grepCommand;
       
       if (startTime.toDateString() === endTime.toDateString()) {

@@ -109,6 +109,22 @@ const productionEnvironments = [
       swms: '/var/log/swms.log'
     }
   },
+  {
+    id: 'lx901',
+    name: 'Opco 901',
+    icon: '🔴',
+    description: 'Harlow',
+    region: 'na',
+    priority: 'primary',
+    envId: '901',
+    endpoint: 'https://lx901.na.sysco.net',
+    database: 'swmsdb901.na.sysco.net:1521/swm1',
+    host: 'lx901.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },
 ];
 
 /**
