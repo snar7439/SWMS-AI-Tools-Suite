@@ -2,6 +2,9 @@
 
 @import "tailwindcss";
 
+/* Highlight.js styling for code blocks */
+@import 'highlight.js/styles/github-dark.css';
+
 :root {
   --background: #0f172a;
   --foreground: #e2e8f0;
@@ -266,4 +269,74 @@ body {
 
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
+}
+
+/* Professional Markdown Styling */
+.prose {
+  max-width: none;
+}
+
+.prose p:last-child {
+  margin-bottom: 0;
+}
+
+.prose ul:last-child,
+.prose ol:last-child {
+  margin-bottom: 0;
+}
+
+.prose pre {
+  background-color: #1a1a1a !important;
+  color: #00ff00 !important;
+}
+
+.prose code {
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.prose pre code {
+  background-color: transparent !important;
+  color: #00ff00 !important;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* Color-specific prose styles */
+.prose-red h1, .prose-red h2, .prose-red h3, .prose-red h4, .prose-red h5, .prose-red h6,
+.prose-red strong {
+  color: #7f1d1d;
+}
+
+.prose-blue h1, .prose-blue h2, .prose-blue h3, .prose-blue h4, .prose-blue h5, .prose-blue h6,
+.prose-blue strong {
+  color: #1e3a8a;
+}
+
+.prose-green h1, .prose-green h2, .prose-green h3, .prose-green h4, .prose-green h5, .prose-green h6,
+.prose-green strong {
+  color: #14532d;
+}
+
+.prose-yellow h1, .prose-yellow h2, .prose-yellow h3, .prose-yellow h4, .prose-yellow h5, .prose-yellow h6,
+.prose-yellow strong {
+  color: #713f12;
+}
+
+.prose-purple h1, .prose-purple h2, .prose-purple h3, .prose-purple h4, .prose-purple h5, .prose-purple h6,
+.prose-purple strong {
+  color: #581c87;
+}
+
+.prose-orange h1, .prose-orange h2, .prose-orange h3, .prose-orange h4, .prose-orange h5, .prose-orange h6,
+.prose-orange strong {
+  color: #9a3412;
+}
+
+.prose-gray h1, .prose-gray h2, .prose-gray h3, .prose-gray h4, .prose-gray h5, .prose-gray h6,
+.prose-gray strong {
+  color: #374151;
 }

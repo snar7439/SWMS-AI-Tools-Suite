@@ -139,70 +139,11 @@ async function getSSHLogs(sessionId) {
   }
 }
 
-export async function POST(request) {
-  try {
-    console.log('[DEBUG] Starting Root Cause Analysis with Hugging Face...');
-    
-    const formData = await request.formData();
-    
-    // Extract form data
-    const issueDescription = formData.get('issueDescription');
-    const timeOccurred = formData.get('timeOccurred');
-    const environmentType = formData.get('environmentType');
-    const environment = JSON.parse(formData.get('environment') || '{}');
-    const logSummary = JSON.parse(formData.get('logSummary') || '{}');
-    const sessionId = formData.get('sessionId');
-    
-    // Process attached images
-    const attachedImages = [];
-    let imageIndex = 0;
-    while (formData.get(`image_${imageIndex}`)) {
-      const imageFile = formData.get(`image_${imageIndex}`);
-      attachedImages.push({
-        name: imageFile.name,
-        type: imageFile.type,
-        size: imageFile.size
-      });
-      imageIndex++;
-    }
-
-    console.log('[DEBUG] Extracted form data:', {
-      issueDescription: issueDescription?.substring(0, 100) + '...',
-      timeOccurred,
-      environmentType,
-      environment: environment.name,
-      sessionId,
-      imageCount: attachedImages.length
-    });
-
-    // Validate required fields
-    if (!issueDescription || !timeOccurred) {
-      return NextResponse.json({ 
-        error: 'Missing required fields', 
-        details: 'Issue description and time occurred are required' 
-      }, { status: 400 });
-    }
-
-    // Get SWMS System Overview
-    const swmsOverview = await getSWMSSystemOverview();
-    if (!swmsOverview) {
-      console.warn('[WARNING] Could not load SWMS System Overview');
-    }
-
-    // Format time window
-    const timeWindow = formatTimeWindow(timeOccurred);
-
-    // Get session logs (database logs)
-    const sessionLogs = await getSessionLogs(sessionId);
-    
-    // Get SSH logs
-    const sshLogs = await getSSHLogs(sessionId);
-
-    // Process images
-    const imageDescriptions = processImages(attachedImages);
-
-    // Create the comprehensive prompt for LLM
-    const prompt = `**Role:**
+// Create prompt for root cause analysis only
+function createRootCausePrompt(data) {
+  const { swmsOverview, issueDescription, timeOccurred, environmentType, environment, timeWindow, imageDescriptions, logSummary, sessionLogs, sshLogs } = data;
+  
+  return `**Role:**
 You are an expert in diagnosing issues in SWMS (Sysco Warehouse Management System) with deep knowledge of its architecture, workflows, database design, and log structures. You are also skilled in correlating SWMS system logs, database logs, and other evidence (including screenshots) to determine the root cause of technical problems.
 
 **Context:**
@@ -264,40 +205,22 @@ ${sshLogs ? Object.entries(sshLogs.logs).map(([filename, content]) =>
    - Example: "The available logs and attached evidence do not contain sufficient information to determine a definitive root cause for this issue."
 
 **Output Format:**
-Provide the analysis in JSON format with the following structure:
+Provide the analysis in Markdown:
 
-{
-  "issueAnalysis": {
-    "summary": "Brief restatement of the issue and time",
-    "timeWindow": {
-      "start": "${timeWindow.start}",
-      "end": "${timeWindow.end}",
-      "issueTime": "${timeWindow.issueTime}"
-    },
-    "relevantEvidence": [
-      {
-        "timestamp": "ISO timestamp",
-        "source": "database|ssh|image",
-        "type": "error|warning|info",
-        "description": "Description of the evidence",
-        "relevance": "Why this evidence is important"
-      }
-    ],
-    "rootCauseAnalysis": {
-      "primaryCause": "Main identified cause",
-      "reasoning": "Detailed step-by-step explanation",
-      "evidenceTrail": ["Evidence point 1", "Evidence point 2", "etc."],
-      "affectedComponents": ["Component 1", "Component 2", "etc."]
-    },
-    "confidenceLevel": "High|Medium|Low",
-    "confidenceReasoning": "Explanation of why this confidence level",
-    "recommendations": {
-      "immediate": "Immediate actions to take",
-      "longTerm": "Long-term preventive measures"
-    },
-    "additionalDataNeeded": ["What additional data would help confirm the root cause"]
-  }
-}
+## Issue Summary
+Brief restatement of the issue and time
+
+## Relevant Evidence
+Summarized key log entries, database events, and notable image observations — include timestamps and relevance
+
+## Root Cause Analysis
+Detailed reasoning and evidence trail that led to the root cause
+
+## Confidence Level
+High / Medium / Low — based on certainty from the provided evidence
+
+## Additional Data Needed
+(if applicable) What more is required to confirm the root cause
 
 **Important Rules:**
 - No hallucinations: Only draw conclusions directly supported by logs or image evidence
@@ -305,256 +228,335 @@ Provide the analysis in JSON format with the following structure:
 - Be concise but thorough in reasoning
 - If unsure, clearly indicate uncertainty
 - Provide specific timestamps and log entries as evidence`;
+}
 
-    console.log('[DEBUG] Prompt created, calling Hugging Face API...');
+// Create prompt for solution generation
+function createSolutionPrompt(data, rootCauseAnalysis) {
+  const { swmsOverview, issueDescription, timeOccurred, environmentType, environment, timeWindow, imageDescriptions, logSummary, sessionLogs, sshLogs } = data;
+  
+  return `**Role:**
+You are an expert SWMS (Sysco Warehouse Management System) engineer with extensive experience in resolving operational, database, and integration issues. You are also an experienced incident responder skilled in creating actionable, realistic, and safe remediation steps for complex system problems.
 
-    // Call Hugging Face API using the official client
-    const HF_TOKEN = process.env.HF_TOKEN;
-    const HF_MODEL = process.env.HF_MODEL;
+**Context:**
+You will be provided with:
+- A confirmed root cause of the issue
+- Relevant SWMS system logs, database logs, and optionally images/screenshots attached by the user
+- A high-level overview of SWMS for reference
 
-    console.log('[DEBUG] Hugging Face API Key available:', !!HF_TOKEN);
+**System Overview:**
+${swmsOverview || 'SWMS System Overview not available'}
 
-    if (!HF_TOKEN) {
-      return NextResponse.json({
-        error: 'Server misconfigured: missing HF_TOKEN'
-      }, { status: 500 });
+**Original Issue Details:**
+- **Environment Type:** ${environmentType}
+- **Environment:** ${environment.name || 'Unknown'} (${environment.description || 'No description'})
+- **Issue Description:** ${issueDescription}
+- **Time Occurred:** ${timeOccurred}
+- **Analysis Time Window:** ${timeWindow.description}
+
+**Confirmed Root Cause:**
+${rootCauseAnalysis}
+
+**Supporting Evidence:**
+**Database Log Summary:**
+${logSummary ? JSON.stringify(logSummary, null, 2) : 'No database log summary available'}
+
+**Database Logs:**
+${sessionLogs ? Object.entries(sessionLogs).map(([filename, content]) => 
+  `**File: ${filename}**\n${content.substring(0, 1500)}${content.length > 1500 ? '...\n[Content truncated]' : ''}`
+).join('\n\n') : 'No database logs available'}
+
+**SSH System Logs:**
+${sshLogs ? Object.entries(sshLogs.logs).map(([filename, content]) => 
+  `**SSH File: ${filename}**\n${content.substring(0, 1500)}${content.length > 1500 ? '...\n[Content truncated]' : ''}`
+).join('\n\n') : 'No SSH logs available'}
+
+**Instructions:**
+
+1. **Understand the Root Cause:**
+   - Read the provided root cause carefully
+   - Cross-check with logs and any evidence provided for context
+
+2. **Develop a Targeted Solution:**
+   - Propose only evidence-based, realistic actions that address the identified root cause
+   - Include both immediate actions to mitigate impact and long-term preventative measures
+   - Ensure solutions are relevant to a SWMS production environment and feasible for warehouse IT teams
+
+3. **Structure the Solution:**
+   - Immediate Fix: Steps to quickly resolve the current issue
+   - Validation Steps: How to confirm the fix worked (tests, log checks, transaction verifications)
+   - Preventive Actions: Long-term measures to reduce recurrence (config changes, monitoring, training, patches)
+
+4. **When a Solution Cannot Be Provided:**
+   - If the root cause is unclear or lacks enough supporting evidence to design a safe fix, explicitly state that a solution cannot be proposed without further data
+   - Suggest what additional evidence or context would be required
+
+**Output Format:**
+Provide the solution in Markdown:
+
+## Solution Overview
+Brief summary of how the solution addresses the root cause
+
+## Immediate Fix
+Step-by-step technical actions to resolve the issue quickly
+
+## Validation Steps
+How to verify that the fix has resolved the issue
+
+## Preventive Actions
+Long-term recommendations to avoid recurrence
+
+## Confidence Level
+High / Medium / Low — based on certainty that the solution addresses the root cause
+
+## Additional Data Needed
+(if applicable) If a solution cannot be provided with the given details, state what more is needed
+
+**Important Rules:**
+- No hallucinations: Only propose solutions directly related to the provided root cause and evidence
+- Do not suggest risky changes without warnings about potential side effects
+- Be practical: Assume real-world SWMS operational constraints (e.g., minimal downtime, integration dependencies)
+- If a workaround is temporary, mark it clearly and note that a permanent fix is still required`;
+}
+
+// Call Hugging Face API
+async function callHuggingFaceAPI(prompt) {
+  const HF_TOKEN = process.env.HF_TOKEN;
+  const HF_MODEL = process.env.HF_MODEL;
+
+  if (!HF_TOKEN || !HF_MODEL) {
+    throw new Error('Missing HF_TOKEN or HF_MODEL configuration');
+  }
+
+  const hf = new HfInference(HF_TOKEN);
+  
+  // Check if it's a chat model
+  const isChatModel = HF_MODEL.toLowerCase().includes('chat') || 
+                     HF_MODEL.toLowerCase().includes('instruct') || 
+                     HF_MODEL.toLowerCase().includes('gemma') ||
+                     HF_MODEL.toLowerCase().includes('gpt-oss') ||
+                     HF_MODEL.toLowerCase().includes('conversational');
+
+  let result;
+  let generatedText = '';
+
+  if (isChatModel) {
+    result = await hf.chatCompletion({
+      model: HF_MODEL,
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      max_tokens: 3000,
+      temperature: 0.3,
+      stream: false
+    });
+
+    if (result && result.choices && result.choices.length > 0) {
+      generatedText = result.choices[0].message.content;
+    } else {
+      throw new Error('No valid response from chat completion');
     }
-
-    if (!HF_MODEL) {
-      return NextResponse.json({
-        error: 'Server misconfigured: missing HF_MODEL'
-      }, { status: 500 });
-    }
-
-    console.log('[DEBUG] Using Hugging Face model for analysis:', HF_MODEL);
-
-    // Initialize variables outside try block to avoid scope issues
-    let result = null;
-    let generatedText = '';
-
+  } else {
     try {
-      const hf = new HfInference(HF_TOKEN);
-      
-      console.log('[DEBUG] Calling Hugging Face API for Root Ripple...');
-
-      // Check if it's a chat model
-      const isChatModel = HF_MODEL.toLowerCase().includes('chat') || 
-                         HF_MODEL.toLowerCase().includes('instruct') || 
-                         HF_MODEL.toLowerCase().includes('gemma') ||
-                         HF_MODEL.toLowerCase().includes('gpt-oss') ||
-                         HF_MODEL.toLowerCase().includes('conversational');
-
-      if (isChatModel) {
-        console.log('[DEBUG] Using chat completion for model:', HF_MODEL);
-        
-        // Use chat completion with correct message structure
-        result = await hf.chatCompletion({
-          model: HF_MODEL,
-          messages: [
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          max_tokens: 2000,
+      result = await hf.textGeneration({
+        model: HF_MODEL,
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 3000,
           temperature: 0.3,
-          stream: false
-        });
-
-        if (result && result.choices && result.choices.length > 0) {
-          generatedText = result.choices[0].message.content;
-        } else {
-          throw new Error('No valid response from chat completion');
-        }
-      } else {
-        console.log('[DEBUG] Using text generation for model:', HF_MODEL);
-        
-        // Use text generation for other models
-        try {
-          result = await hf.textGeneration({
-            model: HF_MODEL,
-            inputs: prompt,
-            parameters: {
-              max_new_tokens: 2000,
-              temperature: 0.3,
-              do_sample: true,
-              return_full_text: false
-            }
-          });
-          
-          generatedText = result.generated_text;
-        } catch (textGenError) {
-          console.log('[WARNING] Text generation failed, trying chat completion fallback:', textGenError.message);
-          
-          // Fallback to chat completion if text generation fails
-          result = await hf.chatCompletion({
-            model: HF_MODEL,
-            messages: [
-              {
-                role: "user",
-                content: prompt
-              }
-            ],
-            max_tokens: 2000,
-            temperature: 0.3,
-            stream: false
-          });
-
-          if (result && result.choices && result.choices.length > 0) {
-            generatedText = result.choices[0].message.content;
-          } else {
-            throw new Error('Both text generation and chat completion failed');
-          }
-        }
-      }
-
-      console.log('[DEBUG] Successfully received response from Hugging Face');
-      
-    } catch (hfError) {
-      console.error('[ERROR] Hugging Face API call failed:', hfError);
-      console.error('[ERROR] Error details:', {
-        message: hfError.message,
-        name: hfError.name,
-        stack: hfError.stack?.split('\n').slice(0, 5).join('\n') // First 5 lines of stack
-      });
-      
-      // Fallback to mock response for development/testing
-      console.log('[DEBUG] Using mock response due to API failure');
-      generatedText = JSON.stringify({
-        issueAnalysis: {
-          summary: `Analysis for issue: ${issueDescription.substring(0, 100)}... occurred at ${timeOccurred}`,
-          timeWindow: {
-            start: timeWindow.start,
-            end: timeWindow.end,
-            issueTime: timeWindow.issueTime
-          },
-          relevantEvidence: [
-            {
-              timestamp: timeWindow.issueTime,
-              source: "analysis",
-              type: "info",
-              description: "LLM API temporarily unavailable - using fallback analysis",
-              relevance: "System status information"
-            }
-          ],
-          rootCauseAnalysis: {
-            primaryCause: "Analysis service temporarily unavailable",
-            reasoning: "The Hugging Face LLM service could not be reached. This appears to be a temporary connectivity or API issue.",
-            evidenceTrail: ["API call failed", "Fallback response generated"],
-            affectedComponents: ["Root Cause Analysis Service"]
-          },
-          confidenceLevel: "Low",
-          confidenceReasoning: "Analysis could not be performed due to API unavailability",
-          recommendations: {
-            immediate: "Retry the analysis when the LLM service becomes available",
-            longTerm: "Implement backup analysis methods or local LLM deployment"
-          },
-          additionalDataNeeded: ["LLM service restoration", "Alternative analysis tools"]
+          do_sample: true,
+          return_full_text: false
         }
       });
-    }
-
-    // Parse the response
-    let analysisResult;
-    try {
-      // Try to extract JSON from the response
-      let jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        analysisResult = JSON.parse(jsonMatch[0]);
-      } else {
-        // If no JSON found, create structured response from text
-        analysisResult = {
-          issueAnalysis: {
-            summary: `Analysis for: ${issueDescription.substring(0, 100)}...`,
-            timeWindow: {
-              start: timeWindow.start,
-              end: timeWindow.end,
-              issueTime: timeWindow.issueTime
-            },
-            relevantEvidence: [{
-              timestamp: timeWindow.issueTime,
-              source: "llm",
-              type: "info",
-              description: "LLM response received but not in expected JSON format",
-              relevance: "Response formatting issue"
-            }],
-            rootCauseAnalysis: {
-              primaryCause: "Analysis completed but response format unexpected",
-              reasoning: generatedText.substring(0, 500),
-              evidenceTrail: ["LLM response received", "JSON parsing attempted"],
-              affectedComponents: ["Response Parser"]
-            },
-            confidenceLevel: "Medium",
-            confidenceReasoning: "Analysis performed but response formatting needs improvement",
-            recommendations: {
-              immediate: "Review response format and retry if needed",
-              longTerm: "Improve prompt engineering for consistent JSON responses"
-            },
-            additionalDataNeeded: ["Better response formatting", "Prompt optimization"]
-          }
-        };
-      }
-    } catch (parseError) {
-      console.error('[ERROR] Failed to parse LLM response:', parseError);
-      console.log('[DEBUG] Raw response:', generatedText);
       
-      // Create error response
-      analysisResult = {
-        issueAnalysis: {
-          summary: `Analysis attempted for: ${issueDescription.substring(0, 100)}...`,
-          timeWindow: {
-            start: timeWindow.start,
-            end: timeWindow.end,
-            issueTime: timeWindow.issueTime
-          },
-          relevantEvidence: [{
-            timestamp: timeWindow.issueTime,
-            source: "system",
-            type: "error",
-            description: "Failed to parse LLM analysis response",
-            relevance: "System processing error"
-          }],
-          rootCauseAnalysis: {
-            primaryCause: "LLM response parsing failed",
-            reasoning: "The LLM provided a response but it could not be parsed into the expected format",
-            evidenceTrail: ["LLM call successful", "Response parsing failed"],
-            affectedComponents: ["Response Parser", "LLM Integration"]
-          },
-          confidenceLevel: "Low",
-          confidenceReasoning: "Technical issue prevented proper analysis",
-          recommendations: {
-            immediate: "Check LLM response format and retry analysis",
-            longTerm: "Improve error handling and response parsing"
-          },
-          additionalDataNeeded: ["Working LLM integration", "Better error handling"]
-        }
-      };
+      generatedText = result.generated_text;
+    } catch (textGenError) {
+      // Fallback to chat completion
+      result = await hf.chatCompletion({
+        model: HF_MODEL,
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 3000,
+        temperature: 0.3,
+        stream: false
+      });
+
+      if (result && result.choices && result.choices.length > 0) {
+        generatedText = result.choices[0].message.content;
+      } else {
+        throw new Error('Both text generation and chat completion failed');
+      }
+    }
+  }
+
+  return generatedText;
+}
+
+export async function POST(request) {
+  try {
+    console.log('[DEBUG] Starting Enhanced Root Cause Analysis...');
+    
+    const formData = await request.formData();
+    
+    // Extract form data
+    const issueDescription = formData.get('issueDescription');
+    const timeOccurred = formData.get('timeOccurred');
+    const environmentType = formData.get('environmentType');
+    const environment = JSON.parse(formData.get('environment') || '{}');
+    const logSummary = JSON.parse(formData.get('logSummary') || '{}');
+    const sessionId = formData.get('sessionId');
+    
+    // Process attached images
+    const attachedImages = [];
+    let imageIndex = 0;
+    while (formData.get(`image_${imageIndex}`)) {
+      const imageFile = formData.get(`image_${imageIndex}`);
+      attachedImages.push({
+        name: imageFile.name,
+        type: imageFile.type,
+        size: imageFile.size
+      });
+      imageIndex++;
     }
 
-    console.log('[DEBUG] Analysis completed successfully');
+    console.log('[DEBUG] Extracted form data:', {
+      issueDescription: issueDescription?.substring(0, 100) + '...',
+      timeOccurred,
+      environmentType,
+      environment: environment.name,
+      sessionId,
+      imageCount: attachedImages.length
+    });
 
-    return NextResponse.json({
-      success: true,
-      analysis: analysisResult,
+    // Validate required fields
+    if (!issueDescription || !timeOccurred) {
+      return NextResponse.json({ 
+        error: 'Missing required fields', 
+        details: 'Issue description and time occurred are required' 
+      }, { status: 400 });
+    }
+
+    // Get SWMS System Overview
+    const swmsOverview = await getSWMSSystemOverview();
+    if (!swmsOverview) {
+      console.warn('[WARNING] Could not load SWMS System Overview');
+    }
+
+    // Format time window
+    const timeWindow = formatTimeWindow(timeOccurred);
+
+    // Get session logs (database logs)
+    const sessionLogs = await getSessionLogs(sessionId);
+    
+    // Get SSH logs
+    const sshLogs = await getSSHLogs(sessionId);
+
+    // Process images
+    const imageDescriptions = processImages(attachedImages);
+
+    // Prepare data for prompts
+    const promptData = {
+      swmsOverview,
+      issueDescription,
+      timeOccurred,
+      environmentType,
+      environment,
+      timeWindow,
+      imageDescriptions,
+      logSummary,
+      sessionLogs,
+      sshLogs
+    };
+
+    console.log('[DEBUG] Step 1: Calling AI for Root Cause Analysis...');
+    
+    // Step 1: Root Cause Analysis
+    const rootCausePrompt = createRootCausePrompt(promptData);
+    const rootCauseResponse = await callHuggingFaceAPI(rootCausePrompt);
+    
+    console.log('[DEBUG] Root Cause Analysis completed');
+    console.log('[DEBUG] Step 2: Calling AI for Solution Generation...');
+
+    // Step 2: Solution Generation
+    const solutionPrompt = createSolutionPrompt(promptData, rootCauseResponse);
+    const solutionResponse = await callHuggingFaceAPI(solutionPrompt);
+    
+    console.log('[DEBUG] Solution Generation completed');
+
+    // Parse responses and create structured result
+    const analysisResult = {
+      rootCauseAnalysis: {
+        raw: rootCauseResponse,
+        parsed: parseMarkdownResponse(rootCauseResponse)
+      },
+      solutionAnalysis: {
+        raw: solutionResponse,
+        parsed: parseMarkdownResponse(solutionResponse)
+      },
       metadata: {
         sessionId,
         environment: environment.name,
+        environmentType,
         timeWindow,
+        analysisTimestamp: new Date().toISOString(),
         logsAvailable: {
           database: !!sessionLogs,
           ssh: !!sshLogs,
           images: attachedImages.length > 0
         }
       }
+    };
+
+    console.log('[DEBUG] Enhanced Analysis completed successfully');
+
+    return NextResponse.json({
+      success: true,
+      analysis: analysisResult,
+      metadata: analysisResult.metadata
     });
 
   } catch (error) {
-    console.error('[ERROR] Root cause analysis failed:', error);
+    console.error('[ERROR] Enhanced root cause analysis failed:', error);
     
     return NextResponse.json({
       success: false,
       error: error.message,
-      details: 'An error occurred during root cause analysis'
+      details: 'An error occurred during enhanced root cause analysis'
     }, { status: 500 });
   }
+}
+
+// Helper function to parse markdown response into structured data
+function parseMarkdownResponse(markdown) {
+  const sections = {};
+  const lines = markdown.split('\n');
+  let currentSection = null;
+  let currentContent = [];
+
+  for (const line of lines) {
+    if (line.startsWith('## ')) {
+      // Save previous section
+      if (currentSection) {
+        sections[currentSection] = currentContent.join('\n').trim();
+      }
+      // Start new section
+      currentSection = line.replace('## ', '').trim().toLowerCase().replace(/\s+/g, '_');
+      currentContent = [];
+    } else if (currentSection) {
+      currentContent.push(line);
+    }
+  }
+
+  // Save last section
+  if (currentSection) {
+    sections[currentSection] = currentContent.join('\n').trim();
+  }
+
+  return sections;
 }
