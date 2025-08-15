@@ -123,7 +123,10 @@ export default function RootRipplePage() {
                       <line x1="16.5" y1="16.5" x2="21" y2="21" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <div>
+                  <div 
+                    onClick={() => window.location.reload()} 
+                    className="cursor-pointer hover:opacity-80 transition-opacity duration-200"
+                  >
                     <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
                       Root Ripple
                     </h1>

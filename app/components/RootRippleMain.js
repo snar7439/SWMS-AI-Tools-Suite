@@ -1027,7 +1027,7 @@ export default function RootRippleMain({ headerHeight }) {
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">
               Analysis Complete
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-gray-600 mb-6">
               AI-powered root cause analysis with targeted solutions
             </p>
           </div>
@@ -1037,7 +1037,7 @@ export default function RootRippleMain({ headerHeight }) {
             <div className="flex border-b border-gray-200">
               <button
                 onClick={() => setActiveTab('overview')}
-                className={`flex-1 px-6 py-4 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
+                className={`flex-1 px-6 py-4 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
                   activeTab === 'overview'
                     ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -1048,7 +1048,7 @@ export default function RootRippleMain({ headerHeight }) {
               </button>
               <button
                 onClick={() => setActiveTab('rootcause')}
-                className={`flex-1 px-6 py-4 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
+                className={`flex-1 px-6 py-4 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
                   activeTab === 'rootcause'
                     ? 'bg-red-50 text-red-700 border-b-2 border-red-600'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -1059,7 +1059,7 @@ export default function RootRippleMain({ headerHeight }) {
               </button>
               <button
                 onClick={() => setActiveTab('solution')}
-                className={`flex-1 px-6 py-4 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
+                className={`flex-1 px-6 py-4 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
                   activeTab === 'solution'
                     ? 'bg-green-50 text-green-700 border-b-2 border-green-600'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -1073,21 +1073,21 @@ export default function RootRippleMain({ headerHeight }) {
 
           {/* Tab Content */}
           {activeTab === 'overview' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               {/* Analysis Summary */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center mb-6">
-                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-                    <BookOpen className="w-5 h-5 text-white" />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <div className="flex items-center mb-8">
+                  <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
+                    <BookOpen className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">Analysis Summary</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">Analysis Summary</h3>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                   {/* Root Cause Confidence */}
-                  <div className="p-4 border border-red-500 rounded-lg">
-                    <h4 className="text-sm font-medium text-blue-800 mb-2">Root Cause Analysis Confidence</h4>
-                    <div className={`inline-block px-3 py-1 rounded text-sm font-medium ${
+                  <div className="p-6 border border-red-500 rounded-lg">
+                    <h4 className="text-base font-semibold text-blue-800 mb-4">Root Cause Analysis Confidence</h4>
+                    <div className={`inline-block px-4 py-2 rounded-lg text-sm font-medium ${
                       cleanConfidenceLevel(analysisResults?.rootCauseAnalysis?.parsed?.confidence_level) === 'High'
                         ? 'bg-green-100 text-green-800'
                         : cleanConfidenceLevel(analysisResults?.rootCauseAnalysis?.parsed?.confidence_level) === 'Medium'
@@ -1099,9 +1099,9 @@ export default function RootRippleMain({ headerHeight }) {
                   </div>
                   
                   {/* Solution Confidence */}
-                  <div className="p-4 border border-green-600 rounded-lg">
-                    <h4 className="text-sm font-medium text-blue-800 mb-2">Solution Analysis Confidence</h4>
-                    <div className={`inline-block px-3 py-1 rounded text-sm font-medium ${
+                  <div className="p-6 border border-green-600 rounded-lg">
+                    <h4 className="text-base font-semibold text-blue-800 mb-4">Solution Analysis Confidence</h4>
+                    <div className={`inline-block px-4 py-2 rounded-lg text-sm font-medium ${
                       cleanConfidenceLevel(analysisResults?.solutionAnalysis?.parsed?.confidence_level) === 'High'
                         ? 'bg-green-100 text-green-800'
                         : cleanConfidenceLevel(analysisResults?.solutionAnalysis?.parsed?.confidence_level) === 'Medium'
@@ -1113,9 +1113,9 @@ export default function RootRippleMain({ headerHeight }) {
                   </div>
                 </div>
                 
-                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-3">Issue Summary</h4>
-                  <div className="text-gray-700">
+                <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Issue Summary</h4>
+                  <div className="text-gray-700 leading-relaxed">
                     <ProfessionalMarkdown 
                       content={analysisResults?.rootCauseAnalysis?.parsed?.issue_summary || 
                         `**Issue:** ${issueDescription}\n\n**Environment:** ${analysisResults?.environment?.name || 'Unknown'}\n\n**Time Occurred:** ${new Date(timeOccurred).toLocaleString()}`}
@@ -1128,19 +1128,19 @@ export default function RootRippleMain({ headerHeight }) {
           )}
 
           {activeTab === 'rootcause' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               {/* Root Cause Analysis */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center mb-6">
-                  <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center mr-3">
-                    <Target className="w-5 h-5 text-white" />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <div className="flex items-center mb-8">
+                  <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center mr-4">
+                    <Target className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">Root Cause Analysis</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">Root Cause Analysis</h3>
                 </div>
                 
                 {/* Confidence Level */}
-                <div className="mb-6 text-center">
-                  <div className={`inline-block px-4 py-2 rounded-lg text-sm font-semibold ${
+                <div className="mb-8 text-center">
+                  <div className={`inline-block px-6 py-3 rounded-lg text-base font-semibold ${
                     cleanConfidenceLevel(analysisResults?.rootCauseAnalysis?.parsed?.confidence_level) === 'High' 
                       ? 'bg-green-100 text-green-800 border border-green-300'
                       : cleanConfidenceLevel(analysisResults?.rootCauseAnalysis?.parsed?.confidence_level) === 'Medium'
@@ -1152,14 +1152,14 @@ export default function RootRippleMain({ headerHeight }) {
                 </div>
 
                 {/* Root Cause Details */}
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {analysisResults?.rootCauseAnalysis?.parsed?.root_cause_analysis && (
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <h4 className="font-semibold text-red-900 mb-3 flex items-center">
-                        <Target className="w-4 h-4 mr-2" />
+                    <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+                      <h4 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
+                        <Target className="w-5 h-5 mr-3" />
                         Identified Root Cause
                       </h4>
-                      <div className="text-red-800">
+                      <div className="text-red-800 leading-relaxed">
                         <ProfessionalMarkdown 
                           content={analysisResults?.rootCauseAnalysis?.parsed?.root_cause_analysis}
                           className="prose-red"
@@ -1169,12 +1169,12 @@ export default function RootRippleMain({ headerHeight }) {
                   )}
 
                   {analysisResults?.rootCauseAnalysis?.parsed?.relevant_evidence && (
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h4 className="font-semibold text-blue-900 mb-3 flex items-center">
-                        <FileText className="w-4 h-4 mr-2" />
+                    <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+                        <FileText className="w-5 h-5 mr-3" />
                         Supporting Evidence
                       </h4>
-                      <div className="text-blue-800">
+                      <div className="text-blue-800 leading-relaxed">
                         <ProfessionalMarkdown 
                           content={analysisResults?.rootCauseAnalysis?.parsed?.relevant_evidence}
                           className="prose-blue"
@@ -1184,12 +1184,12 @@ export default function RootRippleMain({ headerHeight }) {
                   )}
 
                   {analysisResults?.rootCauseAnalysis?.parsed?.additional_data_needed && (
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <h4 className="font-semibold text-yellow-900 mb-3 flex items-center">
-                        <AlertCircle className="w-4 h-4 mr-2" />
+                    <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <h4 className="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
+                        <AlertCircle className="w-5 h-5 mr-3" />
                         Additional Data Needed
                       </h4>
-                      <div className="text-yellow-800">
+                      <div className="text-yellow-800 leading-relaxed">
                         <ProfessionalMarkdown 
                           content={analysisResults?.rootCauseAnalysis?.parsed?.additional_data_needed}
                           className="prose-yellow"
@@ -1200,18 +1200,18 @@ export default function RootRippleMain({ headerHeight }) {
                 </div>
 
                 {/* Raw Analysis (Collapsible) */}
-                <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="mt-8 pt-6 border-t border-gray-200">
                   <button
                     onClick={() => setShowDetailedLogs(!showDetailedLogs)}
-                    className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-sm"
+                    className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-base cursor-pointer"
                   >
-                    {showDetailedLogs ? <ChevronUp className="w-4 h-4 mr-1" /> : <ChevronDown className="w-4 h-4 mr-1" />}
+                    {showDetailedLogs ? <ChevronUp className="w-5 h-5 mr-2" /> : <ChevronDown className="w-5 h-5 mr-2" />}
                     <span className="font-medium">Show Raw AI Analysis</span>
                   </button>
                   
                   {showDetailedLogs && (
-                    <div className="mt-3 p-4 bg-gray-900 rounded-lg">
-                      <div className="text-green-400 font-mono text-xs whitespace-pre-wrap overflow-x-auto">
+                    <div className="mt-4 p-6 bg-gray-900 rounded-lg">
+                      <div className="text-green-400 font-mono text-sm whitespace-pre-wrap overflow-x-auto leading-relaxed">
                         {analysisResults?.rootCauseAnalysis?.raw || 'No raw analysis available'}
                       </div>
                     </div>
@@ -1222,19 +1222,19 @@ export default function RootRippleMain({ headerHeight }) {
           )}
 
           {activeTab === 'solution' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               {/* Solution Analysis */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center mb-6">
-                  <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mr-3">
-                    <Wrench className="w-5 h-5 text-white" />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <div className="flex items-center mb-8">
+                  <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mr-4">
+                    <Wrench className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">Recommended Solutions</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">Recommended Solutions</h3>
                 </div>
 
                 {/* Confidence Level */}
-                <div className="mb-6 text-center">
-                  <div className={`inline-block px-4 py-2 rounded-lg text-sm font-semibold ${
+                <div className="mb-8 text-center">
+                  <div className={`inline-block px-6 py-3 rounded-lg text-base font-semibold ${
                     cleanConfidenceLevel(analysisResults?.solutionAnalysis?.parsed?.confidence_level) === 'High' 
                       ? 'bg-green-100 text-green-800 border border-green-300'
                       : cleanConfidenceLevel(analysisResults?.solutionAnalysis?.parsed?.confidence_level) === 'Medium'
@@ -1245,14 +1245,14 @@ export default function RootRippleMain({ headerHeight }) {
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {analysisResults?.solutionAnalysis?.parsed?.solution_overview && (
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <h4 className="font-semibold text-green-900 mb-3 flex items-center">
-                        <Wrench className="w-4 h-4 mr-2" />
+                    <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+                      <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+                        <Wrench className="w-5 h-5 mr-3" />
                         Solution Overview
                       </h4>
-                      <div className="text-green-800">
+                      <div className="text-green-800 leading-relaxed">
                         <ProfessionalMarkdown 
                           content={analysisResults?.solutionAnalysis?.parsed?.solution_overview}
                           className="prose-green"
@@ -1262,12 +1262,12 @@ export default function RootRippleMain({ headerHeight }) {
                   )}
 
                   {analysisResults?.solutionAnalysis?.parsed?.immediate_fix && (
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h4 className="font-semibold text-blue-900 mb-3 flex items-center">
-                        <Clock className="w-4 h-4 mr-2" />
+                    <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+                        <Clock className="w-5 h-5 mr-3" />
                         Immediate Fix
                       </h4>
-                      <div className="text-blue-800">
+                      <div className="text-blue-800 leading-relaxed">
                         <ProfessionalMarkdown 
                           content={analysisResults?.solutionAnalysis?.parsed?.immediate_fix}
                           className="prose-blue"
@@ -1277,12 +1277,12 @@ export default function RootRippleMain({ headerHeight }) {
                   )}
 
                   {analysisResults?.solutionAnalysis?.parsed?.validation_steps && (
-                    <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                      <h4 className="font-semibold text-purple-900 mb-3 flex items-center">
-                        <CheckCircle className="w-4 h-4 mr-2" />
+                    <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
+                      <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+                        <CheckCircle className="w-5 h-5 mr-3" />
                         Validation Steps
                       </h4>
-                      <div className="text-purple-800">
+                      <div className="text-purple-800 leading-relaxed">
                         <ProfessionalMarkdown 
                           content={analysisResults?.solutionAnalysis?.parsed?.validation_steps}
                           className="prose-purple"
@@ -1292,12 +1292,12 @@ export default function RootRippleMain({ headerHeight }) {
                   )}
 
                   {analysisResults?.solutionAnalysis?.parsed?.preventive_actions && (
-                    <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                      <h4 className="font-semibold text-orange-900 mb-3 flex items-center">
-                        <AlertCircle className="w-4 h-4 mr-2" />
+                    <div className="p-6 bg-orange-50 border border-orange-200 rounded-lg">
+                      <h4 className="text-lg font-semibold text-orange-900 mb-4 flex items-center">
+                        <AlertCircle className="w-5 h-5 mr-3" />
                         Preventive Actions
                       </h4>
-                      <div className="text-orange-800">
+                      <div className="text-orange-800 leading-relaxed">
                         <ProfessionalMarkdown 
                           content={analysisResults?.solutionAnalysis?.parsed?.preventive_actions}
                           className="prose-orange"
@@ -1307,12 +1307,12 @@ export default function RootRippleMain({ headerHeight }) {
                   )}
 
                   {analysisResults?.solutionAnalysis?.parsed?.additional_data_needed && (
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <h4 className="font-semibold text-yellow-900 mb-3 flex items-center">
-                        <Search className="w-4 h-4 mr-2" />
+                    <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <h4 className="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
+                        <Search className="w-5 h-5 mr-3" />
                         Additional Data Needed for Complete Solution
                       </h4>
-                      <div className="text-yellow-800">
+                      <div className="text-yellow-800 leading-relaxed">
                         <ProfessionalMarkdown 
                           content={analysisResults?.solutionAnalysis?.parsed?.additional_data_needed}
                           className="prose-yellow"
@@ -1323,18 +1323,18 @@ export default function RootRippleMain({ headerHeight }) {
                 </div>
 
                 {/* Raw Solution Analysis (Collapsible) */}
-                <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="mt-8 pt-6 border-t border-gray-200">
                   <button
                     onClick={() => setShowDetailedLogs(!showDetailedLogs)}
-                    className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-sm"
+                    className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-base cursor-pointer"
                   >
-                    {showDetailedLogs ? <ChevronUp className="w-4 h-4 mr-1" /> : <ChevronDown className="w-4 h-4 mr-1" />}
+                    {showDetailedLogs ? <ChevronUp className="w-5 h-5 mr-2" /> : <ChevronDown className="w-5 h-5 mr-2" />}
                     <span className="font-medium">Show Raw AI Solution Analysis</span>
                   </button>
                   
                   {showDetailedLogs && (
-                    <div className="mt-3 p-4 bg-gray-900 rounded-lg">
-                      <div className="text-green-400 font-mono text-xs whitespace-pre-wrap overflow-x-auto">
+                    <div className="mt-4 p-6 bg-gray-900 rounded-lg">
+                      <div className="text-green-400 font-mono text-sm whitespace-pre-wrap overflow-x-auto leading-relaxed">
                         {analysisResults?.solutionAnalysis?.raw || 'No raw solution analysis available'}
                       </div>
                     </div>
