@@ -232,6 +232,7 @@ function getLogPaths(environment, timeRange) {
 }
 
 // Helper function to use grep for time-based log filtering
+// Note: timeRange uses exact time as entered by user
 function grepLogFile(conn, remotePath, timeRange) {
   return new Promise((resolve, reject) => {
     try {

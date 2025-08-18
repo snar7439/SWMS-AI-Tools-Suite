@@ -80,6 +80,24 @@ const cleanConfidenceLevel = (confidence) => {
   return confidence.replace(/\*\*/g, '').replace(/\*/g, '').trim();
 };
 
+// Helper function to format time for display
+const formatTimeForDisplay = (date, includeTimezone = true) => {
+  if (!date) return '';
+  
+  const options = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  };
+  
+  const formattedTime = new Date(date).toLocaleString('en-US', options);
+  return formattedTime;
+};
+
 export default function RootRippleMain({ headerHeight }) {
   const [environmentType, setEnvironmentType] = useState(''); // 'production' or 'development'
   const [selectedEnvironment, setSelectedEnvironment] = useState(null);
@@ -133,14 +151,7 @@ export default function RootRippleMain({ headerHeight }) {
     setEnvironmentType(type);
     setSelectedEnvironment(null); // Reset selected environment when type changes
     setShowEnvDropdown(false);
-  };
-
-  // Cleanup effect when component unmounts - removed auto cleanup
-  useEffect(() => {
-    return () => {
-      // Auto-cleanup removed - user will manually cleanup via button
-    };
-  }, [analysisResults]);
+  };  
 
   const getCurrentEnvironments = () => {
     return getEnvironmentsByType(environmentType);
@@ -152,7 +163,7 @@ export default function RootRippleMain({ headerHeight }) {
     { id: 'analyzing-issue', title: 'Analyzing Issue', icon: Search, description: 'Analyzing the issue context and gathering initial insights...', status: 'pending' },
     { id: 'retrieving-db-logs', title: 'Retrieving DB Logs', icon: Database, description: 'Connecting to database and retrieving relevant log entries...', status: 'pending' },
     { id: 'retrieving-system-logs', title: 'Retrieving System Logs', icon: Server, description: 'Collecting system logs via SSH connection...', status: 'pending' },
-    { id: 'retrieving-datadog-logs', title: 'Retrieving DataDog Logs', icon: Cloud, description: 'Fetching monitoring logs from DataDog (Future Implementation)...', status: 'pending' },
+    { id: 'retrieving-datadog-logs', title: 'Retrieving DataDog Logs', icon: Cloud, description: 'Fetching monitoring logs from DataDog (Future Implementation)...', status: 'future' },
     { id: 'finding-root-cause', title: 'Finding Root Cause', icon: Target, description: 'AI is analyzing all collected data to identify the root cause...', status: 'pending' }
   ];
 
@@ -310,10 +321,7 @@ export default function RootRippleMain({ headerHeight }) {
       updateStepStatus('root-cause', 3, 'active');
       await handleSystemLogsRetrieval();
       
-      // Step 5: DataDog Logs (Future - just visual)
-      updateStepStatus('root-cause', 4, 'active');
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      updateStepStatus('root-cause', 4, 'completed');
+      // Step 5: DataDog Logs (Future - skip this step entirely)
       
       // Step 6: Finding Root Cause
       updateStepStatus('root-cause', 5, 'active');
@@ -495,7 +503,7 @@ export default function RootRippleMain({ headerHeight }) {
     // Create a comprehensive report object
     const report = {
       title: "Root Cause Analysis Report",
-      timestamp: new Date().toLocaleString(),
+      timestamp: formatTimeForDisplay(new Date()),
       environment: {
         type: environmentType,
         name: selectedEnvironment?.name || 'Unknown',
@@ -504,7 +512,7 @@ export default function RootRippleMain({ headerHeight }) {
       issue: {
         description: issueDescription,
         timeOccurred: timeOccurred,
-        reportedAt: new Date(timeOccurred).toLocaleString(),
+        reportedAt: formatTimeForDisplay(new Date(timeOccurred)),
         attachedImages: attachedImages.map(img => ({
           name: img.name,
           size: img.file?.size || 0
@@ -579,21 +587,30 @@ export default function RootRippleMain({ headerHeight }) {
                       const isActive = currentRootCauseStep === index && analysisPhase === 'root-cause';
                       const isCompleted = status === 'completed';
                       const isSkipped = status === 'skipped';
+                      const isFuture = step.status === 'future';
+                      
+                      // For future steps, always show grey
+                      const finalIsActive = isFuture ? false : isActive;
+                      const finalIsCompleted = isFuture ? false : isCompleted;
+                      const finalIsSkipped = isFuture ? false : isSkipped;
                       
                       return (
                         <div key={step.id} className="flex items-center space-x-4">
                           <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
-                            isCompleted ? 'bg-green-500 border-green-500' :
-                            isSkipped ? 'bg-yellow-500 border-yellow-500' :
-                            isActive ? 'bg-blue-500 border-blue-500 animate-pulse' :
+                            finalIsCompleted ? 'bg-green-500 border-green-500' :
+                            finalIsSkipped ? 'bg-yellow-500 border-yellow-500' :
+                            finalIsActive ? 'bg-blue-500 border-blue-500 animate-pulse' :
+                            isFuture ? 'bg-gray-500 border-gray-500' :
                             'bg-transparent border-white/30'
                           }`}>
-                            {isCompleted ? (
+                            {finalIsCompleted ? (
                               <CheckCircle2 className="w-5 h-5 text-white" />
-                            ) : isSkipped ? (
+                            ) : finalIsSkipped ? (
                               <X className="w-5 h-5 text-white" />
-                            ) : isActive ? (
+                            ) : finalIsActive ? (
                               <div className="w-3 h-3 bg-white rounded-full animate-ping" />
+                            ) : isFuture ? (
+                              <step.icon className="w-4 h-4 text-gray-300" />
                             ) : (
                               <div className="w-3 h-3 bg-white/30 rounded-full" />
                             )}
@@ -602,11 +619,12 @@ export default function RootRippleMain({ headerHeight }) {
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
                               <h3 className={`font-medium ${
-                                isCompleted || isActive ? 'text-white' : 'text-white/60'
+                                finalIsCompleted || finalIsActive ? 'text-white' : 
+                                isFuture ? 'text-gray-400' : 'text-white/60'
                               }`}>
                                 {step.title}
                               </h3>
-                              {isActive && (
+                              {finalIsActive && (
                                 <div className="flex items-center space-x-1">
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
@@ -615,7 +633,8 @@ export default function RootRippleMain({ headerHeight }) {
                               )}
                             </div>
                             <p className={`text-sm ${
-                              isCompleted || isActive ? 'text-blue-200' : 'text-white/40'
+                              finalIsCompleted || finalIsActive ? 'text-blue-200' : 
+                              isFuture ? 'text-gray-500' : 'text-white/40'
                             }`}>
                               {step.description}
                             </p>
@@ -754,7 +773,6 @@ export default function RootRippleMain({ headerHeight }) {
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-gray-900">Production Environment</h4>
-                    <p className="text-sm text-gray-600">Live production systems</p>
                   </div>
                 </div>
               </button>
@@ -777,7 +795,6 @@ export default function RootRippleMain({ headerHeight }) {
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-gray-900">Development Environment</h4>
-                    <p className="text-sm text-gray-600">Testing and development systems</p>
                   </div>
                 </div>
               </button>
@@ -916,6 +933,9 @@ export default function RootRippleMain({ headerHeight }) {
                     })}</span>
                   </div>
                 )}
+                <div className="mt-1 text-xs text-gray-500">
+                  Enter the exact time when the issue occurred. System will query logs from 30 minutes before to 15 minutes after this time.
+                </div>
               </div>
 
               <div>

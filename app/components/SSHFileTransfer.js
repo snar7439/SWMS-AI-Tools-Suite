@@ -36,10 +36,20 @@ export default function SSHFileTransfer({
     const startTime = new Date(issueDate.getTime() - (30 * 60 * 1000)); // 30 minutes before
     const endTime = new Date(issueDate.getTime() + (15 * 60 * 1000)); // 15 minutes after
     
+    // Format using exact time
+    const options = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    };
+    
     return {
       start: startTime.toISOString(),
       end: endTime.toISOString(),
-      display: `${startTime.toLocaleString()} to ${endTime.toLocaleString()}`
+      display: `${startTime.toLocaleString('en-US', options)} to ${endTime.toLocaleString('en-US', options)}`
     };
   };
 

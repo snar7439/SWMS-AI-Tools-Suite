@@ -24,11 +24,22 @@ function formatTimeWindow(issueTime) {
   const startTime = new Date(issueDate.getTime() - 30 * 60 * 1000); // 30 minutes before
   const endTime = new Date(issueDate.getTime() + 15 * 60 * 1000);   // 15 minutes after
   
+  // Format times using the exact times (no timezone conversion)
+  const options = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  };
+  
   return {
     start: startTime.toISOString(),
     end: endTime.toISOString(),
     issueTime: issueDate.toISOString(),
-    description: `Time window: ${startTime.toLocaleString()} to ${endTime.toLocaleString()}`
+    description: `Time window: ${startTime.toLocaleString('en-US', options)} to ${endTime.toLocaleString('en-US', options)} (using exact entered time)`
   };
 }
 
