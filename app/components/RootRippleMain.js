@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, CheckCircle, Clock, AlertCircle, Zap, Database, Search, Brain, FileText, Server, ChevronDown, ChevronUp, Download, Target, Wrench, BookOpen, Cloud, Shield, Eye, Play, Pause, CheckCircle2, Trash } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -21,6 +21,7 @@ const ProfessionalMarkdown = ({ content, className = "" }) => {
         remarkPlugins={[remarkGfm, remarkBreaks]}
         rehypePlugins={[rehypeHighlight, rehypeRaw]}
         components={{
+          lb: () => <br/>,
           // Headings
           h1: ({ children }) => <h1 className="text-xl font-bold text-gray-900 mb-4 mt-6 first:mt-0 border-b border-gray-200 pb-2">{children}</h1>,
           h2: ({ children }) => <h2 className="text-lg font-bold text-gray-900 mb-3 mt-5 first:mt-0">{children}</h2>,
@@ -133,6 +134,9 @@ export default function RootRippleMain({ headerHeight }) {
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
   const timeInputRef = useRef(null);
+  
+  // Ref for smooth scrolling to results
+  const resultsRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -170,7 +174,7 @@ export default function RootRippleMain({ headerHeight }) {
   // Solution Analysis Steps
   const solutionSteps = [
     { id: 'identifying-db-tables', title: 'Identifying DB Tables', icon: Database, description: 'Mapping affected database tables and relationships...', status: 'pending' },
-    { id: 'identifying-source-codes', title: 'Identifying Source Codes', icon: FileText, description: 'Locating relevant source code files and components...', status: 'pending' },
+    { id: 'identifying-source-codes', title: 'Identifying Source Codes', icon: FileText, description: 'Locating relevant source code files (Future Implementation)...', status: 'future' },
     { id: 'finding-fixes', title: 'Finding Fixes', icon: Wrench, description: 'Generating targeted solutions and fixes for the identified issues...', status: 'pending' }
   ];
 
@@ -345,20 +349,30 @@ export default function RootRippleMain({ headerHeight }) {
       await new Promise(resolve => setTimeout(resolve, 2000));
       updateStepStatus('solution', 0, 'completed');
       
-      // Step 2: Identifying Source Codes
-      updateStepStatus('solution', 1, 'active');
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      updateStepStatus('solution', 1, 'completed');
+      // Step 2: Identifying Source Codes (Future - skip this step entirely)
+      
       
       // Step 3: Finding Fixes
       updateStepStatus('solution', 2, 'active');
       await new Promise(resolve => setTimeout(resolve, 3000));
       updateStepStatus('solution', 2, 'completed');
       
-      // Complete analysis
-      setShowProgressScreen(false);
+      // Wait a moment to ensure all progress updates are rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Complete analysis but keep progress screen visible
       setAnalysisComplete(true);
       setIsAnalyzing(false);
+      
+      // Smooth scroll to results section after a brief delay
+      setTimeout(() => {
+        if (resultsRef.current) {
+          resultsRef.current.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      }, 100);
       
     } catch (error) {
       console.error('Error in solution analysis:', error);
@@ -610,7 +624,7 @@ export default function RootRippleMain({ headerHeight }) {
                             ) : finalIsActive ? (
                               <div className="w-3 h-3 bg-white rounded-full animate-ping" />
                             ) : isFuture ? (
-                              <step.icon className="w-4 h-4 text-gray-300" />
+                              React.createElement(step.icon, { className: "w-4 h-4 text-gray-300" })
                             ) : (
                               <div className="w-3 h-3 bg-white/30 rounded-full" />
                             )}
@@ -663,22 +677,31 @@ export default function RootRippleMain({ headerHeight }) {
                       const isActive = currentSolutionStep === index && analysisPhase === 'solution';
                       const isCompleted = status === 'completed';
                       const isDisabled = analysisPhase === 'root-cause';
+                      const isFuture = step.status === 'future';
+                      
+                      // For future steps, always show grey
+                      const finalIsActive = isFuture ? false : isActive;
+                      const finalIsCompleted = isFuture ? false : isCompleted;
+                      const finalIsDisabled = isFuture ? false : isDisabled;
                       
                       return (
                         <div key={step.id} className="flex items-center space-x-4">
                           <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
-                            isCompleted ? 'bg-green-500 border-green-500' :
-                            isActive ? 'bg-purple-500 border-purple-500 animate-pulse' :
-                            isDisabled ? 'bg-transparent border-white/20' :
+                            finalIsCompleted ? 'bg-green-500 border-green-500' :
+                            finalIsActive ? 'bg-purple-500 border-purple-500 animate-pulse' :
+                            finalIsDisabled ? 'bg-transparent border-white/20' :
+                            isFuture ? 'bg-gray-500 border-gray-500' :
                             'bg-transparent border-white/30'
                           }`}>
-                            {isCompleted ? (
+                            {finalIsCompleted ? (
                               <CheckCircle2 className="w-5 h-5 text-white" />
-                            ) : isActive ? (
+                            ) : finalIsActive ? (
                               <div className="w-3 h-3 bg-white rounded-full animate-ping" />
+                            ) : isFuture ? (
+                              <step.icon className="w-4 h-4 text-gray-300" />
                             ) : (
                               <div className={`w-3 h-3 rounded-full ${
-                                isDisabled ? 'bg-white/20' : 'bg-white/30'
+                                finalIsDisabled ? 'bg-white/20' : 'bg-white/30'
                               }`} />
                             )}
                           </div>
@@ -686,12 +709,13 @@ export default function RootRippleMain({ headerHeight }) {
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
                               <h3 className={`font-medium ${
-                                isCompleted || isActive ? 'text-white' : 
-                                isDisabled ? 'text-white/40' : 'text-white/60'
+                                finalIsCompleted || finalIsActive ? 'text-white' : 
+                                isFuture ? 'text-gray-400' : 
+                                finalIsDisabled ? 'text-white/40' : 'text-white/60'
                               }`}>
                                 {step.title}
                               </h3>
-                              {isActive && (
+                              {finalIsActive && (
                                 <div className="flex items-center space-x-1">
                                   <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" />
                                   <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
@@ -700,8 +724,9 @@ export default function RootRippleMain({ headerHeight }) {
                               )}
                             </div>
                             <p className={`text-sm ${
-                              isCompleted || isActive ? 'text-blue-200' : 
-                              isDisabled ? 'text-white/30' : 'text-white/40'
+                              finalIsCompleted || finalIsActive ? 'text-blue-200' : 
+                              isFuture ? 'text-gray-500' :
+                              finalIsDisabled ? 'text-white/30' : 'text-white/40'
                             }`}>
                               {step.description}
                             </p>
@@ -742,6 +767,616 @@ export default function RootRippleMain({ headerHeight }) {
                   </div>
                 </div>
               </div>
+
+              {/* Analysis Results Section - Shows below progress when completed */}
+              {analysisComplete && (
+                <div ref={resultsRef} className="mt-8 space-y-8">
+                  {/* Completion Notice */}
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-8 text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-lg mb-4">
+                      <CheckCircle className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-semibold text-white mb-2">
+                      Analysis Complete
+                    </h2>
+                    <p className="text-lg text-blue-200 mb-6">
+                      AI-powered root cause analysis with targeted solutions
+                    </p>
+                  </div>
+
+                  {/* Mock Data Indicator - Check if analysis used mock data */}
+                  {analysisResults?.metadata?.usedMockData && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <div className="flex items-center">
+                        <AlertCircle className="w-5 h-5 text-amber-600 mr-3" />
+                        <div>
+                          <h4 className="text-sm font-semibold text-amber-800">Demo Mode - Mock Analysis Results</h4>
+                          <p className="text-sm text-amber-700 mt-1">
+                            This analysis was generated using sample data since the AI model is not currently configured.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Analysis Results Content */}
+                  <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+                    {/* Tab Navigation */}
+                    <div className="flex border-b border-gray-200">
+                      <button
+                        onClick={() => setActiveTab('overview')}
+                        className={`flex-1 px-6 py-4 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
+                          activeTab === 'overview'
+                            ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        <span>Overview</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('rootcause')}
+                        className={`flex-1 px-6 py-4 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
+                          activeTab === 'rootcause'
+                            ? 'bg-red-50 text-red-700 border-b-2 border-red-600'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        <Target className="w-4 h-4" />
+                        <span>Root Cause</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('solution')}
+                        className={`flex-1 px-6 py-4 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
+                          activeTab === 'solution'
+                            ? 'bg-green-50 text-green-700 border-b-2 border-green-600'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        <Wrench className="w-4 h-4" />
+                        <span>Solution</span>
+                      </button>
+                    </div>
+
+                    {/* Tab Content */}
+                    <div className="p-8">
+                      {activeTab === 'overview' && (
+                        <div className="space-y-8">
+                          {/* Analysis Summary */}
+                          <div>
+                            <div className="flex items-center mb-8">
+                              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
+                                <BookOpen className="w-6 h-6 text-white" />
+                              </div>
+                              <h3 className="text-xl font-semibold text-gray-900">Analysis Summary</h3>
+                            </div>
+                            
+                            {/* Incident Summary */}
+                            {analysisResults?.rootCauseAnalysis?.parsed?.incident_summary && (
+                              <div className="p-6 bg-red-50 border border-red-200 rounded-lg mb-6">
+                                <h4 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
+                                  <AlertCircle className="w-5 h-5 mr-3" />
+                                  Incident Summary
+                                </h4>
+                                <div className="text-red-800 leading-relaxed">
+                                  <ProfessionalMarkdown 
+                                    content={analysisResults?.rootCauseAnalysis?.parsed?.incident_summary}
+                                    className="prose-red"
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Root Cause - Direct and Brief */}
+                            {analysisResults?.rootCauseAnalysis?.parsed?.root_cause_summary && (
+                              <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg mb-6">
+                                <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+                                  <Search className="w-5 h-5 mr-3" />
+                                  Root Cause
+                                </h4>
+                                <div className="text-purple-800 leading-relaxed">
+                                  <ProfessionalMarkdown 
+                                    content={analysisResults?.rootCauseAnalysis?.parsed?.root_cause_summary}
+                                    className="prose-purple"
+                                  />
+                                  <div className="mt-3 text-sm">
+                                    <button 
+                                      onClick={() => setActiveTab('rootcause')}
+                                      className="text-purple-600 hover:text-purple-800 font-medium underline"
+                                    >
+                                      View detailed analysis →
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Corrective Actions Summary */}
+                            {analysisResults?.solutionAnalysis?.parsed?.immediate_actions_summary && (
+                              <div className="p-6 bg-green-50 border border-green-200 rounded-lg mb-6">
+                                <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+                                  <Wrench className="w-5 h-5 mr-3" />
+                                  Immediate Actions
+                                </h4>
+                                <div className="text-green-800 leading-relaxed">
+                                  <ProfessionalMarkdown 
+                                    content={analysisResults?.solutionAnalysis?.parsed?.immediate_actions_summary}
+                                    className="prose-green"
+                                  />
+                                  <div className="mt-3 text-sm">
+                                    <button 
+                                      onClick={() => setActiveTab('solution')}
+                                      className="text-green-600 hover:text-green-800 font-medium underline"
+                                    >
+                                      View complete solution plan →
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'rootcause' && (
+                        <div className="space-y-8">
+                          {/* Root Cause Analysis */}
+                          <div>
+                            <div className="flex items-center mb-8">
+                              <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center mr-4">
+                                <Target className="w-6 h-6 text-white" />
+                              </div>
+                              <h3 className="text-xl font-semibold text-gray-900">Detailed Root Cause Analysis</h3>
+                            </div>
+                            
+                            {/* Confidence Level */}
+                            <div className="mb-8 text-center">
+                              <div className={`inline-block px-6 py-3 rounded-lg text-base font-semibold ${
+                                cleanConfidenceLevel(analysisResults?.rootCauseAnalysis?.parsed?.confidence_level) === 'High' 
+                                  ? 'bg-green-100 text-green-800 border border-green-300'
+                                  : cleanConfidenceLevel(analysisResults?.rootCauseAnalysis?.parsed?.confidence_level) === 'Medium'
+                                  ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                                  : 'bg-red-100 text-red-800 border border-red-300'
+                              }`}>
+                                Confidence: {cleanConfidenceLevel(analysisResults?.rootCauseAnalysis?.parsed?.confidence_level)}
+                              </div>
+                            </div>
+
+                            {/* Root Cause Details */}
+                            <div className="space-y-6">
+                              {/* Incident Summary */}
+                              {analysisResults?.rootCauseAnalysis?.parsed?.incident_summary && (
+                                <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+                                  <h4 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
+                                    <AlertCircle className="w-5 h-5 mr-3" />
+                                    Incident Summary
+                                  </h4>
+                                  <div className="text-red-800 leading-relaxed">
+                                    <ProfessionalMarkdown 
+                                      content={analysisResults?.rootCauseAnalysis?.parsed?.incident_summary}
+                                      className="prose-red"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Impact */}
+                              {analysisResults?.rootCauseAnalysis?.parsed?.impact && (
+                                <div className="p-6 bg-orange-50 border border-orange-200 rounded-lg">
+                                  <h4 className="text-lg font-semibold text-orange-900 mb-4 flex items-center">
+                                    <Target className="w-5 h-5 mr-3" />
+                                    Impact Analysis
+                                  </h4>
+                                  <div className="text-orange-800 leading-relaxed">
+                                    <ProfessionalMarkdown 
+                                      content={analysisResults?.rootCauseAnalysis?.parsed?.impact}
+                                      className="prose-orange"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Timeline */}
+                              {analysisResults?.rootCauseAnalysis?.parsed?.timeline && (
+                                <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                                  <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+                                    <Clock className="w-5 h-5 mr-3" />
+                                    Event Timeline
+                                  </h4>
+                                  <div className="text-blue-800 leading-relaxed">
+                                    <ProfessionalMarkdown 
+                                      content={analysisResults?.rootCauseAnalysis?.parsed?.timeline}
+                                      className="prose-blue"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Detection */}
+                              {analysisResults?.rootCauseAnalysis?.parsed?.detection && (
+                                <div className="p-6 bg-indigo-50 border border-indigo-200 rounded-lg">
+                                  <h4 className="text-lg font-semibold text-indigo-900 mb-4 flex items-center">
+                                    <Eye className="w-5 h-5 mr-3" />
+                                    How It Was Detected
+                                  </h4>
+                                  <div className="text-indigo-800 leading-relaxed">
+                                    <ProfessionalMarkdown 
+                                      content={analysisResults?.rootCauseAnalysis?.parsed?.detection}
+                                      className="prose-indigo"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Root Cause */}
+                              {analysisResults?.rootCauseAnalysis?.parsed?.root_cause_detailed && (
+                                <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
+                                  <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+                                    <Search className="w-5 h-5 mr-3" />
+                                    Detailed Root Cause Analysis
+                                  </h4>
+                                  <div className="text-purple-800 leading-relaxed">
+                                    <ProfessionalMarkdown 
+                                      content={analysisResults?.rootCauseAnalysis?.parsed?.root_cause_detailed}
+                                      className="prose-purple"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Contributing Factors */}
+                              {analysisResults?.rootCauseAnalysis?.parsed?.contributing_factors && (
+                                <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                  <h4 className="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
+                                    <AlertCircle className="w-5 h-5 mr-3" />
+                                    Contributing Factors
+                                  </h4>
+                                  <div className="text-yellow-800 leading-relaxed">
+                                    <ProfessionalMarkdown 
+                                      content={analysisResults?.rootCauseAnalysis?.parsed?.contributing_factors}
+                                      className="prose-yellow"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Additional Data Needed */}
+                              {analysisResults?.rootCauseAnalysis?.parsed?.additional_data_needed && (
+                                <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
+                                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                    <FileText className="w-5 h-5 mr-3" />
+                                    Additional Data Needed
+                                  </h4>
+                                  <div className="text-gray-800 leading-relaxed">
+                                    <ProfessionalMarkdown 
+                                      content={analysisResults?.rootCauseAnalysis?.parsed?.additional_data_needed}
+                                      className="prose-gray"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Raw Analysis (Collapsible) */}
+                            <div className="mt-8 pt-6 border-t border-gray-200">
+                              <button
+                                onClick={() => setShowDetailedLogs(!showDetailedLogs)}
+                                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-base cursor-pointer"
+                              >
+                                {showDetailedLogs ? <ChevronUp className="w-5 h-5 mr-2" /> : <ChevronDown className="w-5 h-5 mr-2" />}
+                                <span className="font-medium">Show Raw AI Analysis</span>
+                              </button>
+                              
+                              {showDetailedLogs && (
+                                <div className="mt-4 p-6 bg-gray-900 rounded-lg">
+                                  <div className="text-green-400 font-mono text-sm whitespace-pre-wrap overflow-x-auto leading-relaxed">
+                                    {analysisResults?.rootCauseAnalysis?.raw || 'No raw analysis available'}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'solution' && (
+                        <div className="space-y-8">
+                          {/* Solution Analysis */}
+                          <div>
+                            <div className="flex items-center mb-8">
+                              <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mr-4">
+                                <Wrench className="w-6 h-6 text-white" />
+                              </div>
+                              <h3 className="text-xl font-semibold text-gray-900">Recommended Solutions</h3>
+                            </div>
+
+                            {/* Confidence Level */}
+                            <div className="mb-8 text-center">
+                              <div className={`inline-block px-6 py-3 rounded-lg text-base font-semibold ${
+                                cleanConfidenceLevel(analysisResults?.solutionAnalysis?.parsed?.confidence_level) === 'High' 
+                                  ? 'bg-green-100 text-green-800 border border-green-300'
+                                  : cleanConfidenceLevel(analysisResults?.solutionAnalysis?.parsed?.confidence_level) === 'Medium'
+                                  ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                                  : 'bg-red-100 text-red-800 border border-red-300'
+                              }`}>
+                                Solution Confidence: {cleanConfidenceLevel(analysisResults?.solutionAnalysis?.parsed?.confidence_level)}
+                              </div>
+                            </div>
+
+                            <div className="space-y-6">
+                              {analysisResults?.solutionAnalysis?.parsed?.solution_overview && (
+                                <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+                                  <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+                                    <Wrench className="w-5 h-5 mr-3" />
+                                    Solution Overview
+                                  </h4>
+                                  <div className="text-green-800 leading-relaxed">
+                                    <ProfessionalMarkdown 
+                                      content={analysisResults?.solutionAnalysis?.parsed?.solution_overview}
+                                      className="prose-green"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {analysisResults?.solutionAnalysis?.parsed?.immediate_fix && (
+                                <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                                  <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+                                    <Clock className="w-5 h-5 mr-3" />
+                                    Immediate Fix
+                                  </h4>
+                                  <div className="text-blue-800 leading-relaxed">
+                                    <ProfessionalMarkdown 
+                                      content={analysisResults?.solutionAnalysis?.parsed?.immediate_fix}
+                                      className="prose-blue"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {analysisResults?.solutionAnalysis?.parsed?.validation_steps && (
+                                <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
+                                  <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+                                    <CheckCircle className="w-5 h-5 mr-3" />
+                                    Validation Steps
+                                  </h4>
+                                  <div className="text-purple-800 leading-relaxed">
+                                    <ProfessionalMarkdown 
+                                      content={analysisResults?.solutionAnalysis?.parsed?.validation_steps}
+                                      className="prose-purple"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {analysisResults?.solutionAnalysis?.parsed?.preventive_actions && (
+                                <div className="p-6 bg-orange-50 border border-orange-200 rounded-lg">
+                                  <h4 className="text-lg font-semibold text-orange-900 mb-4 flex items-center">
+                                    <AlertCircle className="w-5 h-5 mr-3" />
+                                    Preventive Actions
+                                  </h4>
+                                  <div className="text-orange-800 leading-relaxed">
+                                    <ProfessionalMarkdown 
+                                      content={analysisResults?.solutionAnalysis?.parsed?.preventive_actions}
+                                      className="prose-orange"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {analysisResults?.solutionAnalysis?.parsed?.additional_data_needed && (
+                                <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                  <h4 className="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
+                                    <Search className="w-5 h-5 mr-3" />
+                                    Additional Data Needed for Complete Solution
+                                  </h4>
+                                  <div className="text-yellow-800 leading-relaxed">
+                                    <ProfessionalMarkdown 
+                                      content={analysisResults?.solutionAnalysis?.parsed?.additional_data_needed}
+                                      className="prose-yellow"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Raw Solution Analysis (Collapsible) */}
+                            <div className="mt-8 pt-6 border-t border-gray-200">
+                              <button
+                                onClick={() => setShowDetailedLogs(!showDetailedLogs)}
+                                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-base cursor-pointer"
+                              >
+                                {showDetailedLogs ? <ChevronUp className="w-5 h-5 mr-2" /> : <ChevronDown className="w-5 h-5 mr-2" />}
+                                <span className="font-medium">Show Raw AI Solution Analysis</span>
+                              </button>
+                              
+                              {showDetailedLogs && (
+                                <div className="mt-4 p-6 bg-gray-900 rounded-lg">
+                                  <div className="text-green-400 font-mono text-sm whitespace-pre-wrap overflow-x-auto leading-relaxed">
+                                    {analysisResults?.solutionAnalysis?.raw || 'No raw solution analysis available'}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* System Information (Collapsible) */}
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div 
+                      className="flex items-center justify-between mb-6 cursor-pointer hover:bg-gray-50 p-2 -m-2 rounded-lg transition-colors duration-200"
+                      onClick={() => setShowSystemInfo(!showSystemInfo)}
+                    >
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center mr-3">
+                          <Database className="w-5 h-5 text-white" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900">System & Log Information</h3>
+                      </div>
+                      {showSystemInfo ? (
+                        <ChevronUp className="w-5 h-5 text-gray-500" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-gray-500" />
+                      )}
+                    </div>
+                    
+                    {showSystemInfo && (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {/* Environment Info */}
+                          <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                            <h4 className="font-bold text-indigo-900 mb-3 text-base">Environment</h4>
+                            <div className="space-y-2 text-sm">
+                              <div><strong className="text-gray-900">Type:</strong> <span className="text-gray-700">{environmentType}</span></div>
+                              <div><strong className="text-gray-900">Name:</strong> <span className="text-gray-700">{analysisResults?.environment?.name || 'Unknown'}</span></div>
+                              <div><strong className="text-gray-900">Session ID:</strong> <span className="font-mono text-xs text-gray-600">{analysisResults?.sessionId}</span></div>
+                            </div>
+                          </div>
+
+                          {/* SSH Logs */}
+                          <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                            <h4 className="font-bold text-purple-900 mb-3 text-base">System Logs</h4>
+                            <div className="space-y-2 text-sm">
+                              {(() => {
+                                // Check multiple possible locations for SSH data
+                                const sshData = analysisResults?.sshLogs || sshResults;
+                                const hasSSHData = sshData && (sshData.downloadedFiles || sshData.success);
+                                const isSkipped = analysisResults?.sshSkipped || skipSSHTransfer;
+                                const isCompleted = sshTransferComplete || hasSSHData;
+                                
+                                if (hasSSHData) {
+                                  return (
+                                    <>
+                                      <div>
+                                        <strong className="text-gray-900">Files Retrieved:</strong> 
+                                        <span className="text-gray-700 ml-1">
+                                          {sshData.downloadedFiles?.length || 0}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <strong className="text-gray-900">Status:</strong> 
+                                        <span className="text-green-600 font-medium ml-1">✓ Success</span>
+                                      </div>
+                                      {sshData.grepFilteringUsed && (
+                                        <div>
+                                          <strong className="text-gray-900">Filtered:</strong> 
+                                          <span className="text-green-600 font-medium ml-1">✓ Yes</span>
+                                        </div>
+                                      )}
+                                      {sshData.totalSize && (
+                                        <div>
+                                          <strong className="text-gray-900">Total Size:</strong> 
+                                          <span className="text-gray-700 ml-1">
+                                            {(sshData.totalSize / 1024).toFixed(2)} KB
+                                          </span>
+                                        </div>
+                                      )}
+                                      {sshData.processedLogs?.files && sshData.processedLogs.files.length > 0 && (
+                                        <div>
+                                          <strong className="text-gray-900">Processed Files:</strong>
+                                          <div className="mt-1 ml-4 text-xs">
+                                            {sshData.processedLogs.files.map((file, idx) => (
+                                              <div key={idx} className="text-gray-600">
+                                                • {file.fileName} ({file.relevantEntries || 0} entries)
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </>
+                                  );
+                                } else if (isSkipped) {
+                                  return (
+                                    <div className="text-yellow-600">
+                                      <span className="font-medium">⚠ Skipped by user</span>
+                                      <div className="text-xs text-gray-600 mt-1">
+                                        Analysis continued with database logs only
+                                      </div>
+                                    </div>
+                                  );
+                                } else if (isCompleted) {
+                                  return (
+                                    <div className="text-orange-600">
+                                      <span className="font-medium">⚠ Transfer completed but no data</span>
+                                      <div className="text-xs text-gray-600 mt-1">
+                                        SSH connection succeeded but no log files retrieved
+                                      </div>
+                                    </div>
+                                  );
+                                } else {
+                                  return (
+                                    <div className="text-gray-600">
+                                      <span>Not available</span>
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        SSH transfer was not performed or failed
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* Database Logs */}
+                          {analysisResults?.logSummary && (
+                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                              <h4 className="font-bold text-blue-900 mb-3 text-base">Database Logs</h4>
+                              <div className="space-y-2 text-sm">
+                                <div><strong className="text-gray-900">SWMS Logs:</strong> <span className="text-gray-700">{analysisResults?.logSummary?.swmsLogCount || 0}</span></div>
+                                <div><strong className="text-gray-900">RF Logs:</strong> <span className="text-gray-700">{analysisResults?.logSummary?.rfLogCount || 0}</span></div>
+                                <div><strong className="text-gray-900">Total Records:</strong> <span className="text-gray-700">{analysisResults?.logSummary?.totalRecords || 0}</span></div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Analysis Errors */}
+                        {analysisResults?.analysisError && (
+                          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <div className="flex items-center mb-2">
+                              <AlertCircle className="w-4 h-4 text-red-600 mr-2" />
+                              <h4 className="font-bold text-red-900 text-base">Analysis Warning</h4>
+                            </div>
+                            <p className="text-red-800 text-sm">{analysisResults?.analysisError}</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col md:flex-row justify-center items-center gap-4">
+                    <button
+                      onClick={resetForm}
+                      className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium text-sm flex items-center gap-2"
+                    >
+                      <RefreshIcon className="w-4 h-4" />
+                      <span>Analyze Another Issue</span>
+                    </button>
+                    <button 
+                      onClick={exportAnalysisReport}
+                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium text-sm flex items-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Export Analysis Report</span>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (analysisResults && analysisResults.sessionId) {
+                          await cleanupLogs(analysisResults.sessionId);
+                        }
+                      }}
+                      className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-medium text-sm flex items-center gap-2"
+                    >
+                      <Trash className="w-4 h-4" />
+                      <span>Clean Up Logs</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1089,280 +1724,7 @@ export default function RootRippleMain({ headerHeight }) {
                 <span>Solution</span>
               </button>
             </div>
-          </div>
-
-          {/* Tab Content */}
-          {activeTab === 'overview' && (
-            <div className="space-y-8">
-              {/* Analysis Summary */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <div className="flex items-center mb-8">
-                  <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
-                    <BookOpen className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900">Analysis Summary</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                  {/* Root Cause Confidence */}
-                  <div className="p-6 border border-red-500 rounded-lg">
-                    <h4 className="text-base font-semibold text-blue-800 mb-4">Root Cause Analysis Confidence</h4>
-                    <div className={`inline-block px-4 py-2 rounded-lg text-sm font-medium ${
-                      cleanConfidenceLevel(analysisResults?.rootCauseAnalysis?.parsed?.confidence_level) === 'High'
-                        ? 'bg-green-100 text-green-800'
-                        : cleanConfidenceLevel(analysisResults?.rootCauseAnalysis?.parsed?.confidence_level) === 'Medium'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {cleanConfidenceLevel(analysisResults?.rootCauseAnalysis?.parsed?.confidence_level)}
-                    </div>
-                  </div>
-                  
-                  {/* Solution Confidence */}
-                  <div className="p-6 border border-green-600 rounded-lg">
-                    <h4 className="text-base font-semibold text-blue-800 mb-4">Solution Analysis Confidence</h4>
-                    <div className={`inline-block px-4 py-2 rounded-lg text-sm font-medium ${
-                      cleanConfidenceLevel(analysisResults?.solutionAnalysis?.parsed?.confidence_level) === 'High'
-                        ? 'bg-green-100 text-green-800'
-                        : cleanConfidenceLevel(analysisResults?.solutionAnalysis?.parsed?.confidence_level) === 'Medium'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {cleanConfidenceLevel(analysisResults?.solutionAnalysis?.parsed?.confidence_level)}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Issue Summary</h4>
-                  <div className="text-gray-700 leading-relaxed">
-                    <ProfessionalMarkdown 
-                      content={analysisResults?.rootCauseAnalysis?.parsed?.issue_summary || 
-                        `**Issue:** ${issueDescription}\n\n**Environment:** ${analysisResults?.environment?.name || 'Unknown'}\n\n**Time Occurred:** ${new Date(timeOccurred).toLocaleString()}`}
-                      className="prose-gray"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'rootcause' && (
-            <div className="space-y-8">
-              {/* Root Cause Analysis */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <div className="flex items-center mb-8">
-                  <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center mr-4">
-                    <Target className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900">Root Cause Analysis</h3>
-                </div>
-                
-                {/* Confidence Level */}
-                <div className="mb-8 text-center">
-                  <div className={`inline-block px-6 py-3 rounded-lg text-base font-semibold ${
-                    cleanConfidenceLevel(analysisResults?.rootCauseAnalysis?.parsed?.confidence_level) === 'High' 
-                      ? 'bg-green-100 text-green-800 border border-green-300'
-                      : cleanConfidenceLevel(analysisResults?.rootCauseAnalysis?.parsed?.confidence_level) === 'Medium'
-                      ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
-                      : 'bg-red-100 text-red-800 border border-red-300'
-                  }`}>
-                    Confidence: {cleanConfidenceLevel(analysisResults?.rootCauseAnalysis?.parsed?.confidence_level)}
-                  </div>
-                </div>
-
-                {/* Root Cause Details */}
-                <div className="space-y-6">
-                  {analysisResults?.rootCauseAnalysis?.parsed?.root_cause_analysis && (
-                    <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
-                      <h4 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
-                        <Target className="w-5 h-5 mr-3" />
-                        Identified Root Cause
-                      </h4>
-                      <div className="text-red-800 leading-relaxed">
-                        <ProfessionalMarkdown 
-                          content={analysisResults?.rootCauseAnalysis?.parsed?.root_cause_analysis}
-                          className="prose-red"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {analysisResults?.rootCauseAnalysis?.parsed?.relevant_evidence && (
-                    <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
-                        <FileText className="w-5 h-5 mr-3" />
-                        Supporting Evidence
-                      </h4>
-                      <div className="text-blue-800 leading-relaxed">
-                        <ProfessionalMarkdown 
-                          content={analysisResults?.rootCauseAnalysis?.parsed?.relevant_evidence}
-                          className="prose-blue"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {analysisResults?.rootCauseAnalysis?.parsed?.additional_data_needed && (
-                    <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <h4 className="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
-                        <AlertCircle className="w-5 h-5 mr-3" />
-                        Additional Data Needed
-                      </h4>
-                      <div className="text-yellow-800 leading-relaxed">
-                        <ProfessionalMarkdown 
-                          content={analysisResults?.rootCauseAnalysis?.parsed?.additional_data_needed}
-                          className="prose-yellow"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Raw Analysis (Collapsible) */}
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <button
-                    onClick={() => setShowDetailedLogs(!showDetailedLogs)}
-                    className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-base cursor-pointer"
-                  >
-                    {showDetailedLogs ? <ChevronUp className="w-5 h-5 mr-2" /> : <ChevronDown className="w-5 h-5 mr-2" />}
-                    <span className="font-medium">Show Raw AI Analysis</span>
-                  </button>
-                  
-                  {showDetailedLogs && (
-                    <div className="mt-4 p-6 bg-gray-900 rounded-lg">
-                      <div className="text-green-400 font-mono text-sm whitespace-pre-wrap overflow-x-auto leading-relaxed">
-                        {analysisResults?.rootCauseAnalysis?.raw || 'No raw analysis available'}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'solution' && (
-            <div className="space-y-8">
-              {/* Solution Analysis */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <div className="flex items-center mb-8">
-                  <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mr-4">
-                    <Wrench className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900">Recommended Solutions</h3>
-                </div>
-
-                {/* Confidence Level */}
-                <div className="mb-8 text-center">
-                  <div className={`inline-block px-6 py-3 rounded-lg text-base font-semibold ${
-                    cleanConfidenceLevel(analysisResults?.solutionAnalysis?.parsed?.confidence_level) === 'High' 
-                      ? 'bg-green-100 text-green-800 border border-green-300'
-                      : cleanConfidenceLevel(analysisResults?.solutionAnalysis?.parsed?.confidence_level) === 'Medium'
-                      ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
-                      : 'bg-red-100 text-red-800 border border-red-300'
-                  }`}>
-                    Solution Confidence: {cleanConfidenceLevel(analysisResults?.solutionAnalysis?.parsed?.confidence_level)}
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  {analysisResults?.solutionAnalysis?.parsed?.solution_overview && (
-                    <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
-                      <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
-                        <Wrench className="w-5 h-5 mr-3" />
-                        Solution Overview
-                      </h4>
-                      <div className="text-green-800 leading-relaxed">
-                        <ProfessionalMarkdown 
-                          content={analysisResults?.solutionAnalysis?.parsed?.solution_overview}
-                          className="prose-green"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {analysisResults?.solutionAnalysis?.parsed?.immediate_fix && (
-                    <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
-                        <Clock className="w-5 h-5 mr-3" />
-                        Immediate Fix
-                      </h4>
-                      <div className="text-blue-800 leading-relaxed">
-                        <ProfessionalMarkdown 
-                          content={analysisResults?.solutionAnalysis?.parsed?.immediate_fix}
-                          className="prose-blue"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {analysisResults?.solutionAnalysis?.parsed?.validation_steps && (
-                    <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
-                      <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
-                        <CheckCircle className="w-5 h-5 mr-3" />
-                        Validation Steps
-                      </h4>
-                      <div className="text-purple-800 leading-relaxed">
-                        <ProfessionalMarkdown 
-                          content={analysisResults?.solutionAnalysis?.parsed?.validation_steps}
-                          className="prose-purple"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {analysisResults?.solutionAnalysis?.parsed?.preventive_actions && (
-                    <div className="p-6 bg-orange-50 border border-orange-200 rounded-lg">
-                      <h4 className="text-lg font-semibold text-orange-900 mb-4 flex items-center">
-                        <AlertCircle className="w-5 h-5 mr-3" />
-                        Preventive Actions
-                      </h4>
-                      <div className="text-orange-800 leading-relaxed">
-                        <ProfessionalMarkdown 
-                          content={analysisResults?.solutionAnalysis?.parsed?.preventive_actions}
-                          className="prose-orange"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {analysisResults?.solutionAnalysis?.parsed?.additional_data_needed && (
-                    <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <h4 className="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
-                        <Search className="w-5 h-5 mr-3" />
-                        Additional Data Needed for Complete Solution
-                      </h4>
-                      <div className="text-yellow-800 leading-relaxed">
-                        <ProfessionalMarkdown 
-                          content={analysisResults?.solutionAnalysis?.parsed?.additional_data_needed}
-                          className="prose-yellow"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Raw Solution Analysis (Collapsible) */}
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <button
-                    onClick={() => setShowDetailedLogs(!showDetailedLogs)}
-                    className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-base cursor-pointer"
-                  >
-                    {showDetailedLogs ? <ChevronUp className="w-5 h-5 mr-2" /> : <ChevronDown className="w-5 h-5 mr-2" />}
-                    <span className="font-medium">Show Raw AI Solution Analysis</span>
-                  </button>
-                  
-                  {showDetailedLogs && (
-                    <div className="mt-4 p-6 bg-gray-900 rounded-lg">
-                      <div className="text-green-400 font-mono text-sm whitespace-pre-wrap overflow-x-auto leading-relaxed">
-                        {analysisResults?.solutionAnalysis?.raw || 'No raw solution analysis available'}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+          </div>        
 
           {/* System Information (Collapsible) */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

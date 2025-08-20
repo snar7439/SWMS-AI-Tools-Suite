@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { HfInference } from '@huggingface/inference';
 import fs from 'fs/promises';
 import path from 'path';
+import { generateMockRootCauseAnalysis, generateMockSolutionAnalysis, shouldUseMockData } from '../../lib/mockRCAData.js';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -216,16 +217,33 @@ ${sshLogs ? Object.entries(sshLogs.logs).map(([filename, content]) =>
    - Example: "The available logs and attached evidence do not contain sufficient information to determine a definitive root cause for this issue."
 
 **Output Format:**
-Provide the analysis in Markdown:
+Provide the analysis in the following RCA (Root Cause Analysis) format using Markdown:
 
-## Issue Summary
-Brief restatement of the issue and time
+## Incident Summary
+On [Date], [Brief description of what happened - system/component affected] due to [high-level cause].
 
-## Relevant Evidence
-Summarized key log entries, database events, and notable image observations — include timestamps and relevance
+## Impact
+- **Affected:** [What systems, users, or processes were impacted]
+- **Duration:** [How long the issue lasted or is lasting]  
+- **Severity:** [Sev-1/Sev-2/Sev-3 or High/Medium/Low]
 
-## Root Cause Analysis
-Detailed reasoning and evidence trail that led to the root cause
+## Timeline
+- **[Timestamp]** – [Event description]
+- **[Timestamp]** – [Event description]
+- **[Timestamp]** – [Event description]
+
+## Detection
+How was the issue discovered (monitoring alert, user report, log analysis, etc.)
+
+## Contributing Factors
+- [Factor 1 that made the issue worse or more likely]
+- [Factor 2 that made the issue worse or more likely]
+
+## Root Cause Detailed
+[Detailed technical explanation of the actual cause - be specific and evidence-based. Include step-by-step breakdown of how you reached this conclusion]
+
+## Root Cause Summary
+[1-2 sentences: Direct, concise statement of the primary technical cause]
 
 ## Confidence Level
 High / Medium / Low — based on certainty from the provided evidence
@@ -302,19 +320,39 @@ ${sshLogs ? Object.entries(sshLogs.logs).map(([filename, content]) =>
    - Suggest what additional evidence or context would be required
 
 **Output Format:**
-Provide the solution in Markdown:
+Provide the solution in the following RCA remediation format using Markdown:
 
-## Solution Overview
-Brief summary of how the solution addresses the root cause
+## Resolution & Recovery
+Step-by-step actions taken or needed to fix the issue during the incident
 
-## Immediate Fix
-Step-by-step technical actions to resolve the issue quickly
+## Immediate Actions Detailed
+- [Action 1] - [Detailed description with specific steps and timeline]
+- [Action 2] - [Detailed description with specific steps and timeline]
+- [Action 3] - [Detailed description with specific steps and timeline]
+
+## Immediate Actions Summary
+[2-3 sentences: Most critical immediate steps to resolve the issue]
+
+## Preventive Actions Detailed
+- [Action 1] - [Detailed description with implementation timeline and ownership]
+- [Action 2] - [Detailed description with implementation timeline and ownership]
+- [Action 3] - [Detailed description with implementation timeline and ownership]
+
+## Preventive Actions Summary
+[2-3 sentences: Key long-term measures to prevent recurrence]
 
 ## Validation Steps
-How to verify that the fix has resolved the issue
+How to verify that the fix has resolved the issue and prevent recurrence
 
-## Preventive Actions
-Long-term recommendations to avoid recurrence
+## Lessons Learned
+
+### What Went Well
+- [Positive aspect 1]
+- [Positive aspect 2]
+
+### What Could Be Improved
+- [Improvement area 1]
+- [Improvement area 2]
 
 ## Confidence Level
 High / Medium / Low — based on certainty that the solution addresses the root cause
@@ -329,62 +367,73 @@ High / Medium / Low — based on certainty that the solution addresses the root 
 - If a workaround is temporary, mark it clearly and note that a permanent fix is still required`;
 }
 
-// Call Hugging Face API
-async function callHuggingFaceAPI(prompt) {
+// Call Hugging Face API with mock data fallback
+async function callHuggingFaceAPI(prompt, promptType = 'root-cause', additionalData = {}) {
+  // Check if we should use mock data
+  if (shouldUseMockData()) {
+    console.log('[INFO] Using mock data - LLM not configured or forced mock mode');
+    
+    if (promptType === 'root-cause') {
+      return {
+        response: generateMockRootCauseAnalysis(
+          additionalData.issueDescription, 
+          additionalData.timeOccurred, 
+          additionalData.environment
+        ),
+        usedMockData: true
+      };
+    } else if (promptType === 'solution') {
+      return {
+        response: generateMockSolutionAnalysis(
+          additionalData.issueDescription, 
+          additionalData.timeOccurred, 
+          additionalData.environment
+        ),
+        usedMockData: true
+      };
+    }
+  }
+
   const HF_TOKEN = process.env.HF_TOKEN;
   const HF_MODEL = process.env.HF_MODEL;
 
   if (!HF_TOKEN || !HF_MODEL) {
-    throw new Error('Missing HF_TOKEN or HF_MODEL configuration');
+    console.log('[WARNING] HF_TOKEN or HF_MODEL not configured, falling back to mock data');
+    if (promptType === 'root-cause') {
+      return {
+        response: generateMockRootCauseAnalysis(
+          additionalData.issueDescription, 
+          additionalData.timeOccurred, 
+          additionalData.environment
+        ),
+        usedMockData: true
+      };
+    } else if (promptType === 'solution') {
+      return {
+        response: generateMockSolutionAnalysis(
+          additionalData.issueDescription, 
+          additionalData.timeOccurred, 
+          additionalData.environment
+        ),
+        usedMockData: true
+      };
+    }
   }
 
-  const hf = new HfInference(HF_TOKEN);
-  
-  // Check if it's a chat model
-  const isChatModel = HF_MODEL.toLowerCase().includes('chat') || 
-                     HF_MODEL.toLowerCase().includes('instruct') || 
-                     HF_MODEL.toLowerCase().includes('gemma') ||
-                     HF_MODEL.toLowerCase().includes('gpt-oss') ||
-                     HF_MODEL.toLowerCase().includes('conversational');
+  try {
+    const hf = new HfInference(HF_TOKEN);
+    
+    // Check if it's a chat model
+    const isChatModel = HF_MODEL.toLowerCase().includes('chat') || 
+                       HF_MODEL.toLowerCase().includes('instruct') || 
+                       HF_MODEL.toLowerCase().includes('gemma') ||
+                       HF_MODEL.toLowerCase().includes('gpt-oss') ||
+                       HF_MODEL.toLowerCase().includes('conversational');
 
-  let result;
-  let generatedText = '';
+    let result;
+    let generatedText = '';
 
-  if (isChatModel) {
-    result = await hf.chatCompletion({
-      model: HF_MODEL,
-      messages: [
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      max_tokens: 3000,
-      temperature: 0.3,
-      stream: false
-    });
-
-    if (result && result.choices && result.choices.length > 0) {
-      generatedText = result.choices[0].message.content;
-    } else {
-      throw new Error('No valid response from chat completion');
-    }
-  } else {
-    try {
-      result = await hf.textGeneration({
-        model: HF_MODEL,
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 3000,
-          temperature: 0.3,
-          do_sample: true,
-          return_full_text: false
-        }
-      });
-      
-      generatedText = result.generated_text;
-    } catch (textGenError) {
-      // Fallback to chat completion
+    if (isChatModel) {
       result = await hf.chatCompletion({
         model: HF_MODEL,
         messages: [
@@ -401,12 +450,75 @@ async function callHuggingFaceAPI(prompt) {
       if (result && result.choices && result.choices.length > 0) {
         generatedText = result.choices[0].message.content;
       } else {
-        throw new Error('Both text generation and chat completion failed');
+        throw new Error('No valid response from chat completion');
+      }
+    } else {
+      try {
+        result = await hf.textGeneration({
+          model: HF_MODEL,
+          inputs: prompt,
+          parameters: {
+            max_new_tokens: 3000,
+            temperature: 0.3,
+            do_sample: true,
+            return_full_text: false
+          }
+        });
+        
+        generatedText = result.generated_text;
+      } catch (textGenError) {
+        // Fallback to chat completion
+        result = await hf.chatCompletion({
+          model: HF_MODEL,
+          messages: [
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          max_tokens: 3000,
+          temperature: 0.3,
+          stream: false
+        });
+
+        if (result && result.choices && result.choices.length > 0) {
+          generatedText = result.choices[0].message.content;
+        } else {
+          throw new Error('Both text generation and chat completion failed');
+        }
       }
     }
-  }
 
-  return generatedText;
+    return {
+      response: generatedText,
+      usedMockData: false
+    };
+  } catch (error) {
+    console.error('[ERROR] LLM API call failed, falling back to mock data:', error.message);
+    
+    // Fallback to mock data on any error
+    if (promptType === 'root-cause') {
+      return {
+        response: generateMockRootCauseAnalysis(
+          additionalData.issueDescription, 
+          additionalData.timeOccurred, 
+          additionalData.environment
+        ),
+        usedMockData: true
+      };
+    } else if (promptType === 'solution') {
+      return {
+        response: generateMockSolutionAnalysis(
+          additionalData.issueDescription, 
+          additionalData.timeOccurred, 
+          additionalData.environment
+        ),
+        usedMockData: true
+      };
+    }
+    
+    throw error; // Re-throw if we can't provide mock data
+  }
 }
 
 export async function POST(request) {
@@ -489,26 +601,37 @@ export async function POST(request) {
     
     // Step 1: Root Cause Analysis
     const rootCausePrompt = createRootCausePrompt(promptData);
-    const rootCauseResponse = await callHuggingFaceAPI(rootCausePrompt);
+    const rootCauseResult = await callHuggingFaceAPI(
+      rootCausePrompt, 
+      'root-cause', 
+      { issueDescription, timeOccurred, environment }
+    );
     
     console.log('[DEBUG] Root Cause Analysis completed');
     console.log('[DEBUG] Step 2: Calling AI for Solution Generation...');
 
     // Step 2: Solution Generation
-    const solutionPrompt = createSolutionPrompt(promptData, rootCauseResponse);
-    const solutionResponse = await callHuggingFaceAPI(solutionPrompt);
+    const solutionPrompt = createSolutionPrompt(promptData, rootCauseResult.response);
+    const solutionResult = await callHuggingFaceAPI(
+      solutionPrompt, 
+      'solution', 
+      { issueDescription, timeOccurred, environment }
+    );
     
     console.log('[DEBUG] Solution Generation completed');
+
+    // Determine if mock data was used
+    const usedMockData = rootCauseResult.usedMockData || solutionResult.usedMockData;
 
     // Parse responses and create structured result
     const analysisResult = {
       rootCauseAnalysis: {
-        raw: rootCauseResponse,
-        parsed: parseMarkdownResponse(rootCauseResponse)
+        raw: rootCauseResult.response,
+        parsed: parseMarkdownResponse(rootCauseResult.response)
       },
       solutionAnalysis: {
-        raw: solutionResponse,
-        parsed: parseMarkdownResponse(solutionResponse)
+        raw: solutionResult.response,
+        parsed: parseMarkdownResponse(solutionResult.response)
       },
       metadata: {
         sessionId,
@@ -516,6 +639,7 @@ export async function POST(request) {
         environmentType,
         timeWindow,
         analysisTimestamp: new Date().toISOString(),
+        usedMockData: usedMockData,
         logsAvailable: {
           database: !!sessionLogs,
           ssh: !!sshLogs,
@@ -557,8 +681,15 @@ function parseMarkdownResponse(markdown) {
         sections[currentSection] = currentContent.join('\n').trim();
       }
       // Start new section
-      currentSection = line.replace('## ', '').trim().toLowerCase().replace(/\s+/g, '_');
+      currentSection = line.replace('## ', '').trim().toLowerCase().replace(/\s+/g, '_').replace(/&/g, 'and');
       currentContent = [];
+    } else if (line.startsWith('### ')) {
+      // Handle subsections (for CAPA sections)
+      if (currentSection) {
+        const subsectionName = line.replace('### ', '').trim().toLowerCase().replace(/\s+/g, '_');
+        sections[currentSection + '_' + subsectionName] = [];
+        currentContent.push(line);
+      }
     } else if (currentSection) {
       currentContent.push(line);
     }
