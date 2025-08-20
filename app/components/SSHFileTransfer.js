@@ -1,3 +1,5 @@
+export const runtime = 'nodejs'
+
 import React, { useState } from 'react';
 import { Upload, Download, Server, AlertCircle, CheckCircle, Eye, EyeOff, Clock, UserCheck } from 'lucide-react';
 
@@ -152,7 +154,7 @@ export default function SSHFileTransfer({
             <div>
               <h4 className="text-yellow-800 font-medium text-sm">SSH Not Configured</h4>
               <p className="text-yellow-700 text-sm mt-1">
-                This environment doesn't have SSH host information configured. You can skip this step and continue with database logs only.
+                This environment doesn&apos;t have SSH host information configured. You can skip this step and continue with database logs only.
               </p>
               <button
                 onClick={handleSkip}
@@ -274,7 +276,7 @@ export default function SSHFileTransfer({
             <p className="text-blue-700 text-sm mt-1">
               This will connect to <strong>{environment.host || 'the selected environment'}</strong> and download 
               the log file <strong>/var/log/swms.log</strong> for the specified time range (30 minutes before to 15 minutes after the issue time). 
-              If you don't have SSH access, you can skip this step and continue with database logs only.
+              If you don&apos;t have SSH access, you can skip this step and continue with database logs only.
             </p>
           </div>
         </div>

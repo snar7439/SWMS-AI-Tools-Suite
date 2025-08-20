@@ -13,7 +13,6 @@
     "@google/generative-ai": "^0.24.1",
     "@heroicons/react": "^1.0.6",
     "@huggingface/inference": "^4.7.0",
-    "cpu-features": "^0.0.10",
     "d3": "^7.9.0",
     "dotenv": "^17.2.1",
     "file-type": "^21.0.0",
@@ -44,6 +43,7 @@
     "copy-webpack-plugin": "^13.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
+    "node-loader": "^2.1.0",
     "tailwindcss": "^4"
   }
 }
