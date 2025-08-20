@@ -306,28 +306,32 @@ export default function RootRippleMain({ headerHeight }) {
 
   const executeRootCauseAnalysis = async () => {
     try {
-      // Step 1: Received Issue Description
+      // Step 0: Received Issue Description
       updateStepStatus('root-cause', 0, 'active');
       await new Promise(resolve => setTimeout(resolve, 1000));
       updateStepStatus('root-cause', 0, 'completed');
       
-      // Step 2: Analyzing Issue
+      // Step 1: Analyzing Issue
       updateStepStatus('root-cause', 1, 'active');
       await new Promise(resolve => setTimeout(resolve, 2000));
       updateStepStatus('root-cause', 1, 'completed');
       
-      // Step 3: Retrieving DB Logs
+      // Step 2: Retrieving DB Logs
       updateStepStatus('root-cause', 2, 'active');
       await retrieveDatabaseLogs();
       updateStepStatus('root-cause', 2, 'completed');
       
-      // Step 4: Retrieving System Logs (SSH)
+      // Step 3: Retrieving System Logs (SSH)
       updateStepStatus('root-cause', 3, 'active');
       await handleSystemLogsRetrieval();
+      updateStepStatus('root-cause', 3, 'completed');
       
-      // Step 5: DataDog Logs (Future - skip this step entirely)
+      // Step 4: Retrieving DataDog Logs (Future - mark as completed but note it's future)
+      updateStepStatus('root-cause', 4, 'active');
+      await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause for UI
+      updateStepStatus('root-cause', 4, 'completed');
       
-      // Step 6: Finding Root Cause
+      // Step 5: Finding Root Cause
       updateStepStatus('root-cause', 5, 'active');
       await performRootCauseAnalysis();
       updateStepStatus('root-cause', 5, 'completed');
@@ -344,27 +348,29 @@ export default function RootRippleMain({ headerHeight }) {
 
   const executeSolutionAnalysis = async () => {
     try {
-      // Step 1: Identifying DB Tables
+      // Step 0: Identifying DB Tables
       updateStepStatus('solution', 0, 'active');
       await new Promise(resolve => setTimeout(resolve, 2000));
       updateStepStatus('solution', 0, 'completed');
       
-      // Step 2: Identifying Source Codes (Future - skip this step entirely)
+      // Step 1: Identifying Source Codes (Future - mark as completed but note it's future)
+      updateStepStatus('solution', 1, 'active');
+      await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause for UI
+      updateStepStatus('solution', 1, 'completed');
       
-      
-      // Step 3: Finding Fixes
+      // Step 2: Finding Fixes
       updateStepStatus('solution', 2, 'active');
       await new Promise(resolve => setTimeout(resolve, 3000));
       updateStepStatus('solution', 2, 'completed');
       
-      // Wait a moment to ensure all progress updates are rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for UI to fully update progress before showing results
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Complete analysis but keep progress screen visible
+      // Complete analysis and show results
       setAnalysisComplete(true);
       setIsAnalyzing(false);
       
-      // Smooth scroll to results section after a brief delay
+      // Smooth scroll to results section after completion
       setTimeout(() => {
         if (resultsRef.current) {
           resultsRef.current.scrollIntoView({ 
@@ -372,7 +378,7 @@ export default function RootRippleMain({ headerHeight }) {
             block: 'start'
           });
         }
-      }, 100);
+      }, 500);
       
     } catch (error) {
       console.error('Error in solution analysis:', error);
@@ -638,7 +644,7 @@ export default function RootRippleMain({ headerHeight }) {
                               }`}>
                                 {step.title}
                               </h3>
-                              {finalIsActive && (
+                              {finalIsActive && !analysisComplete && (
                                 <div className="flex items-center space-x-1">
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
@@ -715,7 +721,7 @@ export default function RootRippleMain({ headerHeight }) {
                               }`}>
                                 {step.title}
                               </h3>
-                              {finalIsActive && (
+                              {finalIsActive && !analysisComplete && (
                                 <div className="flex items-center space-x-1">
                                   <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" />
                                   <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
@@ -759,9 +765,13 @@ export default function RootRippleMain({ headerHeight }) {
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-400">
-                      {Math.round(((Object.values(rootCauseStepsStatus).filter(s => s === 'completed').length + 
-                                   Object.values(solutionStepsStatus).filter(s => s === 'completed').length) / 
-                                   (rootCauseSteps.length + solutionSteps.length)) * 100)}%
+                      {(() => {
+                        const rootCauseCompleted = Object.values(rootCauseStepsStatus).filter(s => s === 'completed').length;
+                        const solutionCompleted = Object.values(solutionStepsStatus).filter(s => s === 'completed').length;
+                        const totalSteps = rootCauseSteps.length + solutionSteps.length;
+                        const completedSteps = rootCauseCompleted + solutionCompleted;
+                        return Math.round((completedSteps / totalSteps) * 100);
+                      })()}%
                     </div>
                     <div className="text-sm text-blue-200">Total Progress</div>
                   </div>
