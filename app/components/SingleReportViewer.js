@@ -123,9 +123,9 @@ export default function SingleReportViewer({
     let html = markdown;
     
     // Convert code blocks first (to avoid interference with other patterns)
-    html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, language, code) => {
-        const lang = language ? ` data-language="${language}"` : '';
-        return `<pre class="bg-gray-900 border border-gray-600 rounded-lg p-4 mb-6 overflow-x-auto shadow-inner"><code class="text-green-300 text-sm font-mono whitespace-pre block leading-relaxed"${lang}>${code.trim()}</code></pre>`;
+    html = html.replace(/```(?:\s*(\w+))?\s*([\s\S]*?)```/g, (match, language, code) => {
+      const lang = language ? ` data-language="${language}"` : '';
+      return `<pre class="bg-gray-900 border border-gray-600 rounded-lg p-4 mb-6 overflow-x-auto shadow-inner"><code class="text-green-300 text-sm font-mono whitespace-pre block leading-relaxed"${lang}>${code.trim()}</code></pre>`;
     });
     
     // Convert inline code (after code blocks to avoid conflicts)
@@ -539,7 +539,10 @@ export default function SingleReportViewer({
             </h3>
             {report && (
               <div className="flex items-center gap-2">
-                <p className="text-xs font-medium text-white truncate">
+                <p 
+                  className="text-xs font-medium text-white truncate max-w-[200px]" 
+                  title={report.name}
+                >
                   {report.name}
                 </p>
                 {shouldShowMarkdown && (
@@ -583,13 +586,13 @@ export default function SingleReportViewer({
               </button>
             )}
 
-            {/* Hide Button - only show for analysis slot and when onToggleVisibility is provided */}
+            {/* Hide Button - only show for verification slot and when onToggleVisibility is provided */}
             {isAnalysisSlot && onToggleVisibility && (
               <button
                 type="button"
                 onClick={onToggleVisibility}
                 className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-gray-700 hover:bg-emerald-600 text-gray-300 hover:text-white border border-gray-600 hover:border-emerald-700 transition-colors shadow-sm"
-                title="Hide analysis document"
+                title="Hide verification document"
               >
                 <svg
                   className="w-3.5 h-3.5"
@@ -831,7 +834,7 @@ export default function SingleReportViewer({
               </p>
               <div className="flex items-center justify-center">
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${colorScheme.emptyBadge}`}>
-                  {isAnalysisSlot ? 'Analysis Document' : 'Report A'}
+                  {isAnalysisSlot ? 'Verification Document' : 'Report A'}
                 </span>
               </div>
             </div>

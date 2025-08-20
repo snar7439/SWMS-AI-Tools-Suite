@@ -1,83 +1,138 @@
 import { NextResponse } from 'next/server';
+import pdf from 'pdf-parse';
 import { HfInference } from '@huggingface/inference';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
+async function extractTextFromPDF(pdfBuffer) {
+  try {
+    const data = await pdf(pdfBuffer);
+    return data.text;
+  } catch (error) {
+    console.error('PDF extraction error:', error);
+    return null;
+  }
+}
+
 export async function POST(request) {
   try {
-    console.log('[DEBUG] Starting report comparison with Hugging Face...');
+    console.log('[DEBUG] Starting report accuracy check...');
     
-    const body = await request.json();
-    const { ai_agent_id, user_query, configuration_environment } = body;
+    const formData = await request.formData();
+    const reportFile = formData.get('report');
+    const queryData = formData.get('queryData');
+    const queryResults = formData.get('queryResults');
     
-    if (!user_query) {
+    if (!reportFile || !queryData || !queryResults) {
       return NextResponse.json({ 
-        error: 'Missing user_query parameter' 
+        error: 'Missing required data', 
+        details: 'Report file, query data, and query results are required' 
       }, { status: 400 });
     }
 
-    // Parse the user_query to get the two reports for comparison
-    let parsedQuery;
+    // Parse the query data and results
+    let parsedQueryData, parsedQueryResults;
     try {
-      parsedQuery = JSON.parse(user_query);
+      parsedQueryData = JSON.parse(queryData);
+      parsedQueryResults = JSON.parse(queryResults);
     } catch (parseError) {
       return NextResponse.json({ 
-        error: 'Invalid user_query format', 
-        details: 'user_query must be valid JSON' 
+        error: 'Invalid JSON data', 
+        details: 'Query data and results must be valid JSON' 
       }, { status: 400 });
     }
 
-    const { baseline, test } = parsedQuery;
-    
-    if (!baseline || !test) {
+    // Extract report content
+    let reportContent = '';
+    try {
+      if (reportFile.type === 'application/pdf') {
+        // Handle PDF files
+        const reportBuffer = Buffer.from(await reportFile.arrayBuffer());
+        reportContent = await extractTextFromPDF(reportBuffer);
+        if (!reportContent) {
+          throw new Error('Could not extract text from report PDF');
+        }
+      } else {
+        // Handle text files
+        reportContent = await reportFile.text();
+      }
+      
+      console.log('[DEBUG] Report content extracted:', {
+        type: reportFile.type,
+        contentLength: reportContent.length
+      });
+      
+    } catch (extractionError) {
+      console.error('[ERROR] Report content extraction failed:', extractionError);
       return NextResponse.json({ 
-        error: 'Missing baseline or test report in user_query' 
-      }, { status: 400 });
+        error: 'Failed to extract report content', 
+        details: extractionError.message 
+      }, { status: 500 });
     }
 
-    // Create the comparison prompt for Hugging Face
-    const prompt = `You are an expert analyst comparing two reports. Please provide a detailed comparison analysis.
+    // Format the results data for analysis
+    let resultsText = '';
+    if (parsedQueryResults.data && parsedQueryResults.data.length > 0) {
+      const headers = Object.keys(parsedQueryResults.data[0]);
+      resultsText = `Headers: ${headers.join(', ')}\n`;
+      resultsText += `Sample data (first 5 rows):\n`;
+      parsedQueryResults.data.slice(0, 5).forEach((row, idx) => {
+        resultsText += `Row ${idx + 1}: ${Object.values(row).join(' | ')}\n`;
+      });
+      resultsText += `\nTotal rows returned: ${parsedQueryResults.data.length}`;
+    } else {
+      resultsText = 'No data returned from query';
+    }
 
-BASELINE REPORT:
-${JSON.stringify(baseline, null, 2)}
+    // Create the prompt for the agent
+    const prompt = `You are a data quality analyst. I need you to compare SQL query results against report content to determine report accuracy.
 
-TEST REPORT:
-${JSON.stringify(test, null, 2)}
+TASK: Analyze how accurate the report data is compared to the actual database query results.
 
-TASK: Compare these two reports and provide detailed insights about their similarities, differences, and overall alignment.
+SQL QUERY EXECUTED:
+${parsedQueryData.query}
 
-Please return your response in JSON format with the following structure:
+ACTUAL QUERY RESULTS FROM DATABASE:
+${resultsText}
+
+REPORT CONTENT TO VERIFY:
+${reportContent}
+
+INSTRUCTIONS:
+1. Compare the query results with information in the report
+2. Look for data matches, discrepancies, and missing information
+3. Provide accuracy scores from 0-100
+4. Return ONLY valid JSON in this exact format:
+
 {
-  "comparison_summary": "Overall summary of the comparison",
-  "similarity_score": 85,
-  "key_differences": [
+  "accuracyScore": 85,
+  "alignmentScore": 78,
+  "dataConsistency": 82,
+  "overallAccuracy": 81,
+  "findings": [
     {
-      "category": "Data Values",
-      "difference": "Description of specific difference",
-      "impact": "high|medium|low"
+      "type": "match",
+      "severity": "low",
+      "description": "Data point matches between query and report",
+      "queryData": "Specific data from query",
+      "reportData": "Corresponding data from report",
+      "impact": "Positive alignment confirmed"
     }
   ],
-  "similarities": [
-    {
-      "category": "Structure",
-      "similarity": "Description of what is similar"
-    }
-  ],
-  "recommendations": [
-    "Specific recommendation 1",
-    "Specific recommendation 2"
-  ],
-  "detailed_analysis": {
-    "baseline_strengths": ["Strength 1", "Strength 2"],
-    "test_improvements": ["Improvement 1", "Improvement 2"],
-    "concerns": ["Concern 1", "Concern 2"]
+  "summary": {
+    "totalChecks": 5,
+    "matches": 3,
+    "discrepancies": 1,
+    "missing": 1,
+    "strengths": ["Accurate data points found"],
+    "improvements": ["Areas needing verification"]
   }
 }`;
 
     // Call Hugging Face API using the official client
     const HF_TOKEN = process.env.HF_TOKEN;
-    const HF_MODEL = process.env.HF_MODEL || "microsoft/DialoGPT-medium";
+    const HF_MODEL = process.env.HF_MODEL;
 
     if (!HF_TOKEN) {
       return NextResponse.json({
@@ -85,7 +140,13 @@ Please return your response in JSON format with the following structure:
       }, { status: 500 });
     }
 
-    console.log('[DEBUG] Using Hugging Face model for comparison:', HF_MODEL);
+    if (!HF_MODEL) {
+      return NextResponse.json({
+        error: 'Server misconfigured: missing HF_MODEL'
+      }, { status: 500 });
+    }
+
+    console.log('[DEBUG] Using Hugging Face model:', HF_MODEL);
 
     // Initialize variables outside try block to avoid scope issues
     let parsedResult = null;
@@ -93,13 +154,13 @@ Please return your response in JSON format with the following structure:
     try {
       const hf = new HfInference(HF_TOKEN);
       
-      console.log('[DEBUG] Calling Hugging Face API for report comparison...');
+      console.log('[DEBUG] Calling Hugging Face API for report accuracy check...');
 
       // Use textGeneration for most models, or chatCompletion for chat models
       let response;
       let generatedText = '';
 
-      // Check if it's a chat model
+      // Check if it's a chat model (models with "chat" or "instruct" in the name)
       const isChatModel = HF_MODEL.toLowerCase().includes('chat') || 
                          HF_MODEL.toLowerCase().includes('instruct') || 
                          HF_MODEL.toLowerCase().includes('gemma') ||
@@ -214,43 +275,42 @@ Please return your response in JSON format with the following structure:
     });
 
     if (!parsedResult || parsedResult === "" || parsedResult === null) {
-      // Enhanced fallback result for comparison
+      // Return a fallback result to verify the frontend works
       console.log('[WARNING] Creating fallback result due to empty Hugging Face response');
       const fallbackResult = {
-        comparison_summary: "Hugging Face model response was empty, using fallback comparison",
-        similarity_score: 50,
-        key_differences: [
+        accuracyScore: 75,
+        alignmentScore: 80,
+        dataConsistency: 70,
+        overallAccuracy: 75,
+        findings: [
           {
-            category: "Model Response",
-            difference: "Unable to perform detailed comparison due to model response issue",
-            impact: "high"
+            type: "analysis",
+            severity: "medium",
+            description: "Hugging Face model response was empty, using fallback analysis",
+            queryData: "Query executed successfully",
+            reportData: "Report content available",
+            impact: "Unable to perform detailed comparison due to model response issue"
           }
         ],
-        similarities: [
-          {
-            category: "Structure",
-            similarity: "Both reports have the same basic structure"
-          }
-        ],
-        recommendations: [
-          "Check Hugging Face model configuration",
-          "Verify model availability and access permissions",
-          "Consider trying a different model"
-        ],
-        detailed_analysis: {
-          baseline_strengths: ["Baseline report structure maintained"],
-          test_improvements: ["Test report format preserved"],
-          concerns: ["Unable to perform deep analysis due to model response issue"]
-        },
-        timestamp: new Date().toISOString(),
-        model: HF_MODEL,
-        ai_agent_id: ai_agent_id,
-        configuration_environment: configuration_environment
+        summary: {
+          totalChecks: 1,
+          matches: 0,
+          discrepancies: 0,
+          missing: 1,
+          strengths: ["Query executed successfully", "Report content accessible"],
+          improvements: ["Hugging Face model configuration needs review", "Response parsing improvements needed"]
+        }
       };
 
       return NextResponse.json({ 
-        result: fallbackResult,
-        note: "This is a fallback result due to empty model response. Check Hugging Face model configuration."
+        success: true, 
+        result: {
+          ...fallbackResult,
+          checkedAt: new Date().toISOString(),
+          queryId: parsedQueryData.id || 'unknown',
+          note: "This is a fallback result due to empty model response. Check Hugging Face model configuration.",
+          model: HF_MODEL
+        }
       });
     }
 
@@ -268,30 +328,31 @@ Please return your response in JSON format with the following structure:
       }
     }
 
-    // Process the successful result - format it in the expected structure
+    // Process the successful result
     const result = {
-      comparison_summary: parsedResult.comparison_summary || 'Comparison completed',
-      similarity_score: parsedResult.similarity_score || 0,
-      key_differences: parsedResult.key_differences || [],
-      similarities: parsedResult.similarities || [],
-      recommendations: parsedResult.recommendations || [],
-      detailed_analysis: parsedResult.detailed_analysis || {
-        baseline_strengths: [],
-        test_improvements: [],
-        concerns: []
-      },
-      timestamp: new Date().toISOString(),
+      success: true,
+      accuracyScore: parsedResult.accuracyScore || 0,
+      alignmentScore: parsedResult.alignmentScore || 0,
+      dataConsistency: parsedResult.dataConsistency || 0,
+      overallAccuracy: parsedResult.overallAccuracy || 0,
+      findings: parsedResult.findings || [],
+      summary: parsedResult.summary || {},
+      checkedAt: new Date().toISOString(),
+      queryId: parsedQueryData.id || 'unknown',
       model: HF_MODEL,
-      ai_agent_id: ai_agent_id,
-      configuration_environment: configuration_environment
+      reportMetadata: {
+        reportType: reportFile.type,
+        reportName: reportFile.name,
+        contentLength: reportContent.length
+      }
     };
 
-    return NextResponse.json({ result });
+    return NextResponse.json({ success: true, result });
 
   } catch (error) {
-    console.error('[ERROR] Comparison failed:', error);
+    console.error('[ERROR] Report check failed:', error);
     return NextResponse.json({ 
-      error: error.message || 'Comparison failed',
+      error: error.message || 'Report check failed',
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }, { status: 500 });
   }

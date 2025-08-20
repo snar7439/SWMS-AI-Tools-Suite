@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { EyeIcon, EyeOffIcon } from '@heroicons/react/outline'; // Heroicons package
+import { EyeIcon, EyeOffIcon } from '@heroicons/react/outline';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [credentials, setCredentials] = useState({ username: '', password: '', environment: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -17,8 +17,16 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    if (!credentials.username || !credentials.password) {
-      setError('Please enter both username and password');
+    if (!credentials.username || !credentials.password || !credentials.environment) {
+      setError('Please enter username, password, and environment');
+      setLoading(false);
+      return;
+    }
+
+    // Basic validation for environment format
+    const envPattern = /^[a-z0-9]+$/i;
+    if (!envPattern.test(credentials.environment)) {
+      setError('Environment should contain only letters and numbers (e.g., lx739q21)');
       setLoading(false);
       return;
     }
@@ -38,6 +46,7 @@ export default function LoginPage() {
 
       sessionStorage.setItem('swms-auth', JSON.stringify({
         username: credentials.username,
+        environment: credentials.environment,
         authenticated: true,
         loginTime: new Date().toISOString()
       }));
@@ -55,8 +64,6 @@ export default function LoginPage() {
     //   authenticated: true,
     //   loginTime: new Date().toISOString()
     // }));
-    
-    router.push('/dashboard');
   };
 
   const inputClass = "block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0690cf] focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-500 text-sm lg:text-base";
@@ -80,14 +87,39 @@ export default function LoginPage() {
       {/* Login Card */}
       <div className="rounded-3xl w-full max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl z-10 ml-1 sm:ml-3 md:ml-5 lg:ml-6 xl:ml-8 overflow-hidden" style={containerStyle}>
         {/* Header */}
-        <div className="px-6 py-6 sm:px-8 sm:py-6 lg:px-10 lg:py-8 xl:px-12 xl:py-10 bg-[#0690cf] text-white text-center">
+        <div className="px-6 py-4 sm:px-8 sm:py-4 lg:px-10 lg:py-5 xl:px-12 xl:py-6 bg-[#0690cf] text-white text-center">
           <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold">SWMS AI Tools Suite</h1>
           <p className="mt-2 text-sm lg:text-base xl:text-lg text-[#b3e3fa]">Sign in to access SWMS AI Tools</p>
         </div>
 
         {/* Form */}
-        <div className="px-6 py-6 sm:px-8 sm:py-6 lg:px-10 lg:py-8 xl:px-12 xl:py-10 bg-white bg-opacity-95">
-          <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-8">
+        <div className="px-6 py-4 sm:px-8 sm:py-4 lg:px-10 lg:py-5 xl:px-12 xl:py-6 bg-white bg-opacity-95">
+          <form onSubmit={handleSubmit} className="space-y-4 lg:space-y-5">
+            {/* Environment Selection */}
+            <div>
+              <label htmlFor="environment" className="block text-sm lg:text-base xl:text-lg font-medium text-gray-700 mb-2">Environment</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 lg:h-6 lg:w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
+                  </svg>
+                </div>
+                <input
+                  id="environment"
+                  autoFocus
+                  type="text"
+                  required
+                  value={credentials.environment}
+                  onChange={(e) => setCredentials({ ...credentials, environment: e.target.value.toLowerCase() })}
+                  className={inputClass}
+                  placeholder="Enter environment (e.g., lx739q21, lx739q60)"
+                />
+              </div>
+              <p className="mt-1 text-xs lg:text-sm text-gray-500">
+                Enter the SWMS environment (e.g., lx739q21, lx739q60, lx739q70)
+              </p>
+            </div>
+
             {/* User ID */}
             <div>
               <label htmlFor="username" className="block text-sm lg:text-base xl:text-lg font-medium text-gray-700 mb-2">User ID</label>
@@ -99,7 +131,6 @@ export default function LoginPage() {
                 </div>
                 <input
                   id="username"
-                  autoFocus
                   type="text"
                   required
                   value={credentials.username}
@@ -178,11 +209,13 @@ export default function LoginPage() {
           </form>
 
           {/* Footer */}
-          <div className="mt-6 lg:mt-8 text-center">
+          <div className="mt-4 lg:mt-5 text-center">
             <p className="text-xs lg:text-sm text-gray-500">Secure connection to SWMS Service Layer</p>
             <div className="mt-2 flex items-center justify-center gap-1">
               <div className="w-2 h-2 lg:w-3 lg:h-3 bg-green-500 rounded-full"></div>
-              <span className="text-xs lg:text-sm text-gray-400">Connected to LX739Q21</span>
+              <span className="text-xs lg:text-sm text-gray-400">
+                Connected to {credentials.environment.toUpperCase()}
+              </span>
             </div>
           </div>
         </div>

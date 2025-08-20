@@ -12,6 +12,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/equipment-overview',
+    analysisDocument: {
+      path: '/Analysis Documents/ME1RA_Analysis.md',
+      name: 'ME1RA Report Verification',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","languageID":3,"opcoNumber":"swms","type":"PDF","equipId":null,"zoneId":null,"printerName":null,"reportValue":"me1ra"}
   },
   {
@@ -21,6 +26,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/item-overview-item',
+    analysisDocument: {
+      path: '/Analysis Documents/MI1RA_Analysis.md',
+      name: 'MI1RA Report Verification',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","prodId":null,"palletType":null,"description":null,"cpv":null,"mfgId":null,"brand":null,"reportName":"Item Overview by Item","location":null,"rdcItem":null,"miniLoadItem":null,"ti":null,"hi":null,"printerName":null,"reportValue":"mi1ra","type":"PDF"}
   },
   {
@@ -30,6 +40,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/replenishment-list',
+    analysisDocument: {
+      path: '/Analysis Documents/PN1RA_Analysis.md',
+      name: 'PN1RA Report Verification',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","areaCode":null,"expDate":null,"fromSlot":null,"languageId":3,"nbtGenDate":null,"nbtGenUid":null,"palletType":null,"perUsage":null,"pikAisleFrom":null,"pikAisleTo":null,"priority":null,"prodId":null,"splitOnly":null,"status":null,"toSlot":null,"printerName":null,"reportValue":"pn1ra"}
   },
   {
@@ -39,6 +54,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/shortage-report',
+    analysisDocument: {
+      path: '/Analysis Documents/OO1RA_Analysis.md',
+      name: 'OO1RA Report Verification',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"oo1ra"}
   },
   {
@@ -48,6 +68,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/labor-monitor-by-user-report',
+    analysisDocument: {
+      path: '/Analysis Documents/LB1RG_Analysis.md',
+      name: 'LB1RG Report Verification',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","printerName":null,"reportValue":"lb1rg","type":"PDF"}
   },
   {
@@ -58,8 +83,8 @@ export const swmsReports = [
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/cool-item-cross-reference-all-item',
     analysisDocument: {
-      path: '/Analysis Documents/mc1rc_analysis.md',
-      name: 'MC1RC Report Analysis',
+      path: '/Analysis Documents/MC1RC_Analysis.md',
+      name: 'MC1RC Report Verification',
       type: 'markdown'
     },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"category":null,"custPrefVendor":null,"descrip":null,"prodId":null,"printerName":null,"reportValue":"mc1rc"}
@@ -71,6 +96,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/item-overview-by-area',
+    analysisDocument: {
+      path: '/Analysis Documents/MI1RD_Analysis.md',
+      name: 'MI1RD Report Verification',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","prodId":null,"palletType":null,"description":null,"cpv":null,"mfgId":null,"brand":null,"reportName":"Item Overview by Area","location":null,"rdcItem":null,"miniLoadItem":null,"ti":null,"hi":null,"printerName":null,"reportValue":"mi1rd","type":"PDF"}
   },
   {
@@ -80,6 +110,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/packing-list-for-R042',
+    analysisDocument: {
+      path: '/Analysis Documents/OB1RG_Analysis.md',
+      name: 'OB1RG Report Verification',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1rg"}
   },
   // {
@@ -91,7 +126,7 @@ export const swmsReports = [
   //   reportPath: '/report/inventory-overview',
     // analysisDocument: {
     //   path: '/Analysis Documents/mn1rb_analysis.md',
-    //   name: 'MN1RB Report Analysis',
+    //   name: 'MN1RB Report Verification',
     //   type: 'markdown'
     // },
   //   payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageID":3,"prodId":null,"custPreferVendor":null,"brand":null,"recId":null,"descrip":null,"palletType":null,"plogiLoc":null,"logicLoc":null,"status":null,"msku":null,"rdcItem":null,"miniLoad":null,"parentpalletId":null,"mfgSku":null,"vendorId":null,"uom":null,"prodSize":null,"prodSizeUnit":null,"ti":null,"hi":null,"warehouseId":null,"lotId":null,"pack":null,"aisleSide":null,"mxEligible":null,"mxItemAssignFlag":null,"qtyExp":null,"qtyAlc":null,"printerName":null,"reportValue":"mn1rb"}
@@ -130,6 +165,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/reserve-location-pallets-received-90-days-prior',
+    analysisDocument: {
+      path: '/Analysis Documents/MN1RE_Analysis.md',
+      name: 'MN1RE Report Verification',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageID":3,"prodId":null,"custPreferVendor":null,"brand":null,"recId":null,"descrip":null,"palletType":null,"plogiLoc":null,"logicLoc":null,"status":null,"msku":null,"rdcItem":null,"miniLoad":null,"parentpalletId":null,"mfgSku":null,"vendorId":null,"uom":null,"prodSize":null,"prodSizeUnit":null,"ti":null,"hi":null,"warehouseId":null,"lotId":null,"pack":null,"aisleSide":null,"mxEligible":null,"mxItemAssignFlag":null,"qtyExp":null,"qtyAlc":null,"printerName":null,"reportValue":"mn1re"}
   },
   {
@@ -140,8 +180,8 @@ export const swmsReports = [
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/adjustment-type-overview',
     analysisDocument: {
-      path: '/Analysis Documents/mc1ra_analysis.md',
-      name: 'MC1RA Report Analysis',
+      path: '/Analysis Documents/MC1RA_Analysis.md',
+      name: 'MC1RA Report Verification',
       type: 'markdown'
     },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","languageId":3,"reasonCode":null,"reasonCodeType":null,"type":"PDF","printerName":null,"reportValue":"mc1ra"}
@@ -164,7 +204,7 @@ export const swmsReports = [
     reportPath: '/report/pallet-worksheet',
     analysisDocument: {
       path: '/Analysis Documents/ob1rb_analysis.md',
-      name: 'OB1RB Report Analysis',
+      name: 'OB1RB Report Verification',
       type: 'markdown'
     },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1rb"}
@@ -176,11 +216,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/catchweight-recording',
-    analysisDocument: {
-      path: '/Analysis Documents/ob1rc_analysis.md',
-      name: 'OB1RC Report Analysis',
-      type: 'markdown'
-    },
+    // analysisDocument: {
+    //   path: '/Analysis Documents/ob1rc_analysis.md',
+    //   name: 'OB1RC Report Verification',
+    //   type: 'markdown'
+    // },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1rc"}
   },
   {
@@ -199,6 +239,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/out-bound-checkoff-detail',
+    analysisDocument: {
+      path: '/Analysis Documents/OB1RA_Analysis.md',
+      name: 'OB1RA Report Verification',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"customerId":null,"customerName":null,"orderId":null,"shipDate":null,"printerName":null,"reportValue":"ob1ra"}
   },
   {
@@ -227,8 +272,8 @@ export const swmsReports = [
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/cool-item-setup',
     analysisDocument: {
-      path: '/Analysis Documents/mc1rc_analysis.md',
-      name: 'MC1RC Report Analysis',
+      path: '/Analysis Documents/MC1RC_Analysis.md',
+      name: 'MC1RC Report Verification',
       type: 'markdown'
     },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"category":null,"custPrefVendor":null,"descrip":null,"prodId":null,"printerName":null,"reportValue":"mc1rc"}
@@ -241,8 +286,8 @@ export const swmsReports = [
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/cool-item-cross-reference-items-not-setup',
     analysisDocument: {
-      path: '/Analysis Documents/mc1rc_analysis.md',
-      name: 'MC1RC Report Analysis',
+      path: '/Analysis Documents/MC1RC_Analysis.md',
+      name: 'MC1RC Report Verification',
       type: 'markdown'
     },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","type":"PDF","languageId":3,"category":null,"custPrefVendor":null,"descrip":null,"prodId":null,"printerName":null,"reportValue":"mc1rc"}
@@ -273,8 +318,8 @@ export const swmsReports = [
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/sos-user-configuration-report',
     analysisDocument: {
-      path: '/Analysis Documents/sosuc_analysis.md',
-      name: 'SOSUC Report Analysis',
+      path: '/Analysis Documents/SOSUC_Analysis.md',
+      name: 'SOSUC Report Verification',
       type: 'markdown'
     },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","languageId":3,"type":"PDF","printerName":null,"reportValue":"sosuc"}
@@ -286,6 +331,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/sosShort-main',
+    analysisDocument: {
+      path: '/Analysis Documents/SOSS1_H_Analysis.md',
+      name: 'SOSS1_H Report Verification',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","area":null,"batchNo":null,"containShortOnShort":null,"languageId":3,"queryUserId":null,"shortBatch":null,"shortUser":null,"sortBy":"TIME","truck":null,"type":"PDF","printerName":null,"reportValue":"soss1_h"}
   },
   {
@@ -304,6 +354,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/slt-equipment-overview',
+    analysisDocument: {
+      path: '/Analysis Documents/MC1RA_Analysis.md',
+      name: 'MC1RA Report Verification',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","languageId":3,"type":"PDF","printerName":null,"reportValue":"mc1ra"}
   },
   {
@@ -313,6 +368,11 @@ export const swmsReports = [
     lastModified: 'Real-time',
     pdfUrl: null, // Will be fetched from SWMS
     reportPath: '/report/cycle-count-overview',
+    analysisDocument: {
+      path: '/Analysis Documents/MC2RA_Analysis.md',
+      name: 'MC2RA Report Verification',
+      type: 'markdown'
+    },
     payload: {"userId":"OPS$TEST0100","opcoNumber":"swms","languageId":3,"type":"PDF","printerName":null,"reportValue":"mc2ra"}
   },
 ];

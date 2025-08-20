@@ -1,6 +1,6 @@
-// Alternative approach - try sending text content instead of base64 files
 import { NextResponse } from 'next/server';
-import pdf from 'pdf-parse'; // You'll need to install: npm install pdf-parse
+import pdf from 'pdf-parse'; 
+import { HfInference } from '@huggingface/inference';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -17,7 +17,7 @@ async function extractTextFromPDF(pdfBuffer) {
 
 export async function POST(request) {
   try {
-    console.log('[DEBUG] Starting report analysis with text extraction...');
+    console.log('[DEBUG] Starting report verification with Hugging Face...');
     
     const formData = await request.formData();
     const reportFile = formData.get('report');
@@ -26,19 +26,19 @@ export async function POST(request) {
     if (!reportFile || !analysisFile) {
       return NextResponse.json({ 
         error: 'Missing files', 
-        details: 'Both report and analysis files are required' 
+        details: 'Both report and verification files are required' 
       }, { status: 400 });
     }
     
     const reportName = reportFile.name || 'Report';
-    const analysisName = analysisFile.name || 'Analysis';
+    const analysisName = analysisFile.name || 'Verification';
     
     // Extract text content from files
     let reportText = '';
     let analysisText = '';
     
     try {
-      // Handle report file (PDF)
+      // Handle report file (PDF or text)
       if (reportFile.type === 'application/pdf') {
         const reportBuffer = Buffer.from(await reportFile.arrayBuffer());
         reportText = await extractTextFromPDF(reportBuffer);
@@ -73,195 +73,343 @@ export async function POST(request) {
       }, { status: 500 });
     }
 
-    // Create a more direct prompt with the extracted text
-    const directPrompt = `You are a document compliance analyst. Compare the following SWMS report against its analysis document and return a JSON response.
+    // Create the enhanced verification prompt for Hugging Face
+    const prompt = `**Role**
+You are an expert document analyst specializing in compliance and report validation. Your responsibility is to perform precise, standards-based evaluations of reports against provided verification documents, especially in regulatory, structural, and quality dimensions.
 
-ANALYSIS DOCUMENT (${analysisName}):
-${analysisText.substring(0, 3000)}${analysisText.length > 3000 ? '...[truncated]' : ''}
+**Instructions**
+You are to conduct a comprehensive, structured comparison between a Sysco Warehouse Management System (SWMS) report and its corresponding verification document. The objective is to validate whether the report meets the requirements, structure, standards, and expectations laid out in the verification document.
 
-REPORT DOCUMENT (${reportName}):
-${reportText.substring(0, 3000)}${reportText.length > 3000 ? '...[truncated]' : ''}
+Please output your results in **valid JSON format**, adhering strictly to the structure outlined below.
 
-Please analyze the report against the analysis document and respond with ONLY this JSON structure (no other text):
+**Steps**
+1. Understand the context by reviewing the content of both documents:
+
+**REPORT DOCUMENT:**
+Name: ${reportName}
+Content: ${reportText}
+
+**Verification DOCUMENT:**
+Name: ${analysisName}
+Format: ${analysisFile.type?.includes('pdf') ? 'PDF (converted text)' : 'Markdown/Text'}
+Content: ${analysisText}
+
+2. Compare the report against the verification document on the following dimensions:
+   - Content Structure: Does the report reflect the outlined structure?
+   - Required Sections: Are all mandated sections present?
+   - Compliance Requirements: Does it meet legal/safety/regulatory standards?
+   - Quality Standards: Does the language, detail, and clarity meet expectations?
+   - Completeness: Are all required components addressed?
+
+3. Apply format-specific considerations:
+   - If verification is in Markdown: Look for structured headings, bullet points, checklists, or code blocks
+   - If verification is in PDF: Look for converted structures like numbered lists, tables, or sections
+
+4. Generate a structured response using this EXACT JSON format:
 
 {
   "overallScores": {
     "accuracy": 85,
     "alignment": 78,
-    "coverage": 82,
-    "compliance": 90
+    "coverage": 90,
+    "compliance": 82
   },
   "detailedFindings": [
     {
-      "type": "missing",
-      "section": "Risk Assessment",
-      "severity": "high",
-      "description": "Risk assessment section is incomplete",
-      "recommendation": "Add detailed risk analysis",
-      "analysisReference": "Analysis requires comprehensive risk evaluation"
+      "type": "alignment|missing|inconsistency|recommendation|compliance",
+      "section": "Executive Summary",
+      "severity": "high|medium|low",
+      "description": "Detailed finding description with specific references",
+      "recommendation": "Actionable step to address the finding",
+      "verificationReference": "Direct reference to requirement from verification document"
     }
   ],
   "summary": {
     "totalIssues": 5,
     "criticalIssues": 2,
-    "recommendations": 3,
+    "recommendations": 8,
     "contentMatches": 12,
-    "missingElements": 2,
-    "strengths": ["Clear structure", "Good formatting"],
-    "weaknesses": ["Missing details", "Incomplete sections"]
+    "missingElements": 3,
+    "strengths": ["Well-structured risk assessment", "Clear compliance section"],
+    "weaknesses": ["Missing emergency procedures", "Incomplete stakeholder analysis"]
   },
   "sectionAnalysis": {
     "Executive Summary": {
       "present": true,
       "completeness": 85,
-      "quality": 80,
-      "issues": ["Minor formatting issues"],
-      "analysisRequirement": "Executive summary with key findings"
+      "quality": 90,
+      "issues": ["Missing key risk metrics"],
+      "verificationRequirement": "Must include overview of all major risks and mitigation strategies"
+    },
+    "Risk Assessment": {
+      "present": false,
+      "completeness": 0,
+      "quality": 0,
+      "issues": ["Section completely missing"],
+      "verificationRequirement": "Comprehensive risk matrix with probability and impact ratings"
     }
   }
-}`;
+}
 
-    // Prepare payload - try without files first, just text
-    const payload = {
-      ai_agent_id: '68887a5b6a0837f7039b3a7e',
-      user_query: directPrompt,
-      configuration_environment: 'DEV'
-      // Note: Removed files array to test if file processing is the issue
-    };
+5. Use the following scoring criteria for consistency:
+   - Accuracy (0-100): Factual correctness and precision
+   - Alignment (0-100): Structural and contextual match with verification requirements
+   - Coverage (0-100): Breadth of requirement fulfillment
+   - Compliance (0-100): Adherence to standards and regulations
 
-    console.log('[DEBUG] Calling agent with text-based approach...');
+**Critical Requirements:**
+- Provide specific, actionable findings
+- Reference both documents directly in your analysis
+- Use only the defined finding types: alignment, missing, inconsistency, recommendation, compliance
+- Score all metrics on 0-100 scale
+- Ensure JSON output is valid and properly formatted
+- Be objective and evidence-based in all assessments
 
-    const agentRes = await fetch('https://sysco-gen-ai-platform.labseag.us-east-1.aws.sysco.net/api/sysco-gen-ai-platform/agents/v1/content/generic/answer', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
+**End Goal**
+Provide a structured, objective, and actionable validation summary of the report, quantifying alignment with the verification document, highlighting gaps and strengths, and enabling targeted improvement.
 
-    console.log('[DEBUG] Agent response status:', agentRes.status);
+Return only the JSON response with no additional text or formatting.`;
 
-    if (!agentRes.ok) {
-      const errText = await agentRes.text();
-      console.error('[ERROR] Agent error response:', errText);
-      return NextResponse.json({ 
-        error: 'Agent error', 
-        details: errText,
-        status: agentRes.status 
+    // Call Hugging Face API using the official client
+    const HF_TOKEN = process.env.HF_TOKEN;
+    const HF_MODEL = process.env.HF_MODEL;
+
+    if (!HF_TOKEN) {
+      return NextResponse.json({
+        error: 'Server misconfigured: missing HF_TOKEN'
       }, { status: 500 });
     }
 
-    const agentResponseText = await agentRes.text();
-    console.log('[DEBUG] Raw agent response:', agentResponseText);
+    if (!HF_MODEL) {
+      return NextResponse.json({
+        error: 'Server misconfigured: missing HF_MODEL'
+      }, { status: 500 });
+    }
 
-    let agentJson;
+    console.log('[DEBUG] Using Hugging Face model for analysis:', HF_MODEL);
+
+    // Initialize variables outside try block to avoid scope issues
+    let parsedResult = null;
+
     try {
-      agentJson = JSON.parse(agentResponseText);
-    } catch (parseError) {
-      console.error('[ERROR] Failed to parse agent response as JSON:', parseError);
+      const hf = new HfInference(HF_TOKEN);
+      
+      console.log('[DEBUG] Calling Hugging Face API for enhanced report verification...');
+
+      // Use textGeneration for most models, or chatCompletion for chat models
+      let response;
+      let generatedText = '';
+
+      // Check if it's a chat model
+      const isChatModel = HF_MODEL.toLowerCase().includes('chat') || 
+                         HF_MODEL.toLowerCase().includes('instruct') || 
+                         HF_MODEL.toLowerCase().includes('gemma') ||
+                         HF_MODEL.toLowerCase().includes('gpt-oss') ||
+                         HF_MODEL.toLowerCase().includes('conversational');
+
+      if (isChatModel) {
+        // Use chat completion for conversational models
+        response = await hf.chatCompletion({
+          model: HF_MODEL,
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 3072,
+          temperature: 0.1,
+          top_p: 0.9,
+        });
+        
+        if (response && response.choices && response.choices.length > 0) {
+          generatedText = response.choices[0].message.content;
+        }
+      } else {
+        // Use text generation for other models, with fallback to chat completion
+        try {
+          response = await hf.textGeneration({
+            model: HF_MODEL,
+            inputs: prompt,
+            parameters: {
+              max_new_tokens: 3072,
+              temperature: 0.1,
+              top_p: 0.9,
+              repetition_penalty: 1.1,
+              return_full_text: false,
+              do_sample: true
+            }
+          });
+          
+          generatedText = response.generated_text;
+        } catch (textGenError) {
+          console.log('[WARNING] Text generation failed, trying chat completion:', textGenError.message);
+          
+          // Fallback to chat completion if text generation fails
+          response = await hf.chatCompletion({
+            model: HF_MODEL,
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: 3072,
+            temperature: 0.1,
+          });
+          
+          if (response && response.choices && response.choices.length > 0) {
+            generatedText = response.choices[0].message.content;
+          }
+        }
+      }
+
+      console.log('[DEBUG] Hugging Face response received');
+      console.log('[DEBUG] Generated text length:', generatedText?.length || 0);
+
+      if (!generatedText) {
+        console.log('[WARNING] No generated text found in response, using enhanced fallback');
+      }
+
+      // Parse the generated text as JSON
+      if (generatedText) {
+        try {
+          // Clean the response to extract JSON
+          let cleanedText = generatedText.trim();
+          
+          // Remove markdown code blocks if present
+          if (cleanedText.startsWith('```json')) {
+            cleanedText = cleanedText.replace(/```json\s*/, '').replace(/```\s*$/, '');
+          } else if (cleanedText.startsWith('```')) {
+            cleanedText = cleanedText.replace(/```\s*/, '').replace(/```\s*$/, '');
+          }
+          
+          // Try to extract JSON from the cleaned text
+          const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsedResult = JSON.parse(jsonMatch[0]);
+            console.log('[DEBUG] Successfully parsed JSON from Hugging Face response');
+          } else {
+            console.log('[WARNING] No JSON found in generated text:', cleanedText.substring(0, 200));
+          }
+        } catch (parseError) {
+          console.error('[ERROR] Failed to parse generated text as JSON:', parseError);
+          console.log('[DEBUG] Generated text sample:', generatedText.substring(0, 500));
+        }
+      }
+
+    } catch (hfError) {
+      console.error('[ERROR] Hugging Face API call failed:', hfError);
+      
+      // Check if it's a model not found error
+      if (hfError.message && hfError.message.includes('404')) {
+        return NextResponse.json({
+          error: 'Model not found or not accessible',
+          details: `The model "${HF_MODEL}" was not found. Please check the model name or try a different model.`,
+          suggestions: [
+            'microsoft/DialoGPT-medium',
+            'gpt2',
+            'google/flan-t5-base',
+            'facebook/bart-large-cnn',
+            'mistralai/Mistral-7B-Instruct-v0.1'
+          ]
+        }, { status: 404 });
+      }
+
+      // Check if it's a model loading error
+      if (hfError.message && hfError.message.includes('loading')) {
+        return NextResponse.json({
+          error: 'Model is loading',
+          details: 'Please wait a moment for the model to load and try again.',
+          retryAfter: 60
+        }, { status: 503 });
+      }
+
       return NextResponse.json({ 
-        error: 'Invalid JSON response from agent', 
-        details: parseError.message,
-        rawResponse: agentResponseText
-      }, { status: 500 });
+        error: 'Hugging Face API error', 
+        details: hfError.message || 'Unknown error occurred',
+        model: HF_MODEL
+      }, { status: 502 });
     }
 
-    // Extract response
-    let parsedResult = agentJson.result || 
-                      agentJson.answer || 
-                      agentJson.data?.responses?.agent_response ||
-                      agentJson.data?.agent_response ||
-                      agentJson.data ||
-                      agentJson;
-
-    console.log('[DEBUG] Extracted result:', {
+    console.log('[DEBUG] Parsed result:', {
       type: typeof parsedResult,
-      content: parsedResult,
+      hasOverallScores: !!parsedResult?.overallScores,
+      hasDetailedFindings: !!(parsedResult?.detailedFindings?.length),
+      hasSectionAnalysis: !!(parsedResult?.sectionAnalysis && Object.keys(parsedResult.sectionAnalysis).length),
       isEmpty: !parsedResult || parsedResult === ""
     });
 
     if (!parsedResult || parsedResult === "" || parsedResult === null) {
-      // Return a test result to verify the frontend works
-      console.log('[WARNING] Creating test result due to empty agent response');
-      const testResult = {
-        accuracy: 78,
-        alignment: 85,
-        coverage: 72,
-        compliance: 88,
-        issues: 4,
-        criticalIssues: 1,
-        recommendations: 3,
-        contentMatches: 15,
-        missingElements: 2,
-        reportName: reportName.replace(/\.(pdf|txt|md|markdown)$/i, ''),
-        analysisName: analysisName.replace(/\.(pdf|txt|md|markdown)$/i, ''),
-        timestamp: new Date().toISOString(),
+      // Enhanced fallback result for analysis
+      console.log('[WARNING] Creating enhanced fallback result due to empty Hugging Face response');
+      const fallbackResult = {
+        overallScores: {
+          accuracy: 65,
+          alignment: 60,
+          coverage: 70,
+          compliance: 68
+        },
         detailedFindings: [
           {
-            type: "missing",
-            section: "Risk Assessment",
-            severity: "high",
-            description: "Comprehensive risk assessment section not found in the report",
-            recommendation: "Add detailed risk analysis with probability and impact ratings",
-            analysisReference: "Analysis document requires risk evaluation framework"
-          },
-          {
-            type: "alignment",
-            section: "Executive Summary",
+            type: "recommendation",
+            section: "Analysis Status",
             severity: "medium",
-            description: "Executive summary structure aligns with analysis requirements",
-            recommendation: "Consider adding more quantitative metrics",
-            analysisReference: "Summary should include key performance indicators"
+            description: "Hugging Face model response was empty, automated analysis could not be completed",
+            recommendation: "Verify model configuration and try again with a different model",
+            verificationReference: "System requirement for successful document verification"
           }
         ],
+        summary: {
+          totalIssues: 1,
+          criticalIssues: 0,
+          recommendations: 3,
+          contentMatches: 0,
+          missingElements: 1,
+          strengths: ["Documents uploaded successfully", "Text extraction completed"],
+          weaknesses: ["Model analysis unavailable", "Automated validation incomplete"]
+        },
         sectionAnalysis: {
-          "Executive Summary": {
-            present: true,
-            completeness: 85,
-            quality: 80,
-            issues: ["Could include more metrics"],
-            analysisRequirement: "Executive summary with key findings and recommendations"
-          },
-          "Risk Assessment": {
+          "System Analysis": {
             present: false,
             completeness: 0,
             quality: 0,
-            issues: ["Section completely missing"],
-            analysisRequirement: "Comprehensive risk analysis with mitigation strategies"
+            issues: ["Model response unavailable"],
+            verificationRequirement: "Successful AI model analysis of document alignment"
           }
-        },
-        summary: {
-          totalIssues: 4,
-          criticalIssues: 1,
-          recommendations: 3,
-          contentMatches: 15,
-          missingElements: 2,
-          strengths: ["Clear document structure", "Good formatting", "Appropriate language"],
-          weaknesses: ["Missing risk assessment", "Limited quantitative data"]
-        },
-        strengths: ["Clear document structure", "Good formatting", "Appropriate language"],
-        weaknesses: ["Missing risk assessment", "Limited quantitative data"],
+        }
+      };
+
+      const structuredData = {
+        accuracy: fallbackResult.overallScores.accuracy,
+        alignment: fallbackResult.overallScores.alignment,
+        coverage: fallbackResult.overallScores.coverage,
+        compliance: fallbackResult.overallScores.compliance,
+        issues: fallbackResult.summary.totalIssues,
+        criticalIssues: fallbackResult.summary.criticalIssues,
+        recommendations: fallbackResult.summary.recommendations,
+        contentMatches: fallbackResult.summary.contentMatches,
+        missingElements: fallbackResult.summary.missingElements,
+        reportName: reportName.replace(/\.(pdf|txt|md|markdown)$/i, ''),
+        analysisName: analysisName.replace(/\.(pdf|txt|md|markdown)$/i, ''),
+        timestamp: new Date().toISOString(),
+        detailedFindings: fallbackResult.detailedFindings,
+        sectionAnalysis: fallbackResult.sectionAnalysis,
+        summary: fallbackResult.summary,
+        strengths: fallbackResult.summary.strengths,
+        weaknesses: fallbackResult.summary.weaknesses,
         fileMetadata: {
           reportType: reportFile.type,
           analysisType: analysisFile.type,
           analysisFormat: analysisFile.type?.includes('pdf') ? 'PDF' : 'Markdown',
           textExtractionSuccess: true,
-          reportTextLength: reportText.length,
-          analysisTextLength: analysisText.length
+          dataStructure: 'JSON',
+          payloadSize: JSON.stringify(fallbackResult).length
         },
         analysisQuality: {
           hasDetailedFindings: true,
           hasSectionAnalysis: true,
           hasRecommendations: true,
-          completeness: 75
+          completeness: 30,
+          structuredInput: true,
+          modelResponse: 'fallback'
         }
       };
 
       return NextResponse.json({ 
         success: true, 
-        result: testResult,
-        note: "This is a test result due to empty agent response. Check agent configuration."
+        result: structuredData,
+        note: "This is a fallback result due to empty model response. Check Hugging Face model configuration."
       });
     }
 
@@ -270,17 +418,41 @@ Please analyze the report against the analysis document and respond with ONLY th
       try {
         parsedResult = JSON.parse(parsedResult);
       } catch (e) {
-        console.log('[ERROR] Could not parse agent response as JSON:', e);
+        console.log('[ERROR] Could not parse Hugging Face response as JSON:', e);
         return NextResponse.json({ 
           error: 'Invalid response format', 
-          details: 'Agent returned non-JSON response',
-          agentResponse: parsedResult
+          details: 'Hugging Face model returned non-JSON response',
+          modelResponse: parsedResult.substring ? parsedResult.substring(0, 500) : parsedResult
         }, { status: 422 });
       }
     }
 
-    // Process the successful result...
-    const result = {
+    // Validate the structure of parsedResult
+    if (!parsedResult.overallScores) {
+      console.log('[WARNING] Missing overallScores in response, adding defaults');
+      parsedResult.overallScores = {
+        accuracy: 75,
+        alignment: 75,
+        coverage: 75,
+        compliance: 75
+      };
+    }
+
+    if (!parsedResult.summary) {
+      console.log('[WARNING] Missing summary in response, adding defaults');
+      parsedResult.summary = {
+        totalIssues: 0,
+        criticalIssues: 0,
+        recommendations: 0,
+        contentMatches: 0,
+        missingElements: 0,
+        strengths: [],
+        weaknesses: []
+      };
+    }
+
+    // Process the successful result with enhanced structure
+    const structuredData = {
       accuracy: parsedResult.overallScores?.accuracy || 0,
       alignment: parsedResult.overallScores?.alignment || 0,
       coverage: parsedResult.overallScores?.coverage || 0,
@@ -302,17 +474,28 @@ Please analyze the report against the analysis document and respond with ONLY th
         reportType: reportFile.type,
         analysisType: analysisFile.type,
         analysisFormat: analysisFile.type?.includes('pdf') ? 'PDF' : 'Markdown',
-        textExtractionSuccess: true
+        textExtractionSuccess: true,
+        dataStructure: 'JSON',
+        payloadSize: JSON.stringify(parsedResult).length
       },
       analysisQuality: {
         hasDetailedFindings: (parsedResult.detailedFindings || []).length > 0,
         hasSectionAnalysis: Object.keys(parsedResult.sectionAnalysis || {}).length > 0,
         hasRecommendations: (parsedResult.summary?.recommendations || 0) > 0,
-        completeness: 100
+        completeness: 100,
+        structuredInput: true,
+        modelResponse: 'success'
       }
     };
 
-    return NextResponse.json({ success: true, result });
+    console.log('[DEBUG] Final structured data:', {
+      hasAllScores: !!(structuredData.accuracy && structuredData.alignment && structuredData.coverage && structuredData.compliance),
+      findingsCount: structuredData.detailedFindings.length,
+      sectionsCount: Object.keys(structuredData.sectionAnalysis).length,
+      dataCompleteness: structuredData.analysisQuality.completeness
+    });
+
+    return NextResponse.json({ success: true, result: structuredData });
 
   } catch (error) {
     console.error('[ERROR] Analysis failed:', error);
