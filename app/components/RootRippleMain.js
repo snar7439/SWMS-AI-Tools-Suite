@@ -1023,7 +1023,7 @@ const EnhancedFeedbackModal = ({
           
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-900 mb-2">
-              {isPositive ? 'Your suggestions (optional):' : 'Please describe the issue:'}
+              {isPositive ? 'Your suggestions (optional):' : 'Please describe the issue (optional):'}
             </label>
             <textarea
               value={isPositive ? positiveSuggestion : feedbackReason}
@@ -1676,29 +1676,35 @@ export default function RootRippleMain({ headerHeight }) {
     >
       {/* Main Tab Navigation */}
       <div className="max-w-7xl mx-auto mb-8">
-        <div className="bg-white border border-gray-300 rounded-none shadow-sm">
+        <div className="bg-white border-b border-gray-200 shadow-sm">
           <div className="flex">
             <button
               onClick={() => setMainTab('rca')}
-              className={`flex-1 px-6 py-4 font-medium text-sm transition-colors flex items-center justify-center gap-2 border-r border-gray-300 ${
+              className={`flex-1 px-8 py-4 text-xs font-medium uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-3 border-r border-gray-200 relative ${
                 mainTab === 'rca'
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'bg-white text-gray-900 border-b-2 border-gray-900'
+                  : 'bg-gray-50 text-gray-600 hover:bg-white hover:text-gray-900'
               }`}
             >
               <Target className="w-4 h-4" />
-              <span>ROOT CAUSE ANALYSIS</span>
+              <span className="font-semibold">ROOT CAUSE ANALYSIS</span>
+              {mainTab === 'rca' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></div>
+              )}
             </button>
             <button
               onClick={() => setMainTab('statistics')}
-              className={`flex-1 px-6 py-4 font-medium text-sm transition-colors flex items-center justify-center gap-2 ${
+              className={`flex-1 px-8 py-4 text-xs font-medium uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-3 relative ${
                 mainTab === 'statistics'
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'bg-white text-gray-900 border-b-2 border-gray-900'
+                  : 'bg-gray-50 text-gray-600 hover:bg-white hover:text-gray-900'
               }`}
             >
               <BarChart3 className="w-4 h-4" />
-              <span>STATISTICS DASHBOARD</span>
+              <span className="font-semibold">Root Cause Analysis Dashboard</span>
+              {mainTab === 'statistics' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></div>
+              )}
             </button>
           </div>
         </div>
