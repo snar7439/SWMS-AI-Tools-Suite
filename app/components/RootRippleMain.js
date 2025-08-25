@@ -1680,7 +1680,7 @@ export default function RootRippleMain({ headerHeight }) {
           <div className="flex">
             <button
               onClick={() => setMainTab('rca')}
-              className={`flex-1 px-8 py-4 text-xs font-medium uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-3 border-r border-gray-200 relative ${
+              className={`flex-1 px-8 py-4 text-xs font-medium uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-3 border-r border-gray-200 relative hover:cursor-pointer ${
                 mainTab === 'rca'
                   ? 'bg-white text-gray-900 border-b-2 border-gray-900'
                   : 'bg-gray-50 text-gray-600 hover:bg-white hover:text-gray-900'
@@ -1694,7 +1694,7 @@ export default function RootRippleMain({ headerHeight }) {
             </button>
             <button
               onClick={() => setMainTab('statistics')}
-              className={`flex-1 px-8 py-4 text-xs font-medium uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-3 relative ${
+              className={`flex-1 px-8 py-4 text-xs font-medium uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-3 relative hover:cursor-pointer ${
                 mainTab === 'statistics'
                   ? 'bg-white text-gray-900 border-b-2 border-gray-900'
                   : 'bg-gray-50 text-gray-600 hover:bg-white hover:text-gray-900'

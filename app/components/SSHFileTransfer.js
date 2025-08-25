@@ -198,7 +198,7 @@ export default function SSHFileTransfer({
                 value={credentials.password}
                 onChange={handleInputChange}
                 placeholder="Your SSH password"
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full text-black px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
                 disabled={loading || !isSSHAvailable}
               />
