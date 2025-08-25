@@ -617,11 +617,11 @@ const StatisticsDashboard = () => {
                             }
                           )}
                         </div>
-                        {/* <div className="text-xs text-gray-500 tabular-nums">
+                        <div className="text-xs text-gray-500 tabular-nums">
                           {analysis.duration
                             ? `${Math.round(analysis.duration / 1000)}s`
                             : "N/A"}
-                        </div> */}
+                        </div>
                       </div>
                       <div
                         className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${

@@ -93,7 +93,23 @@ const productionEnvironments = [
       swms: '/var/log/swms.log'
     }
   },
-    {
+  {
+    id: 'lx027',
+    name: 'Opco 027',
+    icon: '🔴',
+    description: 'Syracuse',
+    region: 'na',
+    priority: 'primary',
+    envId: '027',
+    endpoint: 'https://lx027.na.sysco.net',
+    database: 'swmsdb027.na.sysco.net:1521/swm1',
+    host: 'lx027.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },  
+  {
     id: 'lx056',
     name: 'Opco 056',
     icon: '🔴',

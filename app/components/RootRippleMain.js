@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, X, CheckCircle, Clock, AlertCircle, Zap, Database, Search, Brain, FileText, Server, ChevronDown, ChevronUp, Download, Target, Wrench, BookOpen, Cloud, Shield, Eye, Play, Pause, CheckCircle2, Trash, ThumbsUp, ThumbsDown, BarChart3 } from 'lucide-react';
+import { Upload, X, CheckCircle, Clock, AlertCircle, Zap, Database, Search, Brain, FileText, Server, ChevronDown, ChevronUp, Download, Target, Wrench, BookOpen, Cloud, Shield, Eye, Play, Pause, CheckCircle2, Trash, ThumbsUp, ThumbsDown, BarChart3, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -14,7 +14,7 @@ import { RefreshIcon } from '@heroicons/react/outline';
 
 // Professional Markdown Renderer Component
 const ProfessionalMarkdown = ({ content, className = "" }) => {
-  if (!content) return null;
+  if (!content || typeof content !== 'string' || content.trim() === '') return null;
   
   return (
     <div className={`prose prose-sm max-w-none ${className}`}>
@@ -552,7 +552,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
       </div>
 
       <div className="space-y-6">
-        {analysisResults?.rootCauseAnalysis?.parsed?.incident_summary && (
+        {analysisResults?.rootCauseAnalysis?.parsed?.incident_summary?.trim() && (
           <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
             <h4 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
               <AlertCircle className="w-5 h-5 mr-3" />
@@ -567,7 +567,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.rootCauseAnalysis?.parsed?.impact && (
+        {analysisResults?.rootCauseAnalysis?.parsed?.impact?.trim() && (
           <div className="p-6 bg-orange-50 border border-orange-200 rounded-lg">
             <h4 className="text-lg font-semibold text-orange-900 mb-4 flex items-center">
               <Target className="w-5 h-5 mr-3" />
@@ -582,7 +582,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.rootCauseAnalysis?.parsed?.timeline && (
+        {analysisResults?.rootCauseAnalysis?.parsed?.timeline?.trim() && (
           <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
             <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
               <Clock className="w-5 h-5 mr-3" />
@@ -597,7 +597,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.rootCauseAnalysis?.parsed?.detection && (
+        {analysisResults?.rootCauseAnalysis?.parsed?.detection?.trim() && (
           <div className="p-6 bg-indigo-50 border border-indigo-200 rounded-lg">
             <h4 className="text-lg font-semibold text-indigo-900 mb-4 flex items-center">
               <Eye className="w-5 h-5 mr-3" />
@@ -612,7 +612,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.rootCauseAnalysis?.parsed?.root_cause_detailed && (
+        {analysisResults?.rootCauseAnalysis?.parsed?.root_cause_detailed?.trim() && (
           <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
             <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
               <Search className="w-5 h-5 mr-3" />
@@ -627,7 +627,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.rootCauseAnalysis?.parsed?.contributing_factors && (
+        {analysisResults?.rootCauseAnalysis?.parsed?.contributing_factors?.trim() && (
           <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h4 className="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
               <AlertCircle className="w-5 h-5 mr-3" />
@@ -642,7 +642,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.rootCauseAnalysis?.parsed?.additional_data_needed && (
+        {analysisResults?.rootCauseAnalysis?.parsed?.additional_data_needed?.trim() && (
           <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
             <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <FileText className="w-5 h-5 mr-3" />
@@ -696,7 +696,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
       </div>
 
       <div className="space-y-6">
-        {analysisResults?.solutionAnalysis?.parsed?.solution_overview && (
+        {analysisResults?.solutionAnalysis?.parsed?.solution_overview?.trim() && (
           <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
             <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
               <Wrench className="w-5 h-5 mr-3" />
@@ -711,22 +711,37 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.solutionAnalysis?.parsed?.immediate_fix && (
+        {analysisResults?.solutionAnalysis?.parsed?.immediate_actions_detailed?.trim() && (
           <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
             <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
               <Clock className="w-5 h-5 mr-3" />
-              Immediate Fix
+              Immediate Actions
             </h4>
             <div className="text-blue-800 leading-relaxed">
               <ProfessionalMarkdown 
-                content={analysisResults?.solutionAnalysis?.parsed?.immediate_fix}
+                content={analysisResults?.solutionAnalysis?.parsed?.immediate_actions_detailed}
                 className="prose-blue"
               />
             </div>
           </div>
         )}
 
-        {analysisResults?.solutionAnalysis?.parsed?.validation_steps && (
+        {analysisResults?.solutionAnalysis?.parsed?.preventive_actions_detailed?.trim() && (
+          <div className="p-6 bg-indigo-50 border border-indigo-200 rounded-lg">
+            <h4 className="text-lg font-semibold text-indigo-900 mb-4 flex items-center">
+              <Shield className="w-5 h-5 mr-3" />
+              Preventive Actions
+            </h4>
+            <div className="text-indigo-800 leading-relaxed">
+              <ProfessionalMarkdown 
+                content={analysisResults?.solutionAnalysis?.parsed?.preventive_actions_detailed}
+                className="prose-indigo"
+              />
+            </div>
+          </div>
+        )}
+
+        {analysisResults?.solutionAnalysis?.parsed?.validation_steps?.trim() && (
           <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
             <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
               <CheckCircle className="w-5 h-5 mr-3" />
@@ -741,22 +756,86 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.solutionAnalysis?.parsed?.preventive_actions && (
-          <div className="p-6 bg-orange-50 border border-orange-200 rounded-lg">
-            <h4 className="text-lg font-semibold text-orange-900 mb-4 flex items-center">
-              <AlertCircle className="w-5 h-5 mr-3" />
-              Preventive Actions
+        {(analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_went_well?.trim() || 
+          analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_could_be_improved?.trim() ||
+          analysisResults?.solutionAnalysis?.parsed?.lessons_learned?.trim()) && (
+          <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
+            <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+              <BookOpen className="w-5 h-5 mr-3" />
+              Lessons Learned
             </h4>
-            <div className="text-orange-800 leading-relaxed">
-              <ProfessionalMarkdown 
-                content={analysisResults?.solutionAnalysis?.parsed?.preventive_actions}
-                className="prose-orange"
-              />
+            <div className="text-purple-800 leading-relaxed space-y-4">
+              {/* Check for individually parsed subsections first */}
+              {analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_went_well?.trim() && (
+                <div>
+                  <h5 className="font-semibold text-purple-900 mb-2">What Went Well</h5>
+                  <ProfessionalMarkdown 
+                    content={analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_went_well}
+                    className="prose-purple"
+                  />
+                </div>
+              )}
+              {analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_could_be_improved?.trim() && (
+                <div>
+                  <h5 className="font-semibold text-purple-900 mb-2">What Could Be Improved</h5>
+                  <ProfessionalMarkdown 
+                    content={analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_could_be_improved}
+                    className="prose-purple"
+                  />
+                </div>
+              )}
+              {/* Fallback to show entire lessons learned section if subsections aren't individually parsed */}
+              {(!analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_went_well?.trim() && 
+                !analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_could_be_improved?.trim() &&
+                analysisResults?.solutionAnalysis?.parsed?.lessons_learned?.trim()) && (
+                <div>
+                  {(() => {
+                    const content = analysisResults?.solutionAnalysis?.parsed?.lessons_learned || '';
+                    
+                    // Try to split into "What Went Well" and "What Could Be Improved" sections
+                    const wentWellMatch = content.match(/[-*]\s*What Went Well\s*\n([\s\S]*?)(?=[-*]\s*What Could Be Improved|$)/i);
+                    const couldImproveMatch = content.match(/[-*]\s*What Could Be Improved\s*\n([\s\S]*?)$/i);
+                    
+                    if (wentWellMatch || couldImproveMatch) {
+                      return (
+                        <>
+                          {wentWellMatch && (
+                            <div className="mb-4">
+                              <h5 className="font-semibold text-purple-900 mb-2">What Went Well</h5>
+                              <ProfessionalMarkdown 
+                                content={wentWellMatch[1].trim()}
+                                className="prose-purple"
+                              />
+                            </div>
+                          )}
+                          {couldImproveMatch && (
+                            <div>
+                              <h5 className="font-semibold text-purple-900 mb-2">What Could Be Improved</h5>
+                              <ProfessionalMarkdown 
+                                content={couldImproveMatch[1].trim()}
+                                className="prose-purple"
+                              />
+                            </div>
+                          )}
+                        </>
+                      );
+                    } else {
+                      // Fallback to regular markdown if no subsections detected
+                      return (
+                        <ProfessionalMarkdown 
+                          content={content}
+                          className="prose-purple"
+                        />
+                      );
+                    }
+                  })()}
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {analysisResults?.solutionAnalysis?.parsed?.additional_data_needed && (
+        {analysisResults?.solutionAnalysis?.parsed?.additional_data_needed?.trim() && (
           <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h4 className="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
               <Search className="w-5 h-5 mr-3" />

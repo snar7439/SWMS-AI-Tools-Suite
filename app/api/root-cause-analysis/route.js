@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { HfInference } from '@huggingface/inference';
 import fs from 'fs/promises';
 import path from 'path';
 import { generateMockRootCauseAnalysis, generateMockSolutionAnalysis, shouldUseMockData } from '../../lib/mockRCAData.js';
@@ -151,21 +150,11 @@ async function getSSHLogs(sessionId) {
   }
 }
 
-// Create prompt for root cause analysis only
-function createRootCausePrompt(data) {
+// Create unified prompt for both root cause analysis and solution
+function createUnifiedRCAPrompt(data) {
   const { swmsOverview, issueDescription, timeOccurred, environmentType, environment, timeWindow, imageDescriptions, logSummary, sessionLogs, sshLogs } = data;
   
-  return `**Role:**
-You are an expert in diagnosing issues in SWMS (Sysco Warehouse Management System) with deep knowledge of its architecture, workflows, database design, and log structures. You are also skilled in correlating SWMS system logs, database logs, and other evidence (including screenshots) to determine the root cause of technical problems.
-
-**Context:**
-You will be provided with:
-- A markdown document containing a high-level overview of SWMS
-- A description of the reported issue and the exact time it occurred
-- Relevant SWMS system logs and database logs covering a time window of 30 minutes before the reported time and 15 minutes after
-- Optional images or screenshots attached by the user that may contain error messages, visual anomalies, or diagnostic information
-
-**System Overview:**
+  return `**System Overview:**
 ${swmsOverview || 'SWMS System Overview not available'}
 
 **Issue Details:**
@@ -183,342 +172,232 @@ ${logSummary ? JSON.stringify(logSummary, null, 2) : 'No database log summary av
 
 **Database Logs Retrieved:**
 ${sessionLogs ? Object.entries(sessionLogs).map(([filename, content]) => 
-  `**File: ${filename}**\n${content.substring(0, 2000)}${content.length > 2000 ? '...\n[Content truncated - showing first 2000 characters]' : ''}`
+  `**File: ${filename}**\n${content}`
 ).join('\n\n') : 'No database logs available'}
 
 **SSH System Logs:**
 ${sshLogs ? Object.entries(sshLogs.logs).map(([filename, content]) => 
-  `**SSH File: ${filename}**\n${content.substring(0, 2000)}${content.length > 2000 ? '...\n[Content truncated - showing first 2000 characters]' : ''}`
+  `**SSH File: ${filename}**\n${content}`
 ).join('\n\n') : 'No SSH logs available'}
 
-**Instructions:**
-
-1. **Time Filtering:**
-   - Focus on events within the time window: ${timeWindow.start} to ${timeWindow.end}
-   - The issue occurred at: ${timeWindow.issueTime}
-   - Maintain chronological order for context
-
-2. **Evidence Extraction:**
-   - Identify key log entries, error codes, transaction IDs, or warnings relevant to the issue
-   - Cross-reference system logs with database logs for linked events
-   - Examine provided images for visible error messages, codes, timestamps, or context clues
-
-3. **Correlation & Reasoning:**
-   - Determine relationships between system events, database events, and any information from images
-   - Look for patterns such as recurring failures, transaction rollbacks, resource locks, or unusual activity
-
-4. **Root Cause Determination:**
-   - Provide a clear, evidence-supported explanation of what most likely caused the issue
-   - Include a step-by-step breakdown of how you reached this conclusion
-   - Only state causes that are directly supported by the provided evidence
-
-5. **When Evidence is Insufficient:**
-   - If logs and images do not provide enough information to confirm the root cause, explicitly state this
-   - Example: "The available logs and attached evidence do not contain sufficient information to determine a definitive root cause for this issue."
-
-**Output Format:**
-Provide the analysis in the following RCA (Root Cause Analysis) format using Markdown:
-
-## Incident Summary
-On [Date], [Brief description of what happened - system/component affected] due to [high-level cause].
-
-## Impact
-- **Affected:** [What systems, users, or processes were impacted]
-- **Duration:** [How long the issue lasted or is lasting]  
-- **Severity:** [Sev-1/Sev-2/Sev-3 or High/Medium/Low]
-
-## Timeline
-- **[Timestamp]** – [Event description]
-- **[Timestamp]** – [Event description]
-- **[Timestamp]** – [Event description]
-
-## Detection
-How was the issue discovered (monitoring alert, user report, log analysis, etc.)
-
-## Contributing Factors
-- [Factor 1 that made the issue worse or more likely]
-- [Factor 2 that made the issue worse or more likely]
-
-## Root Cause Detailed
-[Detailed technical explanation of the actual cause - be specific and evidence-based. Include step-by-step breakdown of how you reached this conclusion]
-
-## Root Cause Summary
-[1-2 sentences: Direct, concise statement of the primary technical cause]
-
-## Confidence Level
-High / Medium / Low — based on certainty from the provided evidence
-
-## Additional Data Needed
-(if applicable) What more is required to confirm the root cause
-
-**Important Rules:**
-- No hallucinations: Only draw conclusions directly supported by logs or image evidence
-- Do not fabricate data or speculate beyond the given information
-- Be concise but thorough in reasoning
-- If unsure, clearly indicate uncertainty
-- Provide specific timestamps and log entries as evidence`;
+Please perform comprehensive Root Cause Analysis and provide Solution/Remediation for this SWMS issue using the provided data and logs.`;
 }
 
-// Create prompt for solution generation
-function createSolutionPrompt(data, rootCauseAnalysis) {
-  const { swmsOverview, issueDescription, timeOccurred, environmentType, environment, timeWindow, imageDescriptions, logSummary, sessionLogs, sshLogs } = data;
-  
-  return `**Role:**
-You are an expert SWMS (Sysco Warehouse Management System) engineer with extensive experience in resolving operational, database, and integration issues. You are also an experienced incident responder skilled in creating actionable, realistic, and safe remediation steps for complex system problems.
-
-**Context:**
-You will be provided with:
-- A confirmed root cause of the issue
-- Relevant SWMS system logs, database logs, and optionally images/screenshots attached by the user
-- A high-level overview of SWMS for reference
-
-**System Overview:**
-${swmsOverview || 'SWMS System Overview not available'}
-
-**Original Issue Details:**
-- **Environment Type:** ${environmentType}
-- **Environment:** ${environment.name || 'Unknown'} (${environment.description || 'No description'})
-- **Issue Description:** ${issueDescription}
-- **Time Occurred:** ${timeOccurred}
-- **Analysis Time Window:** ${timeWindow.description}
-
-**Confirmed Root Cause:**
-${rootCauseAnalysis}
-
-**Supporting Evidence:**
-**Database Log Summary:**
-${logSummary ? JSON.stringify(logSummary, null, 2) : 'No database log summary available'}
-
-**Database Logs:**
-${sessionLogs ? Object.entries(sessionLogs).map(([filename, content]) => 
-  `**File: ${filename}**\n${content.substring(0, 1500)}${content.length > 1500 ? '...\n[Content truncated]' : ''}`
-).join('\n\n') : 'No database logs available'}
-
-**SSH System Logs:**
-${sshLogs ? Object.entries(sshLogs.logs).map(([filename, content]) => 
-  `**SSH File: ${filename}**\n${content.substring(0, 1500)}${content.length > 1500 ? '...\n[Content truncated]' : ''}`
-).join('\n\n') : 'No SSH logs available'}
-
-**Instructions:**
-
-1. **Understand the Root Cause:**
-   - Read the provided root cause carefully
-   - Cross-check with logs and any evidence provided for context
-
-2. **Develop a Targeted Solution:**
-   - Propose only evidence-based, realistic actions that address the identified root cause
-   - Include both immediate actions to mitigate impact and long-term preventative measures
-   - Ensure solutions are relevant to a SWMS production environment and feasible for warehouse IT teams
-
-3. **Structure the Solution:**
-   - Immediate Fix: Steps to quickly resolve the current issue
-   - Validation Steps: How to confirm the fix worked (tests, log checks, transaction verifications)
-   - Preventive Actions: Long-term measures to reduce recurrence (config changes, monitoring, training, patches)
-
-4. **When a Solution Cannot Be Provided:**
-   - If the root cause is unclear or lacks enough supporting evidence to design a safe fix, explicitly state that a solution cannot be proposed without further data
-   - Suggest what additional evidence or context would be required
-
-**Output Format:**
-Provide the solution in the following RCA remediation format using Markdown:
-
-## Resolution & Recovery
-Step-by-step actions taken or needed to fix the issue during the incident
-
-## Immediate Actions Detailed
-- [Action 1] - [Detailed description with specific steps and timeline]
-- [Action 2] - [Detailed description with specific steps and timeline]
-- [Action 3] - [Detailed description with specific steps and timeline]
-
-## Immediate Actions Summary
-[2-3 sentences: Most critical immediate steps to resolve the issue]
-
-## Preventive Actions Detailed
-- [Action 1] - [Detailed description with implementation timeline and ownership]
-- [Action 2] - [Detailed description with implementation timeline and ownership]
-- [Action 3] - [Detailed description with implementation timeline and ownership]
-
-## Preventive Actions Summary
-[2-3 sentences: Key long-term measures to prevent recurrence]
-
-## Validation Steps
-How to verify that the fix has resolved the issue and prevent recurrence
-
-## Lessons Learned
-
-### What Went Well
-- [Positive aspect 1]
-- [Positive aspect 2]
-
-### What Could Be Improved
-- [Improvement area 1]
-- [Improvement area 2]
-
-## Confidence Level
-High / Medium / Low — based on certainty that the solution addresses the root cause
-
-## Additional Data Needed
-(if applicable) If a solution cannot be provided with the given details, state what more is needed
-
-**Important Rules:**
-- No hallucinations: Only propose solutions directly related to the provided root cause and evidence
-- Do not suggest risky changes without warnings about potential side effects
-- Be practical: Assume real-world SWMS operational constraints (e.g., minimal downtime, integration dependencies)
-- If a workaround is temporary, mark it clearly and note that a permanent fix is still required`;
-}
-
-// Call Hugging Face API with mock data fallback
-async function callHuggingFaceAPI(prompt, promptType = 'root-cause', additionalData = {}) {
+// Call SAGE API with mock data fallback
+async function callSAGEAPI(prompt, additionalData = {}) {
   // Check if we should use mock data
   if (shouldUseMockData()) {
-    console.log('[INFO] Using mock data - LLM not configured or forced mock mode');
+    console.log('[INFO] Using mock data - SAGE API not configured or forced mock mode');
     
-    if (promptType === 'root-cause') {
-      return {
-        response: generateMockRootCauseAnalysis(
-          additionalData.issueDescription, 
-          additionalData.timeOccurred, 
-          additionalData.environment
-        ),
-        usedMockData: true
-      };
-    } else if (promptType === 'solution') {
-      return {
-        response: generateMockSolutionAnalysis(
-          additionalData.issueDescription, 
-          additionalData.timeOccurred, 
-          additionalData.environment
-        ),
-        usedMockData: true
-      };
-    }
+    const mockRootCause = generateMockRootCauseAnalysis(
+      additionalData.issueDescription, 
+      additionalData.timeOccurred, 
+      additionalData.environment
+    );
+    const mockSolution = generateMockSolutionAnalysis(
+      additionalData.issueDescription, 
+      additionalData.timeOccurred, 
+      additionalData.environment
+    );
+    
+    return {
+      response: mockRootCause + '\n\n' + mockSolution,
+      usedMockData: true
+    };
   }
 
-  const HF_TOKEN = process.env.HF_TOKEN;
-  const HF_MODEL = process.env.HF_MODEL;
+  // SAGE API configuration
+  const SAGE_API_URL = "https://sage.paastry.sysco.net/api/sysco-gen-ai-platform/agents/v1/content/generic/answer";
+  const SAGE_AGENT_ID = "68ac159d05db0ebdb6f22088";
+  const SAGE_ENV = "DEV";
 
-  if (!HF_TOKEN || !HF_MODEL) {
-    console.log('[WARNING] HF_TOKEN or HF_MODEL not configured, falling back to mock data');
-    if (promptType === 'root-cause') {
-      return {
-        response: generateMockRootCauseAnalysis(
-          additionalData.issueDescription, 
-          additionalData.timeOccurred, 
-          additionalData.environment
-        ),
-        usedMockData: true
-      };
-    } else if (promptType === 'solution') {
-      return {
-        response: generateMockSolutionAnalysis(
-          additionalData.issueDescription, 
-          additionalData.timeOccurred, 
-          additionalData.environment
-        ),
-        usedMockData: true
-      };
-    }
+  if (!SAGE_API_URL || !SAGE_AGENT_ID) {
+    console.log('[WARNING] SAGE_API_URL or SAGE_AGENT_ID not configured, falling back to mock data');
+    
+    const mockRootCause = generateMockRootCauseAnalysis(
+      additionalData.issueDescription, 
+      additionalData.timeOccurred, 
+      additionalData.environment
+    );
+    const mockSolution = generateMockSolutionAnalysis(
+      additionalData.issueDescription, 
+      additionalData.timeOccurred, 
+      additionalData.environment
+    );
+    
+    return {
+      response: mockRootCause + '\n\n' + mockSolution,
+      usedMockData: true
+    };
   }
 
   try {
-    const hf = new HfInference(HF_TOKEN);
+    console.log(`[DEBUG] Calling SAGE API for unified RCA analysis...`);
     
-    // Check if it's a chat model
-    const isChatModel = HF_MODEL.toLowerCase().includes('chat') || 
-                       HF_MODEL.toLowerCase().includes('instruct') || 
-                       HF_MODEL.toLowerCase().includes('gemma') ||
-                       HF_MODEL.toLowerCase().includes('gpt-oss') ||
-                       HF_MODEL.toLowerCase().includes('conversational');
+    const requestBody = {
+      ai_agent_id: SAGE_AGENT_ID,
+      user_query: prompt,
+      configuration_environment: SAGE_ENV
+    };
 
-    let result;
-    let generatedText = '';
+    // Log the full request details
+    console.log('[DEBUG] SAGE API Request URL:', SAGE_API_URL);
+    console.log('[DEBUG] SAGE API Request Body:', JSON.stringify(requestBody, null, 2));
+    console.log('[DEBUG] SAGE API User Query (first 500 chars):', prompt.substring(0, 500) + '...');
+    console.log('[DEBUG] SAGE API User Query (full):', prompt);
 
-    if (isChatModel) {
-      result = await hf.chatCompletion({
-        model: HF_MODEL,
-        messages: [
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        max_tokens: 3000,
-        temperature: 0.3,
-        stream: false
-      });
+    const response = await fetch(SAGE_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
 
-      if (result && result.choices && result.choices.length > 0) {
-        generatedText = result.choices[0].message.content;
-      } else {
-        throw new Error('No valid response from chat completion');
-      }
-    } else {
-      try {
-        result = await hf.textGeneration({
-          model: HF_MODEL,
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 3000,
-            temperature: 0.3,
-            do_sample: true,
-            return_full_text: false
-          }
-        });
-        
-        generatedText = result.generated_text;
-      } catch (textGenError) {
-        // Fallback to chat completion
-        result = await hf.chatCompletion({
-          model: HF_MODEL,
-          messages: [
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          max_tokens: 3000,
-          temperature: 0.3,
-          stream: false
-        });
-
-        if (result && result.choices && result.choices.length > 0) {
-          generatedText = result.choices[0].message.content;
-        } else {
-          throw new Error('Both text generation and chat completion failed');
-        }
-      }
+    if (!response.ok) {
+      console.log('[ERROR] SAGE API HTTP Error Response:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.log('[ERROR] SAGE API Error Body:', errorText);
+      throw new Error(`SAGE API error: ${response.status} ${response.statusText}`);
     }
+
+    const result = await response.json();
+    
+    console.log('[DEBUG] SAGE API Response Status:', response.status);
+    console.log('[DEBUG] SAGE API Response Headers:', Object.fromEntries(response.headers.entries()));
+    console.log('[DEBUG] SAGE API Response structure:', Object.keys(result));
+    console.log('[DEBUG] SAGE API Full Response:', JSON.stringify(result, null, 2));
+    
+    // Extract the response from SAGE API response structure
+    let generatedText = '';
+    if (result && typeof result === 'object') {
+      // SAGE API returns response in nested structure: data.responses.agent_response
+      if (result.data && result.data.responses && result.data.responses.agent_response) {
+        generatedText = result.data.responses.agent_response;
+      } else if (result.agent_response) {
+        generatedText = result.agent_response;
+      } else if (result.data && result.data.agent_response) {
+        generatedText = result.data.agent_response;
+      } else if (result.response) {
+        generatedText = result.response;
+      } else if (result.answer) {
+        generatedText = result.answer;
+      } else if (result.content) {
+        generatedText = result.content;
+      } else if (result.data && typeof result.data === 'string') {
+        generatedText = result.data;
+      } else if (result.data && result.data.response) {
+        generatedText = result.data.response;
+      } else if (result.data && result.data.answer) {
+        generatedText = result.data.answer;
+      } else if (result.message) {
+        generatedText = result.message;
+      } else if (result.text) {
+        generatedText = result.text;
+      } else {
+        // If no standard field found, try to convert the entire result to string
+        console.log('[DEBUG] Full SAGE API response:', JSON.stringify(result, null, 2));
+        throw new Error('No valid response field found in SAGE API response. Expected data.responses.agent_response field.');
+      }
+    } else if (typeof result === 'string') {
+      generatedText = result;
+    } else {
+      throw new Error('Invalid response format from SAGE API - expected object with agent_response field');
+    }
+
+    if (!generatedText || generatedText.trim() === '') {
+      throw new Error('Empty response from SAGE API');
+    }
+
+    console.log(`[DEBUG] SAGE API unified analysis completed successfully`);
+    console.log('[DEBUG] Extracted response length:', generatedText.length);
+    console.log('[DEBUG] Extracted response (first 500 chars):', generatedText.substring(0, 500) + '...');
 
     return {
       response: generatedText,
       usedMockData: false
     };
   } catch (error) {
-    console.error('[ERROR] LLM API call failed, falling back to mock data:', error.message);
+    console.error(`[ERROR] SAGE API call failed, falling back to mock data:`, error.message);
     
     // Fallback to mock data on any error
-    if (promptType === 'root-cause') {
-      return {
-        response: generateMockRootCauseAnalysis(
-          additionalData.issueDescription, 
-          additionalData.timeOccurred, 
-          additionalData.environment
-        ),
-        usedMockData: true
-      };
-    } else if (promptType === 'solution') {
-      return {
-        response: generateMockSolutionAnalysis(
-          additionalData.issueDescription, 
-          additionalData.timeOccurred, 
-          additionalData.environment
-        ),
-        usedMockData: true
-      };
-    }
+    const mockRootCause = generateMockRootCauseAnalysis(
+      additionalData.issueDescription, 
+      additionalData.timeOccurred, 
+      additionalData.environment
+    );
+    const mockSolution = generateMockSolutionAnalysis(
+      additionalData.issueDescription, 
+      additionalData.timeOccurred, 
+      additionalData.environment
+    );
     
-    throw error; // Re-throw if we can't provide mock data
+    return {
+      response: mockRootCause + '\n\n' + mockSolution,
+      usedMockData: true
+    };
   }
+}
+
+// Helper function to parse unified response into RCA and Solution parts
+function parseUnifiedResponse(unifiedResponse) {
+  // Look for the start of Part 2 (Solution) to split the response
+  const solutionMarkers = [
+    'Part 2 – Solution / Remediation',
+    'Part 2 - Solution / Remediation', 
+    '## Resolution & Recovery',
+    '## Immediate Actions',
+    'Solution / Remediation',
+    'Solution:',
+    'Remediation:'
+  ];
+  
+  let splitIndex = -1;
+  let usedMarker = '';
+  
+  for (const marker of solutionMarkers) {
+    const index = unifiedResponse.indexOf(marker);
+    if (index !== -1) {
+      splitIndex = index;
+      usedMarker = marker;
+      break;
+    }
+  }
+  
+  if (splitIndex === -1) {
+    // If no clear split found, try to find any solution-related headers
+    const solutionPatterns = [
+      /##\s*(Resolution|Solution|Remediation|Immediate Actions|Preventive Actions)/i,
+      /\*\*\s*(Resolution|Solution|Remediation)\s*\*\*/i
+    ];
+    
+    for (const pattern of solutionPatterns) {
+      const match = unifiedResponse.match(pattern);
+      if (match) {
+        splitIndex = match.index;
+        usedMarker = match[0];
+        break;
+      }
+    }
+  }
+  
+  if (splitIndex === -1) {
+    console.log('[WARNING] Could not find solution section in unified response, returning full response as RCA');
+    return {
+      rootCauseAnalysis: unifiedResponse,
+      solutionAnalysis: 'Solution section not clearly identified in the response. Please review the full analysis above.'
+    };
+  }
+  
+  console.log(`[DEBUG] Split unified response at marker: "${usedMarker}"`);
+  
+  const rootCauseAnalysis = unifiedResponse.substring(0, splitIndex).trim();
+  const solutionAnalysis = unifiedResponse.substring(splitIndex).trim();
+  
+  return {
+    rootCauseAnalysis,
+    solutionAnalysis
+  };
 }
 
 export async function POST(request) {
@@ -597,41 +476,32 @@ export async function POST(request) {
       sshLogs
     };
 
-    console.log('[DEBUG] Step 1: Calling AI for Root Cause Analysis...');
+    console.log('[DEBUG] Calling SAGE API for unified Root Cause Analysis and Solution...');
     
-    // Step 1: Root Cause Analysis
-    const rootCausePrompt = createRootCausePrompt(promptData);
-    const rootCauseResult = await callHuggingFaceAPI(
-      rootCausePrompt, 
-      'root-cause', 
+    // Single call to SAGE API for both RCA and Solution
+    const unifiedPrompt = createUnifiedRCAPrompt(promptData);
+    const unifiedResult = await callSAGEAPI(
+      unifiedPrompt, 
       { issueDescription, timeOccurred, environment }
     );
     
-    console.log('[DEBUG] Root Cause Analysis completed');
-    console.log('[DEBUG] Step 2: Calling AI for Solution Generation...');
+    console.log('[DEBUG] Unified analysis completed');
 
-    // Step 2: Solution Generation
-    const solutionPrompt = createSolutionPrompt(promptData, rootCauseResult.response);
-    const solutionResult = await callHuggingFaceAPI(
-      solutionPrompt, 
-      'solution', 
-      { issueDescription, timeOccurred, environment }
-    );
-    
-    console.log('[DEBUG] Solution Generation completed');
+    // Parse the unified response into RCA and Solution parts
+    const { rootCauseAnalysis, solutionAnalysis } = parseUnifiedResponse(unifiedResult.response);
 
     // Determine if mock data was used
-    const usedMockData = rootCauseResult.usedMockData || solutionResult.usedMockData;
+    const usedMockData = unifiedResult.usedMockData;
 
     // Parse responses and create structured result
     const analysisResult = {
       rootCauseAnalysis: {
-        raw: rootCauseResult.response,
-        parsed: parseMarkdownResponse(rootCauseResult.response)
+        raw: rootCauseAnalysis,
+        parsed: parseMarkdownResponse(rootCauseAnalysis)
       },
       solutionAnalysis: {
-        raw: solutionResult.response,
-        parsed: parseMarkdownResponse(solutionResult.response)
+        raw: solutionAnalysis,
+        parsed: parseMarkdownResponse(solutionAnalysis)
       },
       metadata: {
         sessionId,
