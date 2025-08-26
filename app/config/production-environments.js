@@ -94,6 +94,22 @@ const productionEnvironments = [
     }
   },
   {
+    id: 'lx025',
+    name: 'Opco 025',
+    icon: '🔴',
+    description: 'Albany',
+    region: 'na',
+    priority: 'primary',
+    envId: '025',
+    endpoint: 'https://lx025.na.sysco.net',
+    database: 'swmsdb025.na.sysco.net:1521/swm1',
+    host: 'lx025.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },  
+  {
     id: 'lx027',
     name: 'Opco 027',
     icon: '🔴',
