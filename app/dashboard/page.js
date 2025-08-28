@@ -84,7 +84,7 @@ export default function DashboardPage() {
     {
       id: 'warehouse-simulation',
       title: 'Warehouse Simulation',
-      description: 'Simulate warehouse operations with AI',
+      description: "Run What-Ifs and Unlock What's Next",
       icon: '🏭',
       route: '/simulation',
       status: 'Coming Soon'
@@ -105,21 +105,24 @@ export default function DashboardPage() {
       if (component.id === 'report-testing') {
         setShowReportTestingModal(true);
       } else {
-        setNavigating(component.id);
+        setNavigating(component.title);
         setTimeout(() => {
           router.push(component.route);
-        }, 500);
+        }, 800); // Consistent delay with modal selection
       }
     }
   };
 
   // Handle modal selection
   const handleReportTestingSelect = (option) => {
-    setShowReportTestingModal(false);
-    setNavigating('report-testing');
+    // Set specific navigation state for better loading message
+    const toolName = option.id === 'single-report' ? 'Single Report Checker' : 'Report Comparison';
+    setNavigating(toolName);
+    
     setTimeout(() => {
+      setShowReportTestingModal(false); // Close modal before navigation
       router.push(option.route);
-    }, 500);
+    }, 800); // Slightly longer delay for better UX
   };
 
   // Handle modal close
@@ -140,6 +143,17 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Navigation Loading Overlay */}
+      {navigating && (
+        <div className="fixed inset-0 z-[70] bg-white/90 backdrop-blur-sm flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-xl font-semibold text-gray-700 mb-2">Launching {navigating}...</p>
+            <p className="text-gray-500">Please wait while we prepare your workspace</p>
+          </div>
+        </div>
+      )}
+      
       {/* Fixed Header */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b border-gray-200">
         <div className="w-full px-6 sm:px-8 lg:px-12 xl:px-16">
@@ -245,7 +259,7 @@ export default function DashboardPage() {
           {components.map((component) => (
             <div
               key={component.id}
-              className={`group relative rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+              className={`group relative rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col h-full ${
                 component.id === 'coming-soon'
                   ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 border-dashed'
                   : 'bg-white border-gray-100 hover:border-blue-200'
@@ -276,33 +290,33 @@ export default function DashboardPage() {
               </div>
 
               {/* Content */}
-              <div className="space-y-4 text-center">
-                <div>
+              <div className="flex flex-col flex-grow text-center">
+                <div className="flex-grow">
                   <h3 className={`text-lg font-bold leading-tight mb-3 ${
                     component.id === 'coming-soon' ? 'text-gray-600' : 'text-gray-900'
                   }`}>
                     {component.title}
                   </h3>
+                  
+                  <p className={`text-sm leading-relaxed mb-6 ${
+                    component.id === 'coming-soon' ? 'text-gray-500' : 'text-gray-600'
+                  }`}>
+                    {component.description}
+                  </p>
                 </div>
-                
-                <p className={`text-sm leading-relaxed ${
-                  component.id === 'coming-soon' ? 'text-gray-500' : 'text-gray-600'
-                }`}>
-                  {component.description}
-                </p>
 
                 {/* Action */}
-                <div className="pt-4">
+                <div className="mt-auto">
                   {component.status === 'Available' ? (
                     <div 
                       onClick={() => handleComponentSelect(component)}
                       className={`flex items-center justify-center py-3 px-6 rounded-lg text-sm font-semibold transition-colors cursor-pointer hover:cursor-pointer ${
-                        navigating === component.id 
+                        navigating === component.title 
                           ? 'bg-blue-700 text-white' 
                           : 'bg-blue-600 text-white group-hover:bg-blue-700'
                       }`}
                     >
-                      {navigating === component.id ? (
+                      {navigating === component.title ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                           <span>Launching...</span>

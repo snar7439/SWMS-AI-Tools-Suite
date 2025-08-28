@@ -552,7 +552,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
       </div>
 
       <div className="space-y-6">
-        {analysisResults?.rootCauseAnalysis?.parsed?.incident_summary?.trim() && (
+        {typeof analysisResults?.rootCauseAnalysis?.parsed?.incident_summary === 'string' && analysisResults?.rootCauseAnalysis?.parsed?.incident_summary?.trim() && (
           <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
             <h4 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
               <AlertCircle className="w-5 h-5 mr-3" />
@@ -567,7 +567,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.rootCauseAnalysis?.parsed?.impact?.trim() && (
+        {typeof analysisResults?.rootCauseAnalysis?.parsed?.impact === 'string' && analysisResults?.rootCauseAnalysis?.parsed?.impact?.trim() && (
           <div className="p-6 bg-orange-50 border border-orange-200 rounded-lg">
             <h4 className="text-lg font-semibold text-orange-900 mb-4 flex items-center">
               <Target className="w-5 h-5 mr-3" />
@@ -582,7 +582,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.rootCauseAnalysis?.parsed?.timeline?.trim() && (
+        {typeof analysisResults?.rootCauseAnalysis?.parsed?.timeline === 'string' && analysisResults?.rootCauseAnalysis?.parsed?.timeline?.trim() && (
           <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
             <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
               <Clock className="w-5 h-5 mr-3" />
@@ -597,7 +597,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.rootCauseAnalysis?.parsed?.detection?.trim() && (
+        {typeof analysisResults?.rootCauseAnalysis?.parsed?.detection === 'string' && analysisResults?.rootCauseAnalysis?.parsed?.detection?.trim() && (
           <div className="p-6 bg-indigo-50 border border-indigo-200 rounded-lg">
             <h4 className="text-lg font-semibold text-indigo-900 mb-4 flex items-center">
               <Eye className="w-5 h-5 mr-3" />
@@ -612,7 +612,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.rootCauseAnalysis?.parsed?.root_cause_detailed?.trim() && (
+        {typeof analysisResults?.rootCauseAnalysis?.parsed?.root_cause_detailed === 'string' && analysisResults?.rootCauseAnalysis?.parsed?.root_cause_detailed?.trim() && (
           <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
             <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
               <Search className="w-5 h-5 mr-3" />
@@ -627,7 +627,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.rootCauseAnalysis?.parsed?.contributing_factors?.trim() && (
+        {typeof analysisResults?.rootCauseAnalysis?.parsed?.contributing_factors === 'string' && analysisResults?.rootCauseAnalysis?.parsed?.contributing_factors?.trim() && (
           <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h4 className="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
               <AlertCircle className="w-5 h-5 mr-3" />
@@ -642,7 +642,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.rootCauseAnalysis?.parsed?.additional_data_needed?.trim() && (
+        {typeof analysisResults?.rootCauseAnalysis?.parsed?.additional_data_needed === 'string' && analysisResults?.rootCauseAnalysis?.parsed?.additional_data_needed?.trim() && (
           <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
             <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <FileText className="w-5 h-5 mr-3" />
@@ -696,7 +696,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
       </div>
 
       <div className="space-y-6">
-        {analysisResults?.solutionAnalysis?.parsed?.solution_overview?.trim() && (
+        {typeof analysisResults?.solutionAnalysis?.parsed?.solution_overview === 'string' && analysisResults?.solutionAnalysis?.parsed?.solution_overview?.trim() && (
           <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
             <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
               <Wrench className="w-5 h-5 mr-3" />
@@ -711,7 +711,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.solutionAnalysis?.parsed?.immediate_actions_detailed?.trim() && (
+        {typeof analysisResults?.solutionAnalysis?.parsed?.immediate_actions_detailed === 'string' && analysisResults?.solutionAnalysis?.parsed?.immediate_actions_detailed?.trim() && (
           <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
             <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
               <Clock className="w-5 h-5 mr-3" />
@@ -726,7 +726,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.solutionAnalysis?.parsed?.preventive_actions_detailed?.trim() && (
+        {typeof analysisResults?.solutionAnalysis?.parsed?.preventive_actions_detailed === 'string' && analysisResults?.solutionAnalysis?.parsed?.preventive_actions_detailed?.trim() && (
           <div className="p-6 bg-indigo-50 border border-indigo-200 rounded-lg">
             <h4 className="text-lg font-semibold text-indigo-900 mb-4 flex items-center">
               <Shield className="w-5 h-5 mr-3" />
@@ -741,7 +741,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.solutionAnalysis?.parsed?.validation_steps?.trim() && (
+        {typeof analysisResults?.solutionAnalysis?.parsed?.validation_steps === 'string' && analysisResults?.solutionAnalysis?.parsed?.validation_steps?.trim() && (
           <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
             <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
               <CheckCircle className="w-5 h-5 mr-3" />
@@ -756,9 +756,9 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {(analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_went_well?.trim() || 
-          analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_could_be_improved?.trim() ||
-          analysisResults?.solutionAnalysis?.parsed?.lessons_learned?.trim()) && (
+        {(typeof analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_went_well === 'string' && analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_went_well?.trim() || 
+          typeof analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_could_be_improved === 'string' && analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_could_be_improved?.trim() ||
+          typeof analysisResults?.solutionAnalysis?.parsed?.lessons_learned === 'string' && analysisResults?.solutionAnalysis?.parsed?.lessons_learned?.trim()) && (
           <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
             <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
               <BookOpen className="w-5 h-5 mr-3" />
@@ -766,7 +766,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
             </h4>
             <div className="text-purple-800 leading-relaxed space-y-4">
               {/* Check for individually parsed subsections first */}
-              {analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_went_well?.trim() && (
+              {typeof analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_went_well === 'string' && analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_went_well?.trim() && (
                 <div>
                   <h5 className="font-semibold text-purple-900 mb-2">What Went Well</h5>
                   <ProfessionalMarkdown 
@@ -775,7 +775,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
                   />
                 </div>
               )}
-              {analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_could_be_improved?.trim() && (
+              {typeof analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_could_be_improved === 'string' && analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_could_be_improved?.trim() && (
                 <div>
                   <h5 className="font-semibold text-purple-900 mb-2">What Could Be Improved</h5>
                   <ProfessionalMarkdown 
@@ -785,9 +785,9 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
                 </div>
               )}
               {/* Fallback to show entire lessons learned section if subsections aren't individually parsed */}
-              {(!analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_went_well?.trim() && 
-                !analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_could_be_improved?.trim() &&
-                analysisResults?.solutionAnalysis?.parsed?.lessons_learned?.trim()) && (
+              {(!(typeof analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_went_well === 'string' && analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_went_well?.trim()) && 
+                !(typeof analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_could_be_improved === 'string' && analysisResults?.solutionAnalysis?.parsed?.lessons_learned_what_could_be_improved?.trim()) &&
+                typeof analysisResults?.solutionAnalysis?.parsed?.lessons_learned === 'string' && analysisResults?.solutionAnalysis?.parsed?.lessons_learned?.trim()) && (
                 <div>
                   {(() => {
                     const content = analysisResults?.solutionAnalysis?.parsed?.lessons_learned || '';
@@ -835,7 +835,7 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
           </div>
         )}
 
-        {analysisResults?.solutionAnalysis?.parsed?.additional_data_needed?.trim() && (
+        {typeof analysisResults?.solutionAnalysis?.parsed?.additional_data_needed === 'string' && analysisResults?.solutionAnalysis?.parsed?.additional_data_needed?.trim() && (
           <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h4 className="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
               <Search className="w-5 h-5 mr-3" />
@@ -1365,6 +1365,14 @@ export default function RootRippleMain({ headerHeight }) {
 
   const retrieveDatabaseLogs = async () => {
     try {
+      // Get timezone offset in minutes (positive for west of UTC, negative for east)
+      const timezoneOffsetMinutes = new Date().getTimezoneOffset();
+      
+      // Use existing session ID from analysisResults if available, otherwise create new one
+      const sessionId = analysisResults?.sessionId || `session_${Date.now()}_${selectedEnvironment.id || selectedEnvironment}`;
+      console.log('[DEBUG] Creating/using session for database logs:', sessionId);
+      console.log('[DEBUG] Selected environment:', selectedEnvironment);
+
       const response = await fetch('/api/retrieve-logs', {
         method: 'POST',
         headers: {
@@ -1373,9 +1381,10 @@ export default function RootRippleMain({ headerHeight }) {
         body: JSON.stringify({
           environment: selectedEnvironment,
           environmentType: environmentType,
-          issueTimeFrom: timeOccurred,
+          issueTimeFrom: timeOccurred, // Send the raw datetime-local value
+          timezoneOffsetMinutes: timezoneOffsetMinutes, // Include timezone info
           issueTimeTo: null,
-          sessionId: `session_${Date.now()}_${selectedEnvironment.id || selectedEnvironment}`
+          sessionId: sessionId
         }),
       });
 
@@ -1383,6 +1392,7 @@ export default function RootRippleMain({ headerHeight }) {
       
       if (logResult.success) {
         console.log('Database logs retrieved successfully:', logResult.summary);
+        console.log('Database logs sessionId:', logResult.sessionId);
         setAnalysisResults(prev => ({
           ...prev,
           logSummary: {
@@ -1392,11 +1402,14 @@ export default function RootRippleMain({ headerHeight }) {
           sessionId: logResult.sessionId,
           environment: logResult.environment
         }));
+        return logResult.sessionId; // Return the session ID for used by the database
       } else {
+        console.error('Database log retrieval failed:', logResult.error);
         throw new Error(logResult.error || 'Failed to retrieve logs');
       }
     } catch (error) {
       console.error('Error retrieving database logs:', error);
+      throw error; // Re-throw to handle in calling function
     }
   };
 
@@ -1407,15 +1420,27 @@ export default function RootRippleMain({ headerHeight }) {
     });
   };
 
-  const performRootCauseAnalysis = async () => {
+  const performRootCauseAnalysis = async (sessionId = null) => {
     try {
+      // Use the passed session ID first, then fall back to state
+      const finalSessionId = sessionId || analysisResults?.sessionId;
+      
+      if (!finalSessionId) {
+        console.error('No session ID available for root cause analysis');
+        console.error('Passed sessionId:', sessionId);
+        console.error('State sessionId:', analysisResults?.sessionId);
+        throw new Error('Session ID not found. Database logs may not have been retrieved properly.');
+      }
+
+      console.log('[DEBUG] Using session ID for root cause analysis:', finalSessionId);
+
       const formData = new FormData();
       formData.append('issueDescription', issueDescription);
       formData.append('timeOccurred', timeOccurred);
       formData.append('environmentType', environmentType);
       formData.append('environment', JSON.stringify(selectedEnvironment));
       formData.append('logSummary', JSON.stringify(analysisResults?.logSummary || {}));
-      formData.append('sessionId', analysisResults?.sessionId || `session_${Date.now()}`);
+      formData.append('sessionId', finalSessionId);
       
       attachedImages.forEach((image, index) => {
         if (image.file) {
@@ -1436,12 +1461,17 @@ export default function RootRippleMain({ headerHeight }) {
           rootCauseAnalysis: result.analysis.rootCauseAnalysis,
           solutionAnalysis: result.analysis.solutionAnalysis,
           metadata: result.analysis.metadata,
-          analysisMetadata: result.metadata
+          analysisMetadata: result.metadata,
+          sessionId: finalSessionId // Ensure session ID is preserved in state
         }));
+      } else {
+        console.error('Root cause analysis failed:', result.error);
+        throw new Error(result.error || 'Root cause analysis failed');
       }
-      
+        
     } catch (error) {
       console.error('Error in AI analysis:', error);
+      throw error; // Re-throw to handle in calling function
     }
   };
 
@@ -1456,7 +1486,8 @@ export default function RootRippleMain({ headerHeight }) {
       updateStepStatus('root-cause', 1, 'completed');
       
       updateStepStatus('root-cause', 2, 'active');
-      await retrieveDatabaseLogs();
+      const retrievedSessionId = await retrieveDatabaseLogs();
+      console.log('Database retrieval completed with sessionId:', retrievedSessionId);
       updateStepStatus('root-cause', 2, 'completed');
       
       updateStepStatus('root-cause', 3, 'active');
@@ -1467,7 +1498,7 @@ export default function RootRippleMain({ headerHeight }) {
       updateStepStatus('root-cause', 4, 'completed');
       
       updateStepStatus('root-cause', 5, 'active');
-      await performRootCauseAnalysis();
+      await performRootCauseAnalysis(retrievedSessionId);
       updateStepStatus('root-cause', 5, 'completed');
       
       setAnalysisPhase('solution');
@@ -1482,6 +1513,9 @@ export default function RootRippleMain({ headerHeight }) {
       
       setIsAnalyzing(false);
       setShowProgressScreen(false);
+
+      // Show error to user
+      alert(`Analysis failed: ${error.message}`);
     }
   };
 

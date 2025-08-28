@@ -445,13 +445,14 @@ export default function AskSWMSChatbot() {
       <div className="flex-1 flex flex-col mx-auto w-full px-4 py-4 min-h-0">
         {/* Messages Area */}
         <div className="flex-1 bg-white/60 backdrop-blur-sm rounded-t-2xl shadow-xl border border-white/20 border-b-0 flex flex-col overflow-hidden">
-          {/* Messages Container - Now with scroll handling */}
+          {/* Messages Container */}
           <div 
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto p-6 space-y-4" 
+            className="flex-1 overflow-y-auto p-6" 
             onScroll={handleScroll}
             style={{ scrollBehavior: 'smooth' }}
           >
+            <div className="max-w-5xl mx-auto space-y-6">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -467,7 +468,7 @@ export default function AskSWMSChatbot() {
                   className={`max-w-[70%] rounded-2xl px-4 py-3 relative group ${
                     message.type === 'user'
                       ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                      : 'bg-gray-50 text-gray-900 border border-gray-400'
+                      : 'bg-white text-gray-900'
                   }`}
                 >
                   {editingMessageId === message.id ? (
@@ -597,6 +598,7 @@ export default function AskSWMSChatbot() {
             )}
 
             <div ref={messagesEndRef} />
+            </div>
           </div>
 
           {/* Quick Actions */}

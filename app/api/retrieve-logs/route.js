@@ -10,7 +10,8 @@ export async function POST(request) {
       environmentType, 
       issueTimeFrom, 
       issueTimeTo, 
-      sessionId 
+      sessionId,
+      timezoneOffsetMinutes  
     } = body;
 
     // Validate required parameters
@@ -24,6 +25,50 @@ export async function POST(request) {
     if (!issueTimeFrom) {
       return NextResponse.json(
         { success: false, error: 'Issue start time is required' },
+        { status: 400 }
+      );
+    }
+
+    // Convert the datetime-local input to proper local time
+    let issueTime;
+    
+    if (timezoneOffsetMinutes !== undefined) {
+      // Method 1: Use timezone offset to adjust the time
+      
+      // Parse the datetime-local string as if it were UTC
+      const dateTimeString = issueTimeFrom.includes('T') ? issueTimeFrom : issueTimeFrom + 'T00:00';
+      const tempDate = new Date(dateTimeString + (dateTimeString.includes('Z') ? '' : 'Z'));
+      
+      // Adjust to get the correct local time
+      issueTime = new Date(tempDate.getTime());
+      
+      console.log(`Timezone offset: ${timezoneOffsetMinutes} minutes`);
+      console.log(`Original datetime-local value: ${issueTimeFrom}`);
+      console.log(`Parsed as: ${tempDate.toISOString()}`);
+      console.log(`Adjusted to local time: ${issueTime.toISOString()}`);
+    } else {
+      // Method 2: Fallback - parse as local time components
+      const dateTimeString = issueTimeFrom.includes('T') ? issueTimeFrom : issueTimeFrom + 'T00:00';
+      const tempDate = new Date(dateTimeString + 'Z'); // Parse as UTC first
+      
+      // Create a new date with the same components but as local time
+      issueTime = new Date(
+        tempDate.getUTCFullYear(),
+        tempDate.getUTCMonth(),
+        tempDate.getUTCDate(),
+        tempDate.getUTCHours(),
+        tempDate.getUTCMinutes(),
+        tempDate.getUTCSeconds()
+      );
+      
+      console.log(`No timezone offset provided, using fallback method`);
+      console.log(`Original: ${issueTimeFrom} -> Adjusted: ${issueTime.toISOString()}`);
+    }
+
+    // Validate date
+    if (isNaN(issueTime.getTime())) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid issue time format' },
         { status: 400 }
       );
     }
@@ -46,17 +91,6 @@ export async function POST(request) {
 
     console.log(`Starting log retrieval for environment: ${envId} (${environmentType})`);
     console.log(`Issue time: ${issueTimeFrom} (will retrieve 30 minutes before to 15 minutes after)`);
-
-    // Convert time string to Date object
-    const issueTime = new Date(issueTimeFrom);
-
-    // Validate date
-    if (isNaN(issueTime.getTime())) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid issue time format' },
-        { status: 400 }
-      );
-    }
 
     // Generate session ID if not provided
     const finalSessionId = sessionId || `session_${Date.now()}_${envId}`;

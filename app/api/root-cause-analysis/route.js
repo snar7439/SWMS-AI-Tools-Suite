@@ -7,16 +7,16 @@ export const runtime = 'nodejs';
 export const maxDuration = 300;
 
 // Helper function to read SWMS System Overview
-async function getSWMSSystemOverview() {
-  try {
-    const overviewPath = path.join(process.cwd(), 'public', 'SWMS_System_Overview.md');
-    const overviewContent = await fs.readFile(overviewPath, 'utf-8');
-    return overviewContent;
-  } catch (error) {
-    console.error('Error reading SWMS System Overview:', error);
-    return null;
-  }
-}
+// async function getSWMSSystemOverview() {
+//   try {
+//     const overviewPath = path.join(process.cwd(), 'public', 'SWMS_System_Overview.md');
+//     const overviewContent = await fs.readFile(overviewPath, 'utf-8');
+//     return overviewContent;
+//   } catch (error) {
+//     console.error('Error reading SWMS System Overview:', error);
+//     return null;
+//   }
+// }
 
 // Helper function to format time window for logs
 function formatTimeWindow(issueTime) {
@@ -55,13 +55,18 @@ function processImages(images) {
 // Helper function to read log files from session directory
 async function getSessionLogs(sessionId) {
   try {
-    if (!sessionId) return null;
+    if (!sessionId) {
+      console.log('[DEBUG] No sessionId provided to getSessionLogs');
+      return null;
+    }
     
     const logsPath = path.join(process.cwd(), 'temp_logs', sessionId);
+    console.log(`[DEBUG] Looking for session logs at: ${logsPath}`);
     
     // Check if directory exists
     try {
       await fs.access(logsPath);
+      console.log(`[DEBUG] Session directory found: ${sessionId}`);
     } catch {
       console.log(`Session directory not found: ${sessionId}`);
       return null;
@@ -70,17 +75,25 @@ async function getSessionLogs(sessionId) {
     const files = await fs.readdir(logsPath, { withFileTypes: true });
     const logData = {};
     
+    console.log(`[DEBUG] Found ${files.length} files in session directory: ${sessionId}`);
+    files.forEach(file => {
+      console.log(`[DEBUG] File: ${file.name}, isFile: ${file.isFile()}, extension: ${path.extname(file.name)}`);
+    });
+    
     for (const file of files) {
-      if (file.isFile() && (file.name.endsWith('.log') || file.name.endsWith('.txt'))) {
+      if (file.isFile() && (file.name.endsWith('.log') || file.name.endsWith('.txt') || file.name.endsWith('.json'))) {
         try {
           const filePath = path.join(logsPath, file.name);
           const content = await fs.readFile(filePath, 'utf-8');
           logData[file.name] = content;
+          console.log(`[DEBUG] Successfully read file: ${file.name}, content length: ${content.length}`);
         } catch (error) {
           console.error(`Error reading log file ${file.name}:`, error);
         }
       }
     }
+    
+    console.log(`[DEBUG] Total log files loaded: ${Object.keys(logData).length}`);
     
     return Object.keys(logData).length > 0 ? logData : null;
   } catch (error) {
@@ -152,10 +165,15 @@ async function getSSHLogs(sessionId) {
 
 // Create unified prompt for both root cause analysis and solution
 function createUnifiedRCAPrompt(data) {
-  const { swmsOverview, issueDescription, timeOccurred, environmentType, environment, timeWindow, imageDescriptions, logSummary, sessionLogs, sshLogs } = data;
+  const { issueDescription, timeOccurred, environmentType, environment, timeWindow, imageDescriptions, logSummary, sessionLogs, sshLogs } = data;
   
-  return `**System Overview:**
-${swmsOverview || 'SWMS System Overview not available'}
+  console.log('[DEBUG] Creating unified prompt with data:');
+  console.log('[DEBUG] - sessionLogs available:', !!sessionLogs);
+  console.log('[DEBUG] - sessionLogs keys:', sessionLogs ? Object.keys(sessionLogs) : 'none');
+  console.log('[DEBUG] - sshLogs available:', !!sshLogs);
+  console.log('[DEBUG] - logSummary:', JSON.stringify(logSummary, null, 2));
+  
+  return `
 
 **Issue Details:**
 - **Environment Type:** ${environmentType}
@@ -171,9 +189,22 @@ ${imageDescriptions || 'No images provided'}
 ${logSummary ? JSON.stringify(logSummary, null, 2) : 'No database log summary available'}
 
 **Database Logs Retrieved:**
-${sessionLogs ? Object.entries(sessionLogs).map(([filename, content]) => 
-  `**File: ${filename}**\n${content}`
-).join('\n\n') : 'No database logs available'}
+${sessionLogs ? Object.entries(sessionLogs).map(([filename, content]) => {
+  // Try to format JSON database logs better for LLM readability
+  if (filename.endsWith('.json')) {
+    try {
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return `**Database File: ${filename}** (${parsed.length} records)\n${JSON.stringify(parsed, null, 2)}`;
+      } else if (typeof parsed === 'object') {
+        return `**Database File: ${filename}**\n${JSON.stringify(parsed, null, 2)}`;
+      }
+    } catch (e) {
+      // If JSON parsing fails, treat as regular text
+    }
+  }
+  return `**File: ${filename}**\n${content}`;
+}).join('\n\n') : 'No database logs available'}
 
 **SSH System Logs:**
 ${sshLogs ? Object.entries(sshLogs.logs).map(([filename, content]) => 
@@ -207,8 +238,8 @@ async function callSAGEAPI(prompt, additionalData = {}) {
   }
 
   // SAGE API configuration
-  const SAGE_API_URL = "https://sage.paastry.sysco.net/api/sysco-gen-ai-platform/agents/v1/content/generic/answer";
-  const SAGE_AGENT_ID = "68ac159d05db0ebdb6f22088";
+  const SAGE_API_URL = "https://sage.paastry.sysco.net/api/sysco-gen-ai-platform/agents/v1/content/rag/answer";
+  const SAGE_AGENT_ID = "68aea0abb52288d30e349dbe";
   const SAGE_ENV = "DEV";
 
   if (!SAGE_API_URL || !SAGE_AGENT_ID) {
@@ -242,9 +273,9 @@ async function callSAGEAPI(prompt, additionalData = {}) {
 
     // Log the full request details
     console.log('[DEBUG] SAGE API Request URL:', SAGE_API_URL);
-    console.log('[DEBUG] SAGE API Request Body:', JSON.stringify(requestBody, null, 2));
-    console.log('[DEBUG] SAGE API User Query (first 500 chars):', prompt.substring(0, 500) + '...');
-    console.log('[DEBUG] SAGE API User Query (full):', prompt);
+    // console.log('[DEBUG] SAGE API Request Body:', JSON.stringify(requestBody, null, 2));
+    // console.log('[DEBUG] SAGE API User Query (first 500 chars):', prompt.substring(0, 500) + '...');
+    // console.log('[DEBUG] SAGE API User Query (full):', prompt);
 
     const response = await fetch(SAGE_API_URL, {
       method: 'POST',
@@ -266,7 +297,7 @@ async function callSAGEAPI(prompt, additionalData = {}) {
     console.log('[DEBUG] SAGE API Response Status:', response.status);
     console.log('[DEBUG] SAGE API Response Headers:', Object.fromEntries(response.headers.entries()));
     console.log('[DEBUG] SAGE API Response structure:', Object.keys(result));
-    console.log('[DEBUG] SAGE API Full Response:', JSON.stringify(result, null, 2));
+    // console.log('[DEBUG] SAGE API Full Response:', JSON.stringify(result, null, 2));
     
     // Extract the response from SAGE API response structure
     let generatedText = '';
@@ -445,26 +476,26 @@ export async function POST(request) {
     }
 
     // Get SWMS System Overview
-    const swmsOverview = await getSWMSSystemOverview();
-    if (!swmsOverview) {
-      console.warn('[WARNING] Could not load SWMS System Overview');
-    }
+    // const swmsOverview = await getSWMSSystemOverview();
+    // if (!swmsOverview) {
+    //   console.warn('[WARNING] Could not load SWMS System Overview');
+    // }
 
     // Format time window
     const timeWindow = formatTimeWindow(timeOccurred);
-
-    // Get session logs (database logs)
-    const sessionLogs = await getSessionLogs(sessionId);
     
     // Get SSH logs
     const sshLogs = await getSSHLogs(sessionId);
+
+    // Get session logs
+    const sessionLogs = await getSessionLogs(sessionId);
 
     // Process images
     const imageDescriptions = processImages(attachedImages);
 
     // Prepare data for prompts
     const promptData = {
-      swmsOverview,
+      //swmsOverview,
       issueDescription,
       timeOccurred,
       environmentType,
@@ -477,6 +508,10 @@ export async function POST(request) {
     };
 
     console.log('[DEBUG] Calling SAGE API for unified Root Cause Analysis and Solution...');
+    console.log('[DEBUG] Creating unified prompt with data:');
+    console.log(`[DEBUG] - sessionLogs available: ${!!sessionLogs}`);
+    console.log(`[DEBUG] - sshLogs available: ${!!sshLogs}`);
+    console.log(`[DEBUG] - logSummary:`, logSummary);
     
     // Single call to SAGE API for both RCA and Solution
     const unifiedPrompt = createUnifiedRCAPrompt(promptData);

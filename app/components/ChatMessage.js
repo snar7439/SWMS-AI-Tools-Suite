@@ -12,7 +12,7 @@ import "highlight.js/styles/github.css";
  */
 export default function ChatMessage({ content, references }) {
   return (
-    <div className="bg-white rounded-xl shadow p-4 space-y-4 text-sm leading-relaxed">
+    <div className="bg-white rounded-xl p-4 space-y-4 text-sm leading-relaxed">
       <div className="prose prose-base prose-slate max-w-none">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}

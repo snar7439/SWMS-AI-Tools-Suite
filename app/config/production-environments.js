@@ -94,6 +94,38 @@ const productionEnvironments = [
     }
   },
   {
+    id: 'lx009',
+    name: 'Opco 009',
+    icon: '🔴',
+    description: 'Pittsburgh',
+    region: 'na',
+    priority: 'primary',
+    envId: '009',
+    endpoint: 'https://lx009.na.sysco.net',
+    database: 'swmsdb009.na.sysco.net:1521/swm1',
+    host: 'lx009.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },
+  {
+    id: 'lx011',
+    name: 'Opco 011',
+    icon: '🔴',
+    description: 'Louisville',
+    region: 'na',
+    priority: 'primary',
+    envId: '011',
+    endpoint: 'https://lx011.na.sysco.net',
+    database: 'swmsdb011.na.sysco.net:1521/swm1',
+    host: 'lx011.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },
+  {
     id: 'lx025',
     name: 'Opco 025',
     icon: '🔴',
@@ -120,6 +152,38 @@ const productionEnvironments = [
     endpoint: 'https://lx027.na.sysco.net',
     database: 'swmsdb027.na.sysco.net:1521/swm1',
     host: 'lx027.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },  
+  {
+    id: 'lx052',
+    name: 'Opco 052',
+    icon: '🔴',
+    description: 'Portland',
+    region: 'na',
+    priority: 'primary',
+    envId: '052',
+    endpoint: 'https://lx052.na.sysco.net',
+    database: 'swmsdb052.na.sysco.net:1521/swm1',
+    host: 'lx052.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },
+  {
+    id: 'lx054',
+    name: 'Opco 054',
+    icon: '🔴',
+    description: 'Connecticut',
+    region: 'na',
+    priority: 'primary',
+    envId: '054',
+    endpoint: 'https://lx054.na.sysco.net',
+    database: 'swmsdb054.na.sysco.net:1521/swm1',
+    host: 'lx054.na.sysco.net',
     sshPort: 22,
     logPaths: {
       swms: '/var/log/swms.log'
@@ -168,6 +232,54 @@ const productionEnvironments = [
     endpoint: 'https://lx067.na.sysco.net',
     database: 'swmsdb067.na.sysco.net:1521/swm1',
     host: 'lx067.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },
+  {
+    id: 'lx102',
+    name: 'Opco 102',
+    icon: '🔴',
+    description: 'Spokane',
+    region: 'na',
+    priority: 'primary',
+    envId: '102',
+    endpoint: 'https://lx102.na.sysco.net',
+    database: 'swmsdb102.na.sysco.net:1521/swm1',
+    host: 'lx102.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },
+  {
+    id: 'lx288',
+    name: 'Opco 288',
+    icon: '🔴',
+    description: 'Knoxville',
+    region: 'na',
+    priority: 'primary',
+    envId: '288',
+    endpoint: 'https://lx288.na.sysco.net',
+    database: 'swmsdb288.na.sysco.net:1521/swm1',
+    host: 'lx288.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },
+  {
+    id: 'lx344',
+    name: 'Opco 344',
+    icon: '🔴',
+    description: 'IFG-Jacksonville',
+    region: 'na',
+    priority: 'primary',
+    envId: '344',
+    endpoint: 'https://lx344.na.sysco.net',
+    database: 'swmsdb344.na.sysco.net:1521/swm1',
+    host: 'lx344.na.sysco.net',
     sshPort: 22,
     logPaths: {
       swms: '/var/log/swms.log'
