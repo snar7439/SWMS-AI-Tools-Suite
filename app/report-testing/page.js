@@ -75,7 +75,7 @@ export default function ReportTestingPage() {
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p className="text-gray-300">Loading Report Testing...</p>
+          <p className="text-gray-300">Loading Report Test Automation...</p>
         </div>
       </div>
     );
@@ -102,7 +102,7 @@ export default function ReportTestingPage() {
               </button>
               <div className="border-l border-gray-600 pl-2 sm:pl-4 min-w-0 flex-1">
                 <h1 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-white truncate">
-                  SWMS Report Testing
+                  SWMS Report Comparison
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-400 truncate">
                   Compare and validate reports

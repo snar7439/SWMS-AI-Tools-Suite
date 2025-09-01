@@ -51,7 +51,7 @@ export default function DashboardPage() {
   const components = [
     {
       id: 'report-testing',
-      title: 'Report Testing Automation',
+      title: 'Report Test Automation',
       description: 'Compare SWMS reports with automated testing capabilities',
       icon: '📋 ',
       route: '/report-testing',
