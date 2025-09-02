@@ -12,6 +12,56 @@ import SSHFileTransfer from './SSHFileTransfer.js';
 import StatisticsDashboard from './RootRippleStatisticsDashboard.js';
 import { RefreshIcon } from '@heroicons/react/outline';
 
+// Agent Response Validation Modal Component
+const AgentResponseErrorModal = ({ showModal, onRetry, onClose }) => {
+  if (!showModal) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 border">
+        <div className="p-6">
+          <div className="flex items-center mb-4">
+            <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-lg mr-4">
+              <AlertCircle className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Analysis Interrupted</h3>
+            </div>
+          </div>
+          
+          <div className="mb-6">
+            <p className="text-gray-700 text-sm leading-relaxed">
+              We're experiencing an issue with the SAGE agent response. The analysis didn't return the expected format or content. 
+              This sometimes happens due to connectivity issues or high system load.
+            </p>
+            
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-800 text-sm font-medium">
+                💡 <strong>Recommendation:</strong> Please try the analysis again with shortening the time period or reducing the issue description. Most issues resolve on retry.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex gap-3">
+            <button
+              onClick={onRetry}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Professional Markdown Renderer Component
 const ProfessionalMarkdown = ({ content, className = "" }) => {
   if (!content || typeof content !== 'string' || content.trim() === '') return null;
@@ -288,13 +338,13 @@ const TimePeriodSettings = ({
             onClick={() => { onBeforeChange(5); onAfterChange(5); }}
             className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
           >
-            Extended (5 min before/after)
+            5 min before, 5 min after
           </button>
           <button
             onClick={() => { onBeforeChange(10); onAfterChange(2); }}
             className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
           >
-            Pre-focused (10 min before, 2 min after)
+            10 min before, 2 min after
           </button>
         </div>
       </div>
@@ -1305,6 +1355,9 @@ export default function RootRippleMain({ headerHeight }) {
   const [positiveSuggestion, setPositiveSuggestion] = useState('');
   const [allowFeedbackChange, setAllowFeedbackChange] = useState(true);
   
+  // Agent response validation state
+  const [showAgentErrorModal, setShowAgentErrorModal] = useState(false);
+  
   // Analysis timing
   const [analysisStartTime, setAnalysisStartTime] = useState(null);
   const fileInputRef = useRef(null);
@@ -1531,6 +1584,65 @@ export default function RootRippleMain({ headerHeight }) {
     });
   };
 
+  // Helper function to validate agent response quality
+  const validateAgentResponse = (analysisResult) => {
+    if (!analysisResult) return false;
+    
+    const { rootCauseAnalysis, solutionAnalysis } = analysisResult;
+    
+    // Check if root cause analysis has meaningful content
+    const rootCauseValid = rootCauseAnalysis && 
+      rootCauseAnalysis.raw && 
+      rootCauseAnalysis.raw.trim().length > 50 && // At least 50 characters
+      !rootCauseAnalysis.raw.includes('The available logs and evidence do not contain sufficient information');
+    
+    // Check if solution analysis has meaningful content
+    const solutionValid = solutionAnalysis && 
+      solutionAnalysis.raw && 
+      solutionAnalysis.raw.trim().length > 50; // At least 50 characters
+    
+    // Check if parsed content has meaningful sections
+    const rootCauseParsedValid = rootCauseAnalysis?.parsed && 
+      Object.keys(rootCauseAnalysis.parsed).length > 0 &&
+      Object.values(rootCauseAnalysis.parsed).some(section => 
+        typeof section === 'string' && section.trim().length > 20
+      );
+    
+    const solutionParsedValid = solutionAnalysis?.parsed && 
+      Object.keys(solutionAnalysis.parsed).length > 0 &&
+      Object.values(solutionAnalysis.parsed).some(section => 
+        typeof section === 'string' && section.trim().length > 20
+      );
+    
+    // Also check for common "insufficient information" patterns
+    const insufficientInfoPatterns = [
+      "I'm sorry",
+      "insufficient information",
+      "do not contain sufficient information",
+      "please provide specific issue details",
+      "unable to provide an answer",
+      "not enough information available",
+      "please try again"
+    ];
+    
+    const hasInsufficientInfo = insufficientInfoPatterns.some(pattern => 
+      rootCauseAnalysis?.raw?.toLowerCase().includes(pattern.toLowerCase()) ||
+      solutionAnalysis?.raw?.toLowerCase().includes(pattern.toLowerCase())
+    );
+    
+    console.log('[DEBUG] Agent response validation:', {
+      rootCauseValid,
+      solutionValid, 
+      rootCauseParsedValid,
+      solutionParsedValid,
+      hasInsufficientInfo,
+      rootCauseLength: rootCauseAnalysis?.raw?.length || 0,
+      solutionLength: solutionAnalysis?.raw?.length || 0
+    });
+    
+    return rootCauseValid && solutionValid && rootCauseParsedValid && solutionParsedValid && !hasInsufficientInfo;
+  };
+
   const performRootCauseAnalysis = async (sessionId = null) => {
     try {
       // Use the passed session ID first, then fall back to state
@@ -1567,6 +1679,25 @@ export default function RootRippleMain({ headerHeight }) {
       const result = await response.json();
       
       if (result.success && result.analysis) {
+        // Validate the response quality before accepting it
+        const isValidResponse = validateAgentResponse(result.analysis);
+        
+        if (!isValidResponse) {
+          console.log('[WARNING] Agent response validation failed - response appears to be of poor quality');
+          // Set the analysis results but mark them as having quality issues
+          setAnalysisResults(prev => ({
+            ...prev,
+            rootCauseAnalysis: result.analysis.rootCauseAnalysis,
+            solutionAnalysis: result.analysis.solutionAnalysis,
+            metadata: result.analysis.metadata,
+            analysisMetadata: result.metadata,
+            sessionId: finalSessionId,
+            agentResponseQualityIssue: true
+          }));
+          // Return a special flag to indicate poor quality
+          return { qualityIssue: true };
+        }
+        
         setAnalysisResults(prev => ({
           ...prev,
           rootCauseAnalysis: result.analysis.rootCauseAnalysis,
@@ -1575,14 +1706,19 @@ export default function RootRippleMain({ headerHeight }) {
           analysisMetadata: result.metadata,
           sessionId: finalSessionId // Ensure session ID is preserved in state
         }));
+        
+        // Return success flag
+        return { qualityIssue: false };
       } else {
-        console.error('Root cause analysis failed:', result.error);
-        throw new Error(result.error || 'Root cause analysis failed');
+        console.log('Root cause analysis failed:', result.error);
+        // Instead of throwing an error, return a flag to indicate SAGE agent failure
+        return { sageFailed: true, error: result.error || 'Root cause analysis failed' };
       }
         
     } catch (error) {
-      console.error('Error in AI analysis:', error);
-      throw error; // Re-throw to handle in calling function
+      console.log('Error in AI analysis:', error);
+      // Instead of throwing, return a flag to indicate SAGE agent failure
+      return { sageFailed: true, error: error.message || 'AI analysis failed' };
     }
   };
 
@@ -1609,23 +1745,55 @@ export default function RootRippleMain({ headerHeight }) {
       updateStepStatus('root-cause', 4, 'completed');
       
       updateStepStatus('root-cause', 5, 'active');
-      await performRootCauseAnalysis(retrievedSessionId);
+      const analysisResult = await performRootCauseAnalysis(retrievedSessionId);
       updateStepStatus('root-cause', 5, 'completed');
+      
+      // Check if we got a poor quality response
+      if (analysisResult?.qualityIssue) {
+        console.log('[WARNING] Detected poor quality agent response');
+        
+        // Save failed analysis statistics
+        const duration = analysisStartTime ? Date.now() - analysisStartTime : null;
+        saveAnalysisStatistics(null, 'failed', duration);
+        
+        setIsAnalyzing(false);
+        setShowProgressScreen(false);
+        
+        // Show the agent error modal
+        setShowAgentErrorModal(true);
+        return;
+      }
+      
+      // Check if SAGE agent failed
+      if (analysisResult?.sageFailed) {
+        console.log('[WARNING] SAGE agent analysis failed:', analysisResult.error);
+        
+        // Save failed analysis statistics
+        const duration = analysisStartTime ? Date.now() - analysisStartTime : null;
+        saveAnalysisStatistics(null, 'failed', duration);
+        
+        setIsAnalyzing(false);
+        setShowProgressScreen(false);
+        
+        // Show the agent error modal for SAGE failures
+        setShowAgentErrorModal(true);
+        return;
+      }
       
       setAnalysisPhase('solution');
       await executeSolutionAnalysis();
       
     } catch (error) {
-      console.error('Error in root cause analysis:', error);
+      console.error('Unexpected system error in root cause analysis:', error);
       
-      // Save failed analysis statistics
+      // Save failed analysis statistics for unexpected system errors
       const duration = analysisStartTime ? Date.now() - analysisStartTime : null;
       saveAnalysisStatistics(null, 'failed', duration);
       
       setIsAnalyzing(false);
       setShowProgressScreen(false);
 
-      // Show error to user
+      // Show error to user for other types of errors
       alert(`Analysis failed: ${error.message}`);
     }
   };
@@ -1838,6 +2006,17 @@ export default function RootRippleMain({ headerHeight }) {
     
     setFeedbackType('negative');
     setShowFeedbackModal(true);
+  };
+
+  // Agent error modal handlers
+  const handleAgentErrorRetry = () => {
+    setShowAgentErrorModal(false);
+    // Restart the analysis from the beginning
+    startAnalysis();
+  };
+
+  const handleAgentErrorClose = () => {
+    setShowAgentErrorModal(false);
   };
 
   const handleFeedbackTypeChange = (newType) => {
@@ -2056,20 +2235,6 @@ export default function RootRippleMain({ headerHeight }) {
                       showStats={true}
                     />
                   </div>
-
-                  {analysisResults?.metadata?.usedMockData && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                      <div className="flex items-center">
-                        <AlertCircle className="w-5 h-5 text-amber-600 mr-3" />
-                        <div>
-                          <h4 className="text-sm font-semibold text-amber-800">Demo Mode - Mock Analysis Results</h4>
-                          <p className="text-sm text-amber-700 mt-1">
-                            This analysis was generated using sample data since the AI model is not currently configured.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   <div className="bg-white rounded-xl shadow-lg border border-gray-200">
                     <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -2332,6 +2497,13 @@ export default function RootRippleMain({ headerHeight }) {
           </div>
         </div>
       )}
+
+      {/* Agent Response Error Modal */}
+      <AgentResponseErrorModal
+        showModal={showAgentErrorModal}
+        onRetry={handleAgentErrorRetry}
+        onClose={handleAgentErrorClose}
+      />
     </div>
   );
 }

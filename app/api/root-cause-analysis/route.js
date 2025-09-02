@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
-import { generateMockRootCauseAnalysis, generateMockSolutionAnalysis, shouldUseMockData } from '../../lib/mockRCAData.js';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -238,32 +237,11 @@ ${prompt}
   }
 }
 
-// Call SAGE API with mock data fallback
+// Call SAGE API
 async function callSAGEAPI(prompt, additionalData = {}) {
   // Save query to file for debugging purposes
   if (additionalData.sessionId) {
     await saveQueryToFile(prompt, additionalData.sessionId);
-  }
-
-  // Check if we should use mock data
-  if (shouldUseMockData()) {
-    console.log('[INFO] Using mock data - SAGE API not configured or forced mock mode');
-    
-    const mockRootCause = generateMockRootCauseAnalysis(
-      additionalData.issueDescription, 
-      additionalData.timeOccurred, 
-      additionalData.environment
-    );
-    const mockSolution = generateMockSolutionAnalysis(
-      additionalData.issueDescription, 
-      additionalData.timeOccurred, 
-      additionalData.environment
-    );
-    
-    return {
-      response: mockRootCause + '\n\n' + mockSolution,
-      usedMockData: true
-    };
   }
 
   // SAGE API configuration
@@ -272,23 +250,7 @@ async function callSAGEAPI(prompt, additionalData = {}) {
   const SAGE_ENV = "DEV";
 
   if (!SAGE_API_URL || !SAGE_AGENT_ID) {
-    console.log('[WARNING] SAGE_API_URL or SAGE_AGENT_ID not configured, falling back to mock data');
-    
-    const mockRootCause = generateMockRootCauseAnalysis(
-      additionalData.issueDescription, 
-      additionalData.timeOccurred, 
-      additionalData.environment
-    );
-    const mockSolution = generateMockSolutionAnalysis(
-      additionalData.issueDescription, 
-      additionalData.timeOccurred, 
-      additionalData.environment
-    );
-    
-    return {
-      response: mockRootCause + '\n\n' + mockSolution,
-      usedMockData: true
-    };
+    throw new Error('SAGE API not configured - missing SAGE_API_URL or SAGE_AGENT_ID');
   }
 
   try {
@@ -318,7 +280,7 @@ async function callSAGEAPI(prompt, additionalData = {}) {
       console.log('[ERROR] SAGE API HTTP Error Response:', response.status, response.statusText);
       const errorText = await response.text();
       console.log('[ERROR] SAGE API Error Body:', errorText);
-      throw new Error(`SAGE API error: ${response.status} ${response.statusText}`);
+      // throw new Error(`SAGE API error: ${response.status} ${response.statusText}`);
     }
 
     const result = await response.json();
@@ -369,33 +331,34 @@ async function callSAGEAPI(prompt, additionalData = {}) {
       throw new Error('Empty response from SAGE API');
     }
 
+    // Additional validation for response quality
+    const insufficientInfoPatterns = [
+      'The available logs and evidence do not contain sufficient information',
+      'insufficient information to determine a definitive answer',
+      'please provide specific issue details',
+      'unable to provide an answer',
+      'not enough information available'
+    ];
+    
+    const hasInsufficientInfo = insufficientInfoPatterns.some(pattern => 
+      generatedText.toLowerCase().includes(pattern.toLowerCase())
+    );
+    
+    if (hasInsufficientInfo || generatedText.trim().length < 50) {
+      console.log('[WARNING] SAGE API returned insufficient or low-quality response');
+      // throw new Error('SAGE API returned insufficient response quality');
+    }
+
     console.log(`[DEBUG] SAGE API unified analysis completed successfully`);
     console.log('[DEBUG] Extracted response length:', generatedText.length);
     console.log('[DEBUG] Extracted response (first 500 chars):', generatedText.substring(0, 500) + '...');
 
     return {
-      response: generatedText,
-      usedMockData: false
+      response: generatedText
     };
   } catch (error) {
-    console.error(`[ERROR] SAGE API call failed, falling back to mock data:`, error.message);
-    
-    // Fallback to mock data on any error
-    const mockRootCause = generateMockRootCauseAnalysis(
-      additionalData.issueDescription, 
-      additionalData.timeOccurred, 
-      additionalData.environment
-    );
-    const mockSolution = generateMockSolutionAnalysis(
-      additionalData.issueDescription, 
-      additionalData.timeOccurred, 
-      additionalData.environment
-    );
-    
-    return {
-      response: mockRootCause + '\n\n' + mockSolution,
-      usedMockData: true
-    };
+    console.error(`[ERROR] SAGE API call failed:`, error.message);
+    throw error; // Re-throw the error instead of falling back to mock data
   }
 }
 
@@ -554,9 +517,6 @@ export async function POST(request) {
     // Parse the unified response into RCA and Solution parts
     const { rootCauseAnalysis, solutionAnalysis } = parseUnifiedResponse(unifiedResult.response);
 
-    // Determine if mock data was used
-    const usedMockData = unifiedResult.usedMockData;
-
     // Parse responses and create structured result
     const analysisResult = {
       rootCauseAnalysis: {
@@ -573,7 +533,6 @@ export async function POST(request) {
         environmentType,
         timeWindow,
         analysisTimestamp: new Date().toISOString(),
-        usedMockData: usedMockData,
         logsAvailable: {
           database: !!sessionLogs,
           ssh: !!sshLogs,
