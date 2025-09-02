@@ -21,9 +21,9 @@ export const maxDuration = 300;
 // Helper function to format time window for logs
 function formatTimeWindow(issueTime) {
   const issueDate = new Date(issueTime);
-  const startTime = new Date(issueDate.getTime() - 30 * 60 * 1000); // 30 minutes before
-  const endTime = new Date(issueDate.getTime() + 15 * 60 * 1000);   // 15 minutes after
-  
+  const startTime = new Date(issueDate.getTime() - 2 * 60 * 1000); // 2 minutes before
+  const endTime = new Date(issueDate.getTime() + 1 * 60 * 1000);   // 1 minute after
+
   // Format times using the exact times (no timezone conversion)
   const options = {
     year: 'numeric',
@@ -214,8 +214,37 @@ ${sshLogs ? Object.entries(sshLogs.logs).map(([filename, content]) =>
 Please perform comprehensive Root Cause Analysis and provide Solution/Remediation for this SWMS issue using the provided data and logs.`;
 }
 
+// Helper function to save query to file for debugging
+async function saveQueryToFile(prompt, sessionId) {
+  try {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `query_${sessionId}_${timestamp}.txt`;
+    const filePath = path.join(process.cwd(), 'temp_logs', filename);
+    
+    const queryContent = `=== ROOT RIPPLE LLM QUERY ===
+Timestamp: ${new Date().toISOString()}
+Session ID: ${sessionId}
+Query Length: ${prompt.length} characters
+
+=== FULL QUERY CONTENT ===
+${prompt}
+
+=== END OF QUERY ===`;
+
+    await fs.writeFile(filePath, queryContent, 'utf-8');
+    console.log(`[DEBUG] Query saved to file: ${filename}`);
+  } catch (error) {
+    console.error('Error saving query to file:', error);
+  }
+}
+
 // Call SAGE API with mock data fallback
 async function callSAGEAPI(prompt, additionalData = {}) {
+  // Save query to file for debugging purposes
+  if (additionalData.sessionId) {
+    await saveQueryToFile(prompt, additionalData.sessionId);
+  }
+
   // Check if we should use mock data
   if (shouldUseMockData()) {
     console.log('[INFO] Using mock data - SAGE API not configured or forced mock mode');
@@ -517,7 +546,7 @@ export async function POST(request) {
     const unifiedPrompt = createUnifiedRCAPrompt(promptData);
     const unifiedResult = await callSAGEAPI(
       unifiedPrompt, 
-      { issueDescription, timeOccurred, environment }
+      { issueDescription, timeOccurred, environment, sessionId }
     );
     
     console.log('[DEBUG] Unified analysis completed');

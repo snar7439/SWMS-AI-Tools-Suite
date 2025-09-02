@@ -11,7 +11,9 @@ export async function POST(request) {
       issueTimeFrom, 
       issueTimeTo, 
       sessionId,
-      timezoneOffsetMinutes  
+      timezoneOffsetMinutes,
+      beforeMinutes = 2,  // Default to 2 minutes before
+      afterMinutes = 1    // Default to 1 minute after
     } = body;
 
     // Validate required parameters
@@ -90,7 +92,7 @@ export async function POST(request) {
     }
 
     console.log(`Starting log retrieval for environment: ${envId} (${environmentType})`);
-    console.log(`Issue time: ${issueTimeFrom} (will retrieve 30 minutes before to 15 minutes after)`);
+    console.log(`Issue time: ${issueTimeFrom} (will retrieve ${beforeMinutes} minutes before to ${afterMinutes} minutes after)`);
 
     // Generate session ID if not provided
     const finalSessionId = sessionId || `session_${Date.now()}_${envId}`;
@@ -114,7 +116,9 @@ export async function POST(request) {
       envId,
       isProd,
       issueTime,
-      finalSessionId
+      finalSessionId,
+      beforeMinutes,
+      afterMinutes
     );
 
     if (logResults.success) {

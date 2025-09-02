@@ -198,6 +198,110 @@ const EnvironmentSelector = ({
   );
 };
 
+// Time Period Settings Component
+const TimePeriodSettings = ({ 
+  beforeMinutes, 
+  afterMinutes, 
+  onBeforeChange, 
+  onAfterChange, 
+  showSettings, 
+  onToggleSettings 
+}) => (
+  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="flex items-center justify-between mb-4">
+      <div>
+        <h4 className="text-lg font-semibold text-gray-900">Log Time Period Settings</h4>
+        <p className="text-sm text-gray-600">Customize how much time before and after the incident to include in logs</p>
+      </div>
+      <button
+        onClick={onToggleSettings}
+        className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition-colors"
+      >
+        <Clock className="w-4 h-4" />
+        <span className="text-sm font-medium">
+          {showSettings ? 'Hide Settings' : 'Customize Period'}
+        </span>
+        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showSettings ? 'rotate-180' : ''}`} />
+      </button>
+    </div>
+    
+    <div className="mb-4">
+      <div className="text-sm text-gray-700 bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <div className="flex items-center space-x-1">
+          <Clock className="w-4 h-4 text-blue-600" />
+          <span className="font-medium">Current Setting:</span>
+          <span>{beforeMinutes} minutes before to {afterMinutes} minutes after incident time</span>
+        </div>
+      </div>
+    </div>
+
+    {showSettings && (
+      <div className="space-y-4 border-t border-gray-200 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Minutes Before Incident
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                max="60"
+                value={beforeMinutes}
+                onChange={(e) => onBeforeChange(Math.max(0, Math.min(60, parseInt(e.target.value) || 0)))}
+                className="w-full text-black p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                placeholder="2"
+              />
+              <span className="absolute right-3 top-3 text-sm text-gray-500">min</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Maximum: 60 minutes</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Minutes After Incident
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                max="60"
+                value={afterMinutes}
+                onChange={(e) => onAfterChange(Math.max(0, Math.min(60, parseInt(e.target.value) || 0)))}
+                className="w-full text-black p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                placeholder="1"
+              />
+              <span className="absolute right-3 top-3 text-sm text-gray-500">min</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Maximum: 60 minutes</p>
+          </div>
+        </div>
+        
+        <div className="flex space-x-3">
+          <button
+            onClick={() => { onBeforeChange(2); onAfterChange(1); }}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+          >
+            Default (2 min before, 1 min after)
+          </button>
+          <button
+            onClick={() => { onBeforeChange(5); onAfterChange(5); }}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+          >
+            Extended (5 min before/after)
+          </button>
+          <button
+            onClick={() => { onBeforeChange(10); onAfterChange(2); }}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+          >
+            Pre-focused (10 min before, 2 min after)
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+);
+
 // Progress Step Component
 const ProgressStep = ({ step, index, status, isActive, isFuture, analysisComplete }) => {
   const getStepDisplay = () => {
@@ -1167,6 +1271,11 @@ export default function RootRippleMain({ headerHeight }) {
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [analysisResults, setAnalysisResults] = useState(null);
   
+  // Time period settings
+  const [beforeMinutes, setBeforeMinutes] = useState(2); // Default 2 minutes before
+  const [afterMinutes, setAfterMinutes] = useState(1);   // Default 1 minute after
+  const [showTimePeriodSettings, setShowTimePeriodSettings] = useState(false);
+  
   // SSH Transfer related state
   const [showSSHTransfer, setShowSSHTransfer] = useState(false);
   const [sshTransferComplete, setSSHTransferComplete] = useState(false);
@@ -1384,7 +1493,9 @@ export default function RootRippleMain({ headerHeight }) {
           issueTimeFrom: timeOccurred, // Send the raw datetime-local value
           timezoneOffsetMinutes: timezoneOffsetMinutes, // Include timezone info
           issueTimeTo: null,
-          sessionId: sessionId
+          sessionId: sessionId,
+          beforeMinutes: beforeMinutes, // Include custom time period
+          afterMinutes: afterMinutes
         }),
       });
 
@@ -1597,6 +1708,11 @@ export default function RootRippleMain({ headerHeight }) {
     setAnalysisComplete(false);
     setAnalysisResults(null);
     setActiveTab('overview');
+    
+    // Reset time period settings to defaults
+    setBeforeMinutes(2);
+    setAfterMinutes(1);
+    setShowTimePeriodSettings(false);
     
     setShowSSHTransfer(false);
     setSSHTransferComplete(false);
@@ -2061,9 +2177,21 @@ export default function RootRippleMain({ headerHeight }) {
                   </div>
                 )}
                 <div className="mt-1 text-xs text-gray-500">
-                  Enter the exact time when the issue occurred. System will query logs from 30 minutes before to 15 minutes after this time.
+                  Enter the exact time when the issue occurred. You can customize the log time period below.
                 </div>
               </div>
+
+              {/* Time Period Settings */}
+              {timeOccurred && (
+                <TimePeriodSettings
+                  beforeMinutes={beforeMinutes}
+                  afterMinutes={afterMinutes}
+                  onBeforeChange={setBeforeMinutes}
+                  onAfterChange={setAfterMinutes}
+                  showSettings={showTimePeriodSettings}
+                  onToggleSettings={() => setShowTimePeriodSettings(!showTimePeriodSettings)}
+                />
+              )}
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
@@ -2194,6 +2322,8 @@ export default function RootRippleMain({ headerHeight }) {
               <SSHFileTransfer
                 environment={selectedEnvironment}
                 timeOccurred={timeOccurred}
+                beforeMinutes={beforeMinutes}
+                afterMinutes={afterMinutes}
                 onTransferSuccess={handleSSHTransferSuccess}
                 onTransferError={handleSSHTransferError}
                 onSkipTransfer={handleSkipSSHTransfer}

@@ -15,7 +15,9 @@ export async function POST(request) {
       password, 
       environment, 
       timeRange,
-      sessionId 
+      sessionId,
+      beforeMinutes = 2,
+      afterMinutes = 1
     } = body;
 
     // Validate required parameters

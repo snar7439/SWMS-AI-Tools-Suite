@@ -302,26 +302,28 @@ class ThinOracleConnection {
     }
   }
 
-  // Calculate time range: 30 minutes before and 15 minutes after the given time
-  calculateTimeRange(issueTime) {
+  // Calculate time range with customizable before/after periods
+  calculateTimeRange(issueTime, beforeMinutes = 2, afterMinutes = 1) {
     const issueDate = new Date(issueTime);
-    
-    // 30 minutes before the issue time
-    const startTime = new Date(issueDate.getTime() - (30 * 60 * 1000));
-    
-    // 15 minutes after the issue time
-    const endTime = new Date(issueDate.getTime() + (15 * 60 * 1000));
-    
+
+    // Custom minutes before the issue time
+    const startTime = new Date(issueDate.getTime() - (beforeMinutes * 60 * 1000));
+
+    // Custom minutes after the issue time
+    const endTime = new Date(issueDate.getTime() + (afterMinutes * 60 * 1000));
+
     return {
       startTime: startTime,
       endTime: endTime,
       startTimeString: startTime.toISOString(),
-      endTimeString: endTime.toISOString()
+      endTimeString: endTime.toISOString(),
+      beforeMinutes: beforeMinutes,
+      afterMinutes: afterMinutes
     };
   }
 
   // Retrieve SWMS_LOG table data
-  async retrieveSwmsLog(environment, isProd = false, issueTime = null, sessionId = null) {
+  async retrieveSwmsLog(environment, isProd = false, issueTime = null, sessionId = null, beforeMinutes = 2, afterMinutes = 1) {
     try {
       // Initialize connection for specific environment
       this.initializeConfig(environment, isProd);
@@ -330,10 +332,10 @@ class ThinOracleConnection {
       let binds = [];
       
       if (issueTime) {
-        const timeRange = this.calculateTimeRange(issueTime);
+        const timeRange = this.calculateTimeRange(issueTime, beforeMinutes, afterMinutes);
         whereClause = 'WHERE ADD_DATE BETWEEN :timeFrom AND :timeTo';
         binds = [timeRange.startTime, timeRange.endTime];
-        console.log(`Time range: ${timeRange.startTimeString} to ${timeRange.endTimeString}`);
+        console.log(`Time range: ${timeRange.startTimeString} to ${timeRange.endTimeString} (${beforeMinutes}min before, ${afterMinutes}min after)`);
       }
 
       const sql = `
@@ -393,7 +395,7 @@ class ThinOracleConnection {
   }
 
   // Retrieve RF_LOG table data
-  async retrieveRfLog(environment, isProd = false, issueTime = null, sessionId = null) {
+  async retrieveRfLog(environment, isProd = false, issueTime = null, sessionId = null, beforeMinutes = 2, afterMinutes = 1) {
     try {
       // Initialize connection for specific environment
       this.initializeConfig(environment, isProd);
@@ -402,10 +404,10 @@ class ThinOracleConnection {
       let binds = [];
       
       if (issueTime) {
-        const timeRange = this.calculateTimeRange(issueTime);
+        const timeRange = this.calculateTimeRange(issueTime, beforeMinutes, afterMinutes);
         whereClause = 'WHERE ADD_DATE BETWEEN :timeFrom AND :timeTo';
         binds = [timeRange.startTime, timeRange.endTime];
-        console.log(`Time range: ${timeRange.startTimeString} to ${timeRange.endTimeString}`);
+        console.log(`Time range: ${timeRange.startTimeString} to ${timeRange.endTimeString} (${beforeMinutes}min before, ${afterMinutes}min after)`);
       }
 
       const sql = `
@@ -468,11 +470,11 @@ class ThinOracleConnection {
   }
 
   // Retrieve both log tables for root cause analysis
-  async retrieveAllLogs(environment, isProd = false, issueTime = null, sessionId = null) {
+  async retrieveAllLogs(environment, isProd = false, issueTime = null, sessionId = null, beforeMinutes = 2, afterMinutes = 1) {
     try {
       console.log(`Starting log retrieval for environment: ${environment} (Production: ${isProd})`);
       
-      const timeRange = issueTime ? this.calculateTimeRange(issueTime) : null;
+      const timeRange = issueTime ? this.calculateTimeRange(issueTime, beforeMinutes, afterMinutes) : null;
       
       const results = {
         sessionId: sessionId || `session_${Date.now()}`,
@@ -482,19 +484,21 @@ class ThinOracleConnection {
         timeRange: timeRange ? { 
           from: timeRange.startTimeString, 
           to: timeRange.endTimeString,
-          description: '30 minutes before to 15 minutes after issue time'
+          description: `${beforeMinutes} minutes before to ${afterMinutes} minutes after issue time`,
+          beforeMinutes: beforeMinutes,
+          afterMinutes: afterMinutes
         } : null,
         logs: {}
       };
 
       // Retrieve SWMS_LOG
       console.log('Retrieving SWMS_LOG...');
-      const swmsLogResult = await this.retrieveSwmsLog(environment, isProd, issueTime, results.sessionId);
+      const swmsLogResult = await this.retrieveSwmsLog(environment, isProd, issueTime, results.sessionId, beforeMinutes, afterMinutes);
       results.logs.swmsLog = swmsLogResult;
 
       // Retrieve RF_LOG
       console.log('Retrieving RF_LOG...');
-      const rfLogResult = await this.retrieveRfLog(environment, isProd, issueTime, results.sessionId);
+      const rfLogResult = await this.retrieveRfLog(environment, isProd, issueTime, results.sessionId, beforeMinutes, afterMinutes);
       results.logs.rfLog = rfLogResult;
 
       // Check if both retrievals were successful

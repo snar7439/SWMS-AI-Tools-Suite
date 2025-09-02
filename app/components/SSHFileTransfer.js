@@ -6,6 +6,8 @@ import { Upload, Download, Server, AlertCircle, CheckCircle, Eye, EyeOff, Clock,
 export default function SSHFileTransfer({ 
   environment, 
   timeOccurred, 
+  beforeMinutes = 2,
+  afterMinutes = 1,
   onTransferSuccess, 
   onTransferError, 
   onSkipTransfer 
@@ -35,9 +37,9 @@ export default function SSHFileTransfer({
 
   const formatTimeRange = (issueTime) => {
     const issueDate = new Date(issueTime);
-    const startTime = new Date(issueDate.getTime() - (30 * 60 * 1000)); // 30 minutes before
-    const endTime = new Date(issueDate.getTime() + (15 * 60 * 1000)); // 15 minutes after
-    
+    const startTime = new Date(issueDate.getTime() - (beforeMinutes * 60 * 1000)); // Custom minutes before
+    const endTime = new Date(issueDate.getTime() + (afterMinutes * 60 * 1000)); // Custom minutes after
+
     // Format using exact time
     const options = {
       year: 'numeric',
@@ -76,6 +78,8 @@ export default function SSHFileTransfer({
           ...credentials,
           environment,
           timeRange,
+          beforeMinutes,
+          afterMinutes,
           sessionId: `ssh_session_${Date.now()}_${environment.envId || environment}`
         })
       });
@@ -140,7 +144,7 @@ export default function SSHFileTransfer({
             </span>
             <p className="text-gray-900">{timeRange.display}</p>
             <p className="text-xs text-gray-500 mt-1">
-              30 minutes before issue time to 15 minutes after
+              {beforeMinutes} minutes before issue time to {afterMinutes} minutes after
             </p>
           </div>
         </div>
@@ -275,7 +279,7 @@ export default function SSHFileTransfer({
             <h4 className="text-blue-800 font-medium text-sm">SSH Connection Details</h4>
             <p className="text-blue-700 text-sm mt-1">
               This will connect to <strong>{environment.host || 'the selected environment'}</strong> and download 
-              the log file <strong>/var/log/swms.log</strong> for the specified time range (30 minutes before to 15 minutes after the issue time). 
+              the log file <strong>/var/log/swms.log</strong> for the specified time range ({beforeMinutes} minutes before to {afterMinutes} minutes after the issue time). 
               If you don&apos;t have SSH access, you can skip this step and continue with database logs only.
             </p>
           </div>

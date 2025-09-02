@@ -156,7 +156,23 @@ const productionEnvironments = [
     logPaths: {
       swms: '/var/log/swms.log'
     }
-  },  
+  },
+  {
+    id: 'lx040',
+    name: 'Opco 040',
+    icon: '🔴',
+    description: 'Idaho',
+    region: 'na',
+    priority: 'primary',
+    envId: '040',
+    endpoint: 'https://lx040.na.sysco.net',
+    database: 'swmsdb040.na.sysco.net:1521/swm1',
+    host: 'lx040.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },
   {
     id: 'lx052',
     name: 'Opco 052',
@@ -280,6 +296,22 @@ const productionEnvironments = [
     endpoint: 'https://lx344.na.sysco.net',
     database: 'swmsdb344.na.sysco.net:1521/swm1',
     host: 'lx344.na.sysco.net',
+    sshPort: 22,
+    logPaths: {
+      swms: '/var/log/swms.log'
+    }
+  },
+  {
+    id: 'lx442',
+    name: 'Opco 442',
+    icon: '🔴',
+    description: 'Ottawa',
+    region: 'na',
+    priority: 'primary',
+    envId: '442',
+    endpoint: 'https://lx442.na.sysco.net',
+    database: 'swmsdb442.na.sysco.net:1521/swm1',
+    host: 'lx442.na.sysco.net',
     sshPort: 22,
     logPaths: {
       swms: '/var/log/swms.log'
