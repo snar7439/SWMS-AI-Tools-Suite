@@ -103,59 +103,112 @@ async function getSessionLogs(sessionId) {
 
 // Helper function to read SSH log files
 async function getSSHLogs(sessionId) {
-  try {
-    if (!sessionId) return null;
+    try {
+    if (!sessionId) {
+      console.log('[DEBUG] No sessionId provided to getSSHLogsStrict');
+      return null;
+    }
     
+    // Extract environment ID and timestamp from session ID
+    let envId = null;
+    let sessionTimestamp = null;
+    
+    if (sessionId.startsWith('session_')) {
+      const parts = sessionId.split('_');
+      if (parts.length >= 3) {
+        sessionTimestamp = parseInt(parts[1]);
+        envId = parts.slice(2).join('_');
+      }
+    }
+    
+    if (!envId || !sessionTimestamp) {
+      console.log(`[DEBUG] Could not extract required info from sessionId: ${sessionId}`);
+      return null;
+    }
+    
+    // Look for exact SSH session match: ssh_session_<close_timestamp>_<same_envId>
     const tempLogsPath = path.join(process.cwd(), 'temp_logs');
+    const expectedSSHPattern = `ssh_session_`;
+    
+    try {
+      await fs.access(tempLogsPath);
+    } catch {
+      return null;
+    }
+    
     const directories = await fs.readdir(tempLogsPath, { withFileTypes: true });
+    const maxTimeDiff = 5 * 60 * 1000; // 5 minutes maximum difference
+
+    let bestMatch = null;
+    let smallestTimeDiff = Infinity;
     
-    // Find SSH session directories that might be related
-    const sshSessionDirs = directories
-      .filter(dir => dir.isDirectory() && dir.name.startsWith('ssh_session_'))
-      .map(dir => dir.name);
-    
-    if (sshSessionDirs.length === 0) return null;
-    
-    // Try to find the most recent SSH session or one with similar timestamp
-    const sessionTimestamp = sessionId.split('_')[1]; // Extract timestamp from session ID
-    let matchingSSHDir = null;
-    
-    if (sessionTimestamp) {
-      // Look for SSH session with similar timestamp (within 10 minutes)
-      const sessionTime = parseInt(sessionTimestamp);
-      for (const sshDir of sshSessionDirs) {
-        const sshTimestamp = sshDir.split('_')[2];
-        if (sshTimestamp && Math.abs(parseInt(sshTimestamp) - sessionTime) < 600000) { // 10 minutes
-          matchingSSHDir = sshDir;
-          break;
+    for (const dir of directories) {
+      if (dir.isDirectory() && dir.name.startsWith(expectedSSHPattern)) {
+        const parts = dir.name.split('_');
+        if (parts.length >= 4 && parts[0] === 'ssh' && parts[1] === 'session') {
+          const sshTimestamp = parseInt(parts[2]);
+          const sshEnvId = parts.slice(3).join('_');
+          
+          // Must match environment ID exactly
+          if (sshEnvId === envId) {
+            const timeDiff = Math.abs(sshTimestamp - sessionTimestamp);
+            
+            // Must be within acceptable time window
+            if (timeDiff <= maxTimeDiff && timeDiff < smallestTimeDiff) {
+              bestMatch = {
+                name: dir.name,
+                timestamp: sshTimestamp,
+                envId: sshEnvId,
+                timeDiff: timeDiff,
+                fullPath: path.join(tempLogsPath, dir.name)
+              };
+              smallestTimeDiff = timeDiff;
+            }
+          }
         }
       }
     }
     
-    // If no matching timestamp, use the most recent SSH session
-    if (!matchingSSHDir && sshSessionDirs.length > 0) {
-      matchingSSHDir = sshSessionDirs.sort().pop(); // Get the latest one
+    if (!bestMatch) {
+      console.log(`[DEBUG] No SSH session found for session ${sessionId}`);
+      return null;
     }
     
-    if (!matchingSSHDir) return null;
+    console.log(`[DEBUG] Found SSH session: ${bestMatch.name}`);
     
-    const sshLogsPath = path.join(tempLogsPath, matchingSSHDir);
-    const sshFiles = await fs.readdir(sshLogsPath, { withFileTypes: true });
-    const sshLogData = {};
-    
-    for (const file of sshFiles) {
-      if (file.isFile() && (file.name.endsWith('.log') || file.name.endsWith('.txt'))) {
-        try {
-          const filePath = path.join(sshLogsPath, file.name);
-          const content = await fs.readFile(filePath, 'utf-8');
-          sshLogData[file.name] = content;
-        } catch (error) {
-          console.error(`Error reading SSH log file ${file.name}:`, error);
+    // Read the logs from the matched directory
+    try {
+      const sshFiles = await fs.readdir(bestMatch.fullPath, { withFileTypes: true });
+      const sshLogData = {};
+      
+      for (const file of sshFiles) {
+        if (file.isFile() && (file.name.endsWith('.log') || file.name.endsWith('.txt'))) {
+          try {
+            const filePath = path.join(bestMatch.fullPath, file.name);
+            const content = await fs.readFile(filePath, 'utf-8');
+            sshLogData[file.name] = content;
+          } catch (error) {
+            console.error(`Error reading SSH log file ${file.name}:`, error);
+          }
         }
       }
+      
+      return Object.keys(sshLogData).length > 0 ? {
+        directory: bestMatch.name,
+        logs: sshLogData,
+        metadata: {
+          envId: bestMatch.envId,
+          timestamp: bestMatch.timestamp,
+          timeDifferenceSeconds: Math.round(bestMatch.timeDiff / 1000),
+          matchQuality: 'strict'
+        }
+      } : null;
+      
+    } catch (error) {
+      console.error(`Error reading SSH logs from ${bestMatch.name}:`, error);
+      return null;
     }
     
-    return Object.keys(sshLogData).length > 0 ? { directory: matchingSSHDir, logs: sshLogData } : null;
   } catch (error) {
     console.error('Error reading SSH logs:', error);
     return null;
@@ -281,16 +334,16 @@ async function callSAGEAPI(prompt, additionalData = {}) {
       const errorText = await response.text();
       console.log('[ERROR] SAGE API Error Body:', errorText);
       // throw new Error(`SAGE API error: ${response.status} ${response.statusText}`);
+      
     }
 
     const result = await response.json();
     
     console.log('[DEBUG] SAGE API Response Status:', response.status);
-    console.log('[DEBUG] SAGE API Response Headers:', Object.fromEntries(response.headers.entries()));
     console.log('[DEBUG] SAGE API Response structure:', Object.keys(result));
     // console.log('[DEBUG] SAGE API Full Response:', JSON.stringify(result, null, 2));
     
-    // Extract the response from SAGE API response structure
+    // Extract and clean the response from SAGE API response structure
     let generatedText = '';
     if (result && typeof result === 'object') {
       // SAGE API returns response in nested structure: data.responses.agent_response
@@ -317,7 +370,6 @@ async function callSAGEAPI(prompt, additionalData = {}) {
       } else if (result.text) {
         generatedText = result.text;
       } else {
-        // If no standard field found, try to convert the entire result to string
         console.log('[DEBUG] Full SAGE API response:', JSON.stringify(result, null, 2));
         throw new Error('No valid response field found in SAGE API response. Expected data.responses.agent_response field.');
       }
@@ -325,6 +377,38 @@ async function callSAGEAPI(prompt, additionalData = {}) {
       generatedText = result;
     } else {
       throw new Error('Invalid response format from SAGE API - expected object with agent_response field');
+    }
+
+    // Clean up the response if it's wrapped in JSON format
+    if (typeof generatedText === 'string') {
+      // Check if the response is a JSON string containing agent_response
+      if (generatedText.trim().startsWith('[') || generatedText.trim().startsWith('{')) {
+        try {
+          // Try to parse as JSON
+          let parsed = JSON.parse(generatedText);
+          
+          // Handle array of objects case: ['{"agent_response": "..."}']
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            if (typeof parsed[0] === 'string') {
+              // Parse the string inside the array
+              const innerParsed = JSON.parse(parsed[0]);
+              if (innerParsed.agent_response) {
+                generatedText = innerParsed.agent_response;
+              }
+            } else if (parsed[0].agent_response) {
+              generatedText = parsed[0].agent_response;
+            }
+          }
+          // Handle direct object case: {"agent_response": "..."}
+          else if (parsed.agent_response) {
+            generatedText = parsed.agent_response;
+          }
+          // If it's just a regular JSON object without agent_response, keep as is
+        } catch (jsonError) {
+          console.log('[DEBUG] Response is not valid JSON, treating as plain text');
+          // If JSON parsing fails, treat as regular text
+        }
+      }
     }
 
     if (!generatedText || generatedText.trim() === '') {
@@ -358,7 +442,7 @@ async function callSAGEAPI(prompt, additionalData = {}) {
     };
   } catch (error) {
     console.error(`[ERROR] SAGE API call failed:`, error.message);
-    throw error; // Re-throw the error instead of falling back to mock data
+    throw error;
   }
 }
 

@@ -158,6 +158,7 @@ const EnvironmentTypeSelector = ({ environmentType, onTypeChange }) => (
 );
 
 // Environment Selector Component
+// Enhanced Environment Selector Component with Search
 const EnvironmentSelector = ({ 
   environmentType, 
   selectedEnvironment, 
@@ -166,7 +167,27 @@ const EnvironmentSelector = ({
   onSelectEnvironment,
   dropdownRef 
 }) => {
+  const [searchTerm, setSearchTerm] = useState('');
   const environments = getEnvironmentsByType(environmentType);
+
+  // Filter environments based on search term
+  const filteredEnvironments = environments.filter(env => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      env.name?.toLowerCase().includes(searchLower) ||
+      env.description?.toLowerCase().includes(searchLower) ||
+      env.id?.toString().toLowerCase().includes(searchLower)
+    );
+  });
+
+  // Clear search when dropdown closes
+  useEffect(() => {
+    if (!showDropdown) {
+      setSearchTerm('');
+    }
+  }, [showDropdown]);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -223,24 +244,84 @@ const EnvironmentSelector = ({
         </button>
 
         {showDropdown && environmentType && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] max-h-80 overflow-y-auto">
-            {environments.map((env) => (
-              <button
-                key={env.id}
-                onClick={() => onSelectEnvironment(env)}
-                className={`w-full p-4 text-left hover:bg-gray-50 transition-colors first:rounded-t-lg last:rounded-b-lg border-b border-gray-100 last:border-b-0 ${
-                  selectedEnvironment?.id === env.id ? 'bg-blue-50 border-blue-200' : ''
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <span className="text-lg">{env.icon}</span>
-                  <div>
-                    <p className="font-semibold text-gray-900">{env.name}</p>
-                    <p className="text-sm text-gray-600">{env.description}</p>
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] max-h-80 overflow-hidden">
+            {/* Search Input */}
+            <div className="p-3 border-b border-gray-200 bg-gray-50">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search environments by name or ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-500"
+                  autoFocus
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Environment List */}
+            <div className="max-h-64 overflow-y-auto">
+              {filteredEnvironments.length > 0 ? (
+                filteredEnvironments.map((env) => (
+                  <button
+                    key={env.id}
+                    onClick={() => onSelectEnvironment(env)}
+                    className={`w-full p-4 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                      selectedEnvironment?.id === env.id ? 'bg-blue-50 border-blue-200' : ''
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="text-lg">{env.icon}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-semibold text-gray-900">{env.name}</p>
+                        </div>
+                        <p className="text-sm text-gray-600">{env.description}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="p-6 text-center">
+                  <div className="text-gray-500 mb-2">
+                    <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   </div>
+                  <p className="text-sm text-gray-600 font-medium">No environments found</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Try adjusting your search terms
+                  </p>
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="mt-3 text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Clear search and show all
+                    </button>
+                  )}
                 </div>
-              </button>
-            ))}
+              )}
+            </div>
+
+            {/* Results Counter */}
+            {searchTerm && (
+              <div className="p-2 bg-gray-50 border-t border-gray-200 text-center">
+                <p className="text-xs text-gray-600">
+                  {filteredEnvironments.length === 0 
+                    ? 'No matches found' 
+                    : `${filteredEnvironments.length} of ${environments.length} environments`
+                  }
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
