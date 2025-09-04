@@ -31,7 +31,7 @@ const AgentResponseErrorModal = ({ showModal, onRetry, onClose }) => {
           
           <div className="mb-6">
             <p className="text-gray-700 text-sm leading-relaxed">
-              We're experiencing an issue with the SAGE agent response. The analysis didn't return the expected format or content. 
+              We&apos;re experiencing an issue with the SAGE agent response. The analysis didn&apos;t return the expected format or content. 
               This sometimes happens due to connectivity issues or high system load.
             </p>
             
