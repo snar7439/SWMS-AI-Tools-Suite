@@ -224,7 +224,7 @@ export default function SingleReportResultsTab({
       {/* Results Content */}
       <div className={`${inline ? 'p-6' : 'flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 p-6'}`}>
         {/* Enhanced Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className={`${getScoreBgColor(checkResult.accuracy || 0)} border rounded-lg p-4`}>
             <div className={`text-2xl font-bold ${getScoreColor(checkResult.accuracy || 0)}`}>
               {checkResult.accuracy || 0}%
@@ -272,9 +272,9 @@ export default function SingleReportResultsTab({
               Standards adherence
             </div>
           </div>
-        </div>
+        </div> */}
 
-        {/* Statistics Cards */}
+        {/* Statistics Cards
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-orange-900/20 border border-orange-800 rounded-lg p-4">
             <div className="text-2xl font-bold text-orange-400">
@@ -320,10 +320,10 @@ export default function SingleReportResultsTab({
               Missing Elements
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Document Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
             <h3 className="text-lg font-semibold text-blue-100 mb-3">
               SWMS Report
@@ -349,9 +349,9 @@ export default function SingleReportResultsTab({
               <div><span className="font-medium">Source:</span> Manual Upload</div>
             </div>
           </div>
-        </div>
+        </div> */}
 
-        {/* Analysis Quality Indicators */}
+        {/* Analysis Quality Indicators
         {checkResult.analysisQuality && (
           <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-4 mb-6">
             <h3 className="text-lg font-semibold text-white mb-3">
@@ -376,7 +376,7 @@ export default function SingleReportResultsTab({
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Strengths and Weaknesses */}
         {(checkResult.strengths?.length > 0 || checkResult.weaknesses?.length > 0) && (
@@ -441,12 +441,12 @@ export default function SingleReportResultsTab({
                       </span>
                       {analysis.present && (
                         <>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getScoreBgColor(analysis.completeness || 0)} ${getScoreColor(analysis.completeness || 0)}`}>
+                          {/* <span className={`px-2 py-1 text-xs font-medium rounded-full ${getScoreBgColor(analysis.completeness || 0)} ${getScoreColor(analysis.completeness || 0)}`}>
                             {analysis.completeness || 0}% Complete
-                          </span>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getScoreBgColor(analysis.quality || 0)} ${getScoreColor(analysis.quality || 0)}`}>
+                          </span> */}
+                          {/* <span className={`px-2 py-1 text-xs font-medium rounded-full ${getScoreBgColor(analysis.quality || 0)} ${getScoreColor(analysis.quality || 0)}`}>
                             {analysis.quality || 0}% Quality
-                          </span>
+                          </span> */}
                         </>
                       )}
                     </div>

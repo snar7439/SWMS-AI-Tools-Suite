@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, X, CheckCircle, Clock, AlertCircle, Zap, Database, Search, Brain, FileText, Server, ChevronDown, ChevronUp, Download, Target, Wrench, BookOpen, Cloud, Shield, Eye, Play, Pause, CheckCircle2, Trash, ThumbsUp, ThumbsDown, BarChart3, RefreshCw } from 'lucide-react';
+import { Upload, X, CheckCircle, Clock, AlertCircle, Zap, Database, Search, Brain, FileText, Server, ChevronDown, ChevronUp, Download, Target, Wrench, BookOpen, Cloud, Shield, Eye, Play, Pause, CheckCircle2, Trash, ThumbsUp, ThumbsDown, BarChart3, RefreshCw, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -13,7 +13,7 @@ import StatisticsDashboard from './RootRippleStatisticsDashboard.js';
 import { RefreshIcon } from '@heroicons/react/outline';
 
 // Agent Response Validation Modal Component
-const AgentResponseErrorModal = ({ showModal, onRetry, onClose }) => {
+const AgentResponseErrorModal = ({ showModal, onRetry, onClose, isInFallbackMode }) => {
   if (!showModal) return null;
 
   return (
@@ -37,7 +37,12 @@ const AgentResponseErrorModal = ({ showModal, onRetry, onClose }) => {
             
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-blue-800 text-sm font-medium">
-                💡 <strong>Recommendation:</strong> Please try the analysis again with shortening the time period or reducing the issue description. Most issues resolve on retry.
+                💡 <strong>Recommendation:</strong>{' '}
+                {isInFallbackMode ? (
+                  "Try the fallback analysis again. Most issues resolve on retry."
+                ) : (
+                  "Please try the analysis again with shortening the time period or reducing the issue description."
+                )}
               </p>
             </div>
           </div>
@@ -47,7 +52,7 @@ const AgentResponseErrorModal = ({ showModal, onRetry, onClose }) => {
               onClick={onRetry}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
             >
-              Try Again
+              {isInFallbackMode ? "Try Fallback Again" : "Try Again"}
             </button>
             <button
               onClick={onClose}
@@ -55,6 +60,46 @@ const AgentResponseErrorModal = ({ showModal, onRetry, onClose }) => {
             >
               Close
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FallbackToast = ({ show, onConfirm, onCancel }) => {
+  return (
+    <div 
+      className={`fixed right-4 bottom-4 z-50 transition-all duration-500 transform ${
+        show ? 'translate-x-0 opacity-100' : 'translate-x-[200%] opacity-0'
+      }`}
+    >
+      <div className="bg-gradient-to-r from-slate-800 to-slate-900 shadow-lg rounded-lg p-4 w-[350px] border border-slate-700">
+        <div className="flex items-start gap-3">
+          <div className="pt-1">
+            <Brain className="w-6 h-6 text-blue-400" />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-sm font-medium text-white mb-1">
+              Fallback Analysis Mode
+            </h4>
+            <p className="text-sm text-slate-300 mb-3">
+              Would you like to analyze this issue without using log data? Our AI agent will focus on your issue description and screenshots to provide insights.
+            </p>
+            <div className="flex items-center gap-6">
+              <button 
+                onClick={onConfirm} 
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm transition-colors flex items-center gap-1"
+              >
+                Analyze without logs
+              </button>
+              <button 
+                onClick={onCancel} 
+                className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-sm transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -158,7 +203,6 @@ const EnvironmentTypeSelector = ({ environmentType, onTypeChange }) => (
 );
 
 // Environment Selector Component
-// Enhanced Environment Selector Component with Search
 const EnvironmentSelector = ({ 
   environmentType, 
   selectedEnvironment, 
@@ -434,50 +478,67 @@ const TimePeriodSettings = ({
 );
 
 // Progress Step Component
-const ProgressStep = ({ step, index, status, isActive, isFuture, analysisComplete }) => {
+const ProgressStep = ({ step, index, status, isActive, isFuture, analysisComplete, isFallbackAnalysis }) => {
   const getStepDisplay = () => {
-    if (isFuture) {
-      return {
-        bgColor: 'bg-gray-500 border-gray-500',
-        textColor: 'text-gray-400',
-        descColor: 'text-gray-500',
-        icon: React.createElement(step.icon, { className: "w-4 h-4 text-gray-300" })
-      };
+    // Special handling for fallback analysis
+    if (isFallbackAnalysis) {
+      // Special handling for root cause analysis in fallback mode
+      if (step.id === 'finding-root-cause') {
+        const baseDisplay = getBaseStepDisplay();
+        return {
+          ...baseDisplay,
+          badge: 'Issue Analysis Only',
+          badgeColor: 'bg-purple-100 text-purple-800'
+        };
+      }
     }
     
-    if (status === 'completed') {
+    return getBaseStepDisplay();
+    
+    function getBaseStepDisplay() {
+      if (isFuture) {
+        return {
+          bgColor: 'bg-gray-500 border-gray-500',
+          textColor: 'text-gray-400',
+          descColor: 'text-gray-500',
+          icon: React.createElement(step.icon, { className: "w-4 h-4 text-gray-300" })
+        };
+      }
+      
+      if (status === 'completed') {
+        return {
+          bgColor: 'bg-green-500 border-green-500',
+          textColor: 'text-white',
+          descColor: 'text-blue-200',
+          icon: <CheckCircle2 className="w-5 h-5 text-white" />
+        };
+      }
+      
+      if (status === 'skipped') {
+        return {
+          bgColor: 'bg-yellow-500 border-yellow-500',
+          textColor: 'text-white',
+          descColor: 'text-blue-200',
+          icon: <X className="w-5 h-5 text-white" />
+        };
+      }
+      
+      if (isActive) {
+        return {
+          bgColor: 'bg-blue-500 border-blue-500 animate-pulse',
+          textColor: 'text-white',
+          descColor: 'text-blue-200',
+          icon: <div className="w-3 h-3 bg-white rounded-full animate-ping" />
+        };
+      }
+      
       return {
-        bgColor: 'bg-green-500 border-green-500',
-        textColor: 'text-white',
-        descColor: 'text-blue-200',
-        icon: <CheckCircle2 className="w-5 h-5 text-white" />
+        bgColor: 'bg-transparent border-white/30',
+        textColor: 'text-white/60',
+        descColor: 'text-white/40',
+        icon: <div className="w-3 h-3 bg-white/30 rounded-full" />
       };
     }
-    
-    if (status === 'skipped') {
-      return {
-        bgColor: 'bg-yellow-500 border-yellow-500',
-        textColor: 'text-white',
-        descColor: 'text-blue-200',
-        icon: <X className="w-5 h-5 text-white" />
-      };
-    }
-    
-    if (isActive) {
-      return {
-        bgColor: 'bg-blue-500 border-blue-500 animate-pulse',
-        textColor: 'text-white',
-        descColor: 'text-blue-200',
-        icon: <div className="w-3 h-3 bg-white rounded-full animate-ping" />
-      };
-    }
-    
-    return {
-      bgColor: 'bg-transparent border-white/30',
-      textColor: 'text-white/60',
-      descColor: 'text-white/40',
-      icon: <div className="w-3 h-3 bg-white/30 rounded-full" />
-    };
   };
 
   const display = getStepDisplay();
@@ -493,16 +554,28 @@ const ProgressStep = ({ step, index, status, isActive, isFuture, analysisComplet
           <h3 className={`font-medium ${display.textColor}`}>
             {step.title}
           </h3>
-          {isActive && !analysisComplete && (
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {display.badge && (
+              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${display.badgeColor || 'bg-orange-100 text-orange-800'}`}>
+                {display.badge}
+              </span>
+            )}
+            {isActive && !analysisComplete && (
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+              </div>
+            )}
+          </div>
         </div>
         <p className={`text-sm ${display.descColor}`}>
-          {step.description}
+          {isFallbackAnalysis && status === 'skipped' ? 
+            `${step.description
+              .replace('Collecting system logs via SSH connection...', 'System logs collection skipped in fallback mode')
+              .replace('Connecting to database and retrieving relevant log entries...', 'Database logs collection skipped in fallback mode')}` : 
+            step.description
+          }
         </p>
       </div>
     </div>
@@ -1115,9 +1188,53 @@ const AnalysisTabContent = ({ activeTab, analysisResults, showDetailedLogs, onTo
   return tabContent[activeTab]?.() || null;
 };
 
-// System Information Component
+// Enhanced SystemInformation component to show fallback analysis info
 const SystemInformation = ({ analysisResults, showSystemInfo, onToggleSystemInfo, sshResults, skipSSHTransfer, sshTransferComplete }) => {
+  const getAnalysisMode = () => {
+    if (analysisResults?.isFallbackAnalysis) {
+      return (
+        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+          <h4 className="font-bold text-orange-900 mb-3 text-base">Analysis Mode</h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center">
+              <span className="text-lg mr-2">🔄</span>
+              <div>
+                <strong className="text-gray-900">Mode:</strong> 
+                <span className="text-orange-600 font-medium ml-1">Fallback Analysis (No Logs)</span>
+              </div>
+            </div>
+            <div>
+              <strong className="text-gray-900">Data Source:</strong> 
+              <span className="text-gray-700 ml-1">Issue description and screenshots only</span>
+            </div>
+            <div>
+              <strong className="text-gray-900">Agent Used:</strong> 
+              <span className="text-gray-700 ml-1">Fallback RAG Agent</span>
+            </div>
+            <div>
+              <strong className="text-gray-900">Logs Retrieved:</strong> 
+              <span className="text-orange-600 font-medium ml-1">None - Analysis based on description only</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const getSSHStatus = () => {
+    if (analysisResults?.isFallbackAnalysis) {
+      return (
+        <div className="text-orange-600">
+          <span className="font-medium">⚠ Skipped in fallback mode</span>
+          <div className="text-xs text-gray-600 mt-1">
+            System logs not retrieved in fallback analysis
+          </div>
+        </div>
+      );
+    }
+    
+    // Original SSH status logic for normal analysis
     const sshData = analysisResults?.sshLogs || sshResults;
     const hasSSHData = sshData && (sshData.downloadedFiles || sshData.success);
     const isSkipped = analysisResults?.sshSkipped || skipSSHTransfer;
@@ -1220,6 +1337,10 @@ const SystemInformation = ({ analysisResults, showSystemInfo, onToggleSystemInfo
       {showSystemInfo && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Analysis mode info for fallback analysis */}
+            {getAnalysisMode()}
+            
+            {/* Environment info */}
             <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
               <h4 className="font-bold text-indigo-900 mb-3 text-base">Environment</h4>
               <div className="space-y-2 text-sm">
@@ -1229,6 +1350,7 @@ const SystemInformation = ({ analysisResults, showSystemInfo, onToggleSystemInfo
               </div>
             </div>
 
+            {/* System Logs info */}
             <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
               <h4 className="font-bold text-purple-900 mb-3 text-base">System Logs</h4>
               <div className="space-y-2 text-sm">
@@ -1236,13 +1358,30 @@ const SystemInformation = ({ analysisResults, showSystemInfo, onToggleSystemInfo
               </div>
             </div>
 
-            {analysisResults?.logSummary && (
+            {/* Database Logs info (show as skipped for fallback) */}
+            {!analysisResults?.isFallbackAnalysis && analysisResults?.logSummary && (
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <h4 className="font-bold text-blue-900 mb-3 text-base">Database Logs</h4>
                 <div className="space-y-2 text-sm">
                   <div><strong className="text-gray-900">SWMS Logs:</strong> <span className="text-gray-700">{analysisResults?.logSummary?.swmsLogCount || 0}</span></div>
                   <div><strong className="text-gray-900">RF Logs:</strong> <span className="text-gray-700">{analysisResults?.logSummary?.rfLogCount || 0}</span></div>
                   <div><strong className="text-gray-900">Total Records:</strong> <span className="text-gray-700">{analysisResults?.logSummary?.totalRecords || 0}</span></div>
+                </div>
+              </div>
+            )}
+            
+            {/* Database Logs info for fallback mode */}
+            {analysisResults?.isFallbackAnalysis && (
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <h4 className="font-bold text-orange-900 mb-3 text-base">Database Logs</h4>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <strong className="text-gray-900">Status:</strong> 
+                    <span className="text-orange-600 font-medium ml-1">⚠ Skipped in fallback mode</span>
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    Database logs not retrieved in fallback analysis
+                  </div>
                 </div>
               </div>
             )}
@@ -1401,6 +1540,7 @@ export default function RootRippleMain({ headerHeight }) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [analysisResults, setAnalysisResults] = useState(null);
+  const [isInFallbackMode, setIsInFallbackMode] = useState(false);
   
   // Time period settings
   const [beforeMinutes, setBeforeMinutes] = useState(2); // Default 2 minutes before
@@ -1438,6 +1578,10 @@ export default function RootRippleMain({ headerHeight }) {
   
   // Agent response validation state
   const [showAgentErrorModal, setShowAgentErrorModal] = useState(false);
+  const [showFallbackToast, setFallbackToastVisible] = useState(false);
+  const [isFallbackAnalysis, setIsFallbackAnalysis] = useState(false);
+  // store a minimal payload for fallback calls
+  const storedFallbackData = useRef(null);
   
   // Analysis timing
   const [analysisStartTime, setAnalysisStartTime] = useState(null);
@@ -1487,7 +1631,7 @@ export default function RootRippleMain({ headerHeight }) {
     { id: 'retrieving-db-logs', title: 'Retrieving DB Logs', icon: Database, description: 'Connecting to database and retrieving relevant log entries...', status: 'pending' },
     { id: 'retrieving-system-logs', title: 'Retrieving System Logs', icon: Server, description: 'Collecting system logs via SSH connection...', status: 'pending' },
     { id: 'retrieving-datadog-logs', title: 'Retrieving DataDog Logs', icon: Cloud, description: 'Fetching monitoring logs from DataDog (Future Implementation)...', status: 'future' },
-    { id: 'finding-root-cause', title: 'Finding Root Cause', icon: Target, description: 'AI is analyzing all collected data to identify the root cause...', status: 'pending' }
+    { id: 'finding-root-cause', title: 'Finding Root Cause', icon: Target, description: 'AI is analyzing all available data to identify the root cause...', status: 'pending' }
   ];
 
   // Solution Analysis Steps
@@ -1757,49 +1901,123 @@ export default function RootRippleMain({ headerHeight }) {
         body: formData
       });
 
-      const result = await response.json();
-      
-      if (result.success && result.analysis) {
-        // Validate the response quality before accepting it
-        const isValidResponse = validateAgentResponse(result.analysis);
+      let result = await response.json();
+
+      // Handle fallback (only for main agent)
+      if (result.agentFallbackNeeded && !isInFallbackMode) {
+        console.log('[INFO] Server suggests using fallback agent (no logs)');
+        storedFallbackData.current = {
+          issueDescription,
+          timeOccurred,
+          environmentType,
+          environment: selectedEnvironment,
+          attachedImages: attachedImages.map(img => ({ name: img.name, file: img.file }))
+        };
         
-        if (!isValidResponse) {
-          console.log('[WARNING] Agent response validation failed - response appears to be of poor quality');
-          // Set the analysis results but mark them as having quality issues
-          setAnalysisResults(prev => ({
-            ...prev,
-            rootCauseAnalysis: result.analysis.rootCauseAnalysis,
-            solutionAnalysis: result.analysis.solutionAnalysis,
-            metadata: result.analysis.metadata,
-            analysisMetadata: result.metadata,
-            sessionId: finalSessionId,
-            agentResponseQualityIssue: true
-          }));
-          // Return a special flag to indicate poor quality
-          return { qualityIssue: true };
+        // Show both agent error modal AND fallback toast for main agent failures
+        setShowAgentErrorModal(true);
+        setFallbackToastVisible(true);
+        return { sageFailed: true, error: 'Agent indicated no logs; user decision pending' };
+      }
+
+      // Check if the request failed or returned no analysis
+      if (!result.success || !result.analysis) {
+        console.log('[WARNING] Agent analysis failed:', result.error);
+        
+        // If we're not in fallback mode (main agent failure)
+        if (!isInFallbackMode) {
+          console.log('[INFO] Main agent failed, offering fallback analysis');
+          storedFallbackData.current = {
+            issueDescription,
+            timeOccurred,
+            environmentType,
+            environment: selectedEnvironment,
+            attachedImages: attachedImages.map(img => ({ name: img.name, file: img.file }))
+          };
+          
+          // Show both agent error modal AND fallback toast for main agent failures
+          setShowAgentErrorModal(true);
+          setFallbackToastVisible(true);
+          return { sageFailed: true, error: result.error || 'Main agent analysis failed' };
         }
         
+        // If already in fallback mode (fallback agent failure)
+        console.log('[ERROR] Fallback agent failed');
+        return { sageFailed: true, error: result.error || 'Fallback agent analysis failed' };
+      }
+
+      // Validate the response quality before accepting it
+      const isValidResponse = validateAgentResponse(result.analysis);
+      
+      if (!isValidResponse) {
+        console.log('[WARNING] Agent response validation failed - response appears to be of poor quality');
+        
+        // If we're not in fallback mode (main agent poor quality)
+        if (!isInFallbackMode) {
+          console.log('[INFO] Main agent poor quality, offering fallback analysis');
+          storedFallbackData.current = {
+            issueDescription,
+            timeOccurred,
+            environmentType,
+            environment: selectedEnvironment,
+            attachedImages: attachedImages.map(img => ({ name: img.name, file: img.file }))
+          };
+          
+          // Show both agent error modal AND fallback toast for main agent failures
+          setShowAgentErrorModal(true);
+          setFallbackToastVisible(true);
+          return { sageFailed: true, error: 'Poor quality response from main agent' };
+        }
+        
+        // If already in fallback mode (fallback agent poor quality)
+        console.log('[ERROR] Fallback agent poor quality response');
         setAnalysisResults(prev => ({
           ...prev,
           rootCauseAnalysis: result.analysis.rootCauseAnalysis,
           solutionAnalysis: result.analysis.solutionAnalysis,
           metadata: result.analysis.metadata,
           analysisMetadata: result.metadata,
-          sessionId: finalSessionId // Ensure session ID is preserved in state
+          sessionId: finalSessionId,
+          agentResponseQualityIssue: true
         }));
-        
-        // Return success flag
-        return { qualityIssue: false };
-      } else {
-        console.log('Root cause analysis failed:', result.error);
-        // Instead of throwing an error, return a flag to indicate SAGE agent failure
-        return { sageFailed: true, error: result.error || 'Root cause analysis failed' };
+        return { qualityIssue: true };
       }
+      
+      setAnalysisResults(prev => ({
+        ...prev,
+        rootCauseAnalysis: result.analysis.rootCauseAnalysis,
+        solutionAnalysis: result.analysis.solutionAnalysis,
+        metadata: result.analysis.metadata,
+        analysisMetadata: result.metadata,
+        sessionId: finalSessionId // Ensure session ID is preserved in state
+      }));
+      
+      // Return success flag
+      return { qualityIssue: false };
         
     } catch (error) {
       console.log('Error in AI analysis:', error);
-      // Instead of throwing, return a flag to indicate SAGE agent failure
-      return { sageFailed: true, error: error.message || 'AI analysis failed' };
+      
+      // If we're not in fallback mode (main agent error)
+      if (!isInFallbackMode) {
+        console.log('[INFO] Main agent error, offering fallback analysis');
+        storedFallbackData.current = {
+          issueDescription,
+          timeOccurred,
+          environmentType,
+          environment: selectedEnvironment,
+          attachedImages: attachedImages.map(img => ({ name: img.name, file: img.file }))
+        };
+        
+        // Show both agent error modal AND fallback toast for main agent failures
+        setShowAgentErrorModal(true);
+        setFallbackToastVisible(true);
+        return { sageFailed: true, error: error.message || 'Main agent analysis failed' };
+      }
+      
+      // If already in fallback mode (fallback agent error)
+      console.log('[ERROR] Fallback agent error');
+      return { sageFailed: true, error: error.message || 'Fallback agent analysis failed' };
     }
   };
 
@@ -1827,11 +2045,13 @@ export default function RootRippleMain({ headerHeight }) {
       
       updateStepStatus('root-cause', 5, 'active');
       const analysisResult = await performRootCauseAnalysis(retrievedSessionId);
-      updateStepStatus('root-cause', 5, 'completed');
       
-      // Check if we got a poor quality response
-      if (analysisResult?.qualityIssue) {
-        console.log('[WARNING] Detected poor quality agent response');
+      // Check if we got a poor quality response from fallback agent
+      if (analysisResult?.qualityIssue && isInFallbackMode) {
+        console.log('[WARNING] Detected poor quality fallback agent response');
+        
+        // Stop the step progression immediately
+        updateStepStatus('root-cause', 5, 'completed'); // Mark as completed to stop animation
         
         // Save failed analysis statistics
         const duration = analysisStartTime ? Date.now() - analysisStartTime : null;
@@ -1840,14 +2060,50 @@ export default function RootRippleMain({ headerHeight }) {
         setIsAnalyzing(false);
         setShowProgressScreen(false);
         
-        // Show the agent error modal
+         // Show ONLY agent error modal for fallback failures
         setShowAgentErrorModal(true);
+        return;
+      }
+      
+      // Check if we got a poor quality response from main agent
+      if (analysisResult?.qualityIssue && !isInFallbackMode) {
+        console.log('[WARNING] Detected poor quality main agent response');
+        
+        // The fallback toast should already be shown by performRootCauseAnalysis
+        // Stop the current analysis flow
+        updateStepStatus('root-cause', 5, 'completed');
+        
+        // Save failed analysis statistics
+        const duration = analysisStartTime ? Date.now() - analysisStartTime : null;
+        saveAnalysisStatistics(null, 'failed', duration);
+        
+        setIsAnalyzing(false);
+        setShowProgressScreen(false);
         return;
       }
       
       // Check if SAGE agent failed
       if (analysisResult?.sageFailed) {
-        console.log('[WARNING] SAGE agent analysis failed:', analysisResult.error);
+        console.log('[WARNING] Agent analysis failed:', analysisResult.error);
+        
+        // If in fallback mode and still failing, show error modal immediately
+        if (isInFallbackMode) {
+          updateStepStatus('root-cause', 5, 'completed'); // Mark as completed to stop animation
+          
+          // Save failed analysis statistics
+          const duration = analysisStartTime ? Date.now() - analysisStartTime : null;
+          saveAnalysisStatistics(null, 'failed', duration);
+          
+          setIsAnalyzing(false);
+          setShowProgressScreen(false);
+          
+          // Show the agent error modal for fallback failures
+          setShowAgentErrorModal(true);
+          return;
+        }
+        
+        // If not in fallback mode, the agent error modal and fallback toast should already be shown
+        updateStepStatus('root-cause', 5, 'completed');
         
         // Save failed analysis statistics
         const duration = analysisStartTime ? Date.now() - analysisStartTime : null;
@@ -1855,11 +2111,11 @@ export default function RootRippleMain({ headerHeight }) {
         
         setIsAnalyzing(false);
         setShowProgressScreen(false);
-        
-        // Show the agent error modal for SAGE failures
-        setShowAgentErrorModal(true);
         return;
       }
+      
+      // If we reach here, the analysis was successful
+      updateStepStatus('root-cause', 5, 'completed');
       
       setAnalysisPhase('solution');
       await executeSolutionAnalysis();
@@ -1926,6 +2182,13 @@ export default function RootRippleMain({ headerHeight }) {
   const startAnalysis = async () => {
     if (!environmentType || !selectedEnvironment || !issueDescription || !timeOccurred) return;
     
+    // Reset fallback states before starting new analysis
+    setIsInFallbackMode(false);
+    setIsFallbackAnalysis(false);
+    setShowAgentErrorModal(false);
+    setFallbackToastVisible(false);
+    clearFallbackData();
+
     const startTime = Date.now();
     setAnalysisStartTime(startTime);
     
@@ -1957,7 +2220,14 @@ export default function RootRippleMain({ headerHeight }) {
     setAnalysisComplete(false);
     setAnalysisResults(null);
     setActiveTab('overview');
-    
+   
+    // Reset fallback states
+    setIsInFallbackMode(false);
+    setIsFallbackAnalysis(false);
+    setShowAgentErrorModal(false);
+    setFallbackToastVisible(false);
+    clearFallbackData();
+
     // Reset time period settings to defaults
     setBeforeMinutes(2);
     setAfterMinutes(1);
@@ -2092,12 +2362,335 @@ export default function RootRippleMain({ headerHeight }) {
   // Agent error modal handlers
   const handleAgentErrorRetry = () => {
     setShowAgentErrorModal(false);
-    // Restart the analysis from the beginning
-    startAnalysis();
+    setFallbackToastVisible(false);
+    
+    // If we're already in fallback mode and it failed, try fallback again
+    if (isInFallbackMode && storedFallbackData.current) {
+      console.log('[DEBUG] Retrying fallback agent from error modal');
+        
+      // Set the analysis start time
+      const startTime = Date.now();
+      setAnalysisStartTime(startTime);
+      
+      // Reset analysis states for fallback flow
+      setIsAnalyzing(true);
+      setAnalysisComplete(false);
+      setShowProgressScreen(true);
+      setAnalysisPhase('root-cause');
+      
+      // Reset progress states
+      setCurrentRootCauseStep(0);
+      setCurrentSolutionStep(0);
+      setRootCauseStepsStatus({});
+      setSolutionStepsStatus({});
+      
+      // Try fallback agent
+      performFallbackAgentAnalysis().catch(error => {
+        console.error('Fallback analysis failed after retry:', error);
+        
+        // Save failed analysis statistics
+        const duration = analysisStartTime ? Date.now() - analysisStartTime : null;
+        saveAnalysisStatistics(null, 'failed', duration);
+        
+        // Reset states but DON'T clear storedFallbackData to allow future retries
+        setIsAnalyzing(false);
+        setShowProgressScreen(false);
+        setIsFallbackAnalysis(false);
+        
+        // Show error modal again (fallback data still available for next retry)
+        setShowAgentErrorModal(true);
+      });
+    } else {
+      // No fallback data available, restart the main analysis from the beginning
+      console.log('[DEBUG] Restarting main analysis from error modal');
+      startAnalysis();
+    }
   };
 
   const handleAgentErrorClose = () => {
     setShowAgentErrorModal(false);
+    setFallbackToastVisible(false);
+    setIsFallbackAnalysis(false);
+
+    // Reset fallback mode to allow fresh fallback offers
+    setIsInFallbackMode(false);
+    clearFallbackData(); 
+    
+    // Reset analysis states to allow fresh starts
+    setIsAnalyzing(false);
+    setShowProgressScreen(false);
+    setAnalysisComplete(false);
+    
+    // Reset progress tracking
+    setCurrentRootCauseStep(0);
+    setCurrentSolutionStep(0);
+    setRootCauseStepsStatus({});
+    setSolutionStepsStatus({});
+    setAnalysisPhase('root-cause');
+  };
+
+  // Perform fallback analysis using only issue description and screenshots
+  const performFallbackAgentAnalysis = async () => {
+    try {
+      console.log('[DEBUG] Starting fallback agent analysis (no logs)');
+      
+      // Set fallback mode to true when starting fallback analysis
+      setIsInFallbackMode(true);
+      
+      // Close any existing modals when fallback starts
+      setShowAgentErrorModal(false);
+      setFallbackToastVisible(false);
+      setIsFallbackAnalysis(true);
+      
+      // Get the fallback payload from stored data or current form state
+      const fallbackPayload = storedFallbackData.current || {
+        issueDescription,
+        timeOccurred,
+        environmentType,
+        environment: selectedEnvironment,
+        attachedImages: attachedImages.map(img => ({ name: img.name, file: img.file }))
+      };
+
+      // Execute fallback root cause analysis with progress steps
+      await executeFallbackRootCauseAnalysis(fallbackPayload);
+      
+    } catch (error) {
+        console.error('Fallback agent analysis error:', error);
+        
+        // Reset fallback mode when fallback fails
+        setIsInFallbackMode(false);
+        setIsFallbackAnalysis(false);
+
+        // Ensure all analysis states are reset
+        setIsAnalyzing(false);
+        setShowProgressScreen(false);
+        setAnalysisComplete(false);
+        
+        throw error; // Re-throw to be handled by caller
+    }
+  };
+
+  // Execute fallback root cause analysis with progress steps
+  const executeFallbackRootCauseAnalysis = async (fallbackPayload) => {
+    try {
+      // Step 1: Received Issue Description
+      updateStepStatus('root-cause', 0, 'active');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      updateStepStatus('root-cause', 0, 'completed');
+      
+      // Step 2: Analyzing Issue
+      updateStepStatus('root-cause', 1, 'active');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      updateStepStatus('root-cause', 1, 'completed');
+      
+      // Step 3: Skip DB Logs (mark as skipped for fallback)
+      updateStepStatus('root-cause', 2, 'active');
+      await new Promise(resolve => setTimeout(resolve, 800));
+      updateStepStatus('root-cause', 2, 'skipped');
+      
+      // Step 4: Skip System Logs (mark as skipped for fallback)
+      updateStepStatus('root-cause', 3, 'active');
+      await new Promise(resolve => setTimeout(resolve, 800));
+      updateStepStatus('root-cause', 3, 'skipped');
+      
+      // Step 5: Skip DataDog Logs (already marked as future)
+      updateStepStatus('root-cause', 4, 'active');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      updateStepStatus('root-cause', 4, 'completed');
+      
+      // Step 6: Finding Root Cause (using fallback agent)
+      updateStepStatus('root-cause', 5, 'active');
+      
+      // Prepare FormData for fallback agent call - matches your existing API structure
+      const formData = new FormData();
+      formData.append('issueDescription', fallbackPayload.issueDescription);
+      formData.append('timeOccurred', fallbackPayload.timeOccurred);
+      formData.append('environmentType', fallbackPayload.environmentType);
+      formData.append('environment', JSON.stringify(fallbackPayload.environment || {}));
+      formData.append('useFallbackAgent', 'true'); // Tells API to use the fallback agent
+      
+      // Add images if available
+      (fallbackPayload.attachedImages || []).forEach((image, index) => {
+        if (image.file) {
+          formData.append(`image_${index}`, image.file);
+        }
+      });
+
+      console.log('[DEBUG] Making fallback API call');
+
+      // Make the API call
+      const response = await fetch('/api/root-cause-analysis', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      if (!result.success || !result.analysis) {
+        console.error('[ERROR] Fallback agent failed:', result.error);
+        
+        // Stop the step progression immediately for fallback failures
+        updateStepStatus('root-cause', 5, 'completed');
+        
+        // Save failed analysis statistics
+        const duration = analysisStartTime ? Date.now() - analysisStartTime : null;
+        saveAnalysisStatistics(null, 'failed', duration);
+        
+        setIsAnalyzing(false);
+        setShowProgressScreen(false);
+        setIsFallbackAnalysis(false);
+        
+        // Show the agent error modal immediately for fallback failures
+        setShowAgentErrorModal(true);
+        return;
+      }
+      
+      // Validate fallback response quality too
+      const isValidResponse = validateAgentResponse(result.analysis);
+      
+      if (!isValidResponse) {
+        console.log('[WARNING] Fallback agent response validation failed');
+        
+        // Stop the step progression immediately
+        updateStepStatus('root-cause', 5, 'completed');
+        
+        // Save failed analysis statistics
+        const duration = analysisStartTime ? Date.now() - analysisStartTime : null;
+        saveAnalysisStatistics(null, 'failed', duration);
+        
+        setIsAnalyzing(false);
+        setShowProgressScreen(false);
+        setIsFallbackAnalysis(false);
+        
+        // Show the agent error modal immediately for poor quality fallback responses
+        setShowAgentErrorModal(true);
+        return;
+      }
+
+      // Update analysis results with fallback-specific metadata
+      setAnalysisResults(prev => ({
+        ...prev,
+        rootCauseAnalysis: result.analysis.rootCauseAnalysis,
+        solutionAnalysis: result.analysis.solutionAnalysis,
+        metadata: result.analysis.metadata,
+        analysisMetadata: result.metadata,
+        sessionId: result.analysis.metadata?.sessionId || `fallback_session_${Date.now()}`,
+        environment: {
+          type: fallbackPayload.environmentType,
+          name: fallbackPayload.environment?.name || 'Unknown'
+        },
+        logSummary: {
+          swmsLogCount: 0,
+          rfLogCount: 0,
+          totalRecords: 0,
+          message: 'Fallback analysis - no logs retrieved'
+        },
+        sshSkipped: true,
+        isFallbackAnalysis: true
+      }));
+      
+      updateStepStatus('root-cause', 5, 'completed');
+      
+      // Proceed to solution analysis (which is already included in the unified response)
+      setAnalysisPhase('solution');
+      await executeFallbackSolutionAnalysis();
+      
+    } catch (error) {
+      console.error('Error in fallback root cause analysis:', error);
+      
+      // Set error in analysis results but continue to completion
+      setAnalysisResults(prev => ({
+        ...prev,
+        rootCauseAnalysis: { raw: '', parsed: {} },
+        solutionAnalysis: { raw: '', parsed: {} },
+        metadata: {},
+        analysisMetadata: {},
+        sessionId: `fallback_session_${Date.now()}`,
+        environment: {
+          type: fallbackPayload.environmentType,
+          name: fallbackPayload.environment?.name || 'Unknown'
+        },
+        logSummary: {
+          swmsLogCount: 0,
+          rfLogCount: 0,
+          totalRecords: 0,
+          message: 'Fallback analysis error - no logs retrieved'
+        },
+        sshSkipped: true,
+        isFallbackAnalysis: true,
+        fallbackAnalysisFailed: true,
+        analysisError: error.message || 'Fallback root cause analysis error'
+      }));
+      
+      updateStepStatus('root-cause', 5, 'completed');
+      
+      // Continue to solution analysis to complete the flow even with errors
+      setAnalysisPhase('solution');
+      await executeFallbackSolutionAnalysis();
+    }
+  };
+
+  // New function to execute fallback solution analysis with progress steps
+  const executeFallbackSolutionAnalysis = async () => {
+    try {
+      // Step 1: Skip DB Tables identification (mark as skipped for fallback)
+      updateStepStatus('solution', 0, 'active');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      updateStepStatus('solution', 0, 'skipped');
+      
+      // Step 2: Skip Source Code identification (already marked as future)
+      updateStepStatus('solution', 1, 'active');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      updateStepStatus('solution', 1, 'completed');
+      
+      // Step 3: Finding Fixes (using existing solution from fallback agent)
+      updateStepStatus('solution', 2, 'active');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      updateStepStatus('solution', 2, 'completed');
+      
+      // Complete the analysis
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setAnalysisComplete(true);
+      setIsAnalyzing(false);
+      setIsFallbackAnalysis(false);
+
+      // Reset fallback mode on successful completion
+      setIsInFallbackMode(false);
+      
+      // Save analysis statistics
+      const duration = analysisStartTime ? Date.now() - analysisStartTime : null;
+      saveAnalysisStatistics(analysisResults, 'completed', duration);
+      
+      // Scroll to results
+      setTimeout(() => {
+        if (resultsRef.current) {
+          resultsRef.current.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      }, 500);
+      
+    } catch (error) {
+      console.error('Error in fallback solution analysis:', error);
+      
+      // Reset all states on error
+      setIsAnalyzing(false);
+      setShowProgressScreen(false);
+      setIsFallbackAnalysis(false);
+      setIsInFallbackMode(false);
+
+      throw error;
+    }
+  };
+
+  const clearFallbackData = () => {
+    storedFallbackData.current = null;
+    setIsInFallbackMode(false);
+    setIsFallbackAnalysis(false);
+    setFallbackToastVisible(false);
+    console.log('[DEBUG] Fallback data cleared');
   };
 
   const handleFeedbackTypeChange = (newType) => {
@@ -2124,6 +2717,71 @@ export default function RootRippleMain({ headerHeight }) {
     setFeedbackType(null);
     setFeedbackReason('');
     setPositiveSuggestion('');
+  };
+
+  // Enhanced handleFallbackConfirm function
+  const handleFallbackConfirm = async () => {
+    setFallbackToastVisible(false);
+    setShowAgentErrorModal(false);
+    
+    // Set the analysis start time
+    const startTime = Date.now();
+    setAnalysisStartTime(startTime);
+
+    // Set fallback mode when user confirms fallback
+    setIsInFallbackMode(true);
+    
+    // Reset analysis states for fallback flow
+    setIsAnalyzing(true);
+    setAnalysisComplete(false);
+    setShowProgressScreen(true);
+    setAnalysisPhase('root-cause');
+    
+    // Reset progress states
+    setCurrentRootCauseStep(0);
+    setCurrentSolutionStep(0);
+    setRootCauseStepsStatus({});
+    setSolutionStepsStatus({});
+    
+    try {
+      await performFallbackAgentAnalysis();
+    } catch (error) {
+      console.error('Fallback analysis failed:', error);
+      
+      // Save failed analysis statistics
+      const duration = analysisStartTime ? Date.now() - analysisStartTime : null;
+      saveAnalysisStatistics(null, 'failed', duration);
+      
+      // Reset all states on error
+      setIsAnalyzing(false);
+      setShowProgressScreen(false);
+      setIsFallbackAnalysis(false);
+
+      // Show agent error modal for subsequent failures
+      setTimeout(() => {
+        setShowAgentErrorModal(true);
+      }, 100); // Small delay to ensure state updates
+    }
+  };
+
+  const handleFallbackCancel = () => {
+    setFallbackToastVisible(false);
+    
+    // Reset fallback mode to allow fresh fallback offers
+    setIsInFallbackMode(false);
+    clearFallbackData();
+    
+    // Reset analysis states
+    setIsAnalyzing(false);
+    setShowProgressScreen(false);
+    setAnalysisComplete(false);
+    
+    // Reset progress tracking
+    setCurrentRootCauseStep(0);
+    setCurrentSolutionStep(0);
+    setRootCauseStepsStatus({});
+    setSolutionStepsStatus({});
+    setAnalysisPhase('root-cause');
   };
 
   // Allow user to change their feedback
@@ -2234,6 +2892,7 @@ export default function RootRippleMain({ headerHeight }) {
                         isActive={currentRootCauseStep === index && analysisPhase === 'root-cause'}
                         isFuture={step.status === 'future'}
                         analysisComplete={analysisComplete}
+                        isFallbackAnalysis={isFallbackAnalysis}
                       />
                     ))}
                   </div>
@@ -2261,6 +2920,7 @@ export default function RootRippleMain({ headerHeight }) {
                         isActive={currentSolutionStep === index && analysisPhase === 'solution'}
                         isFuture={step.status === 'future'}
                         analysisComplete={analysisComplete}
+                        isFallbackAnalysis={isFallbackAnalysis}
                       />
                     ))}
                   </div>
@@ -2584,6 +3244,12 @@ export default function RootRippleMain({ headerHeight }) {
         showModal={showAgentErrorModal}
         onRetry={handleAgentErrorRetry}
         onClose={handleAgentErrorClose}
+        isInFallbackMode={isInFallbackMode}
+      />
+      <FallbackToast
+        show={showFallbackToast}
+        onConfirm={handleFallbackConfirm}
+        onCancel={handleFallbackCancel}
       />
     </div>
   );

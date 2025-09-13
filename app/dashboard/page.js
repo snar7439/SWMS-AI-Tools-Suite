@@ -51,8 +51,8 @@ export default function DashboardPage() {
   const components = [
     {
       id: 'report-testing',
-      title: 'Report Test Automation',
-      description: 'Compare SWMS reports with automated testing capabilities',
+      title: 'ReportSure.AI',
+      description: 'Test SWMS reports with automated testing capabilities',
       icon: '📋 ',
       route: '/report-testing',
       status: 'Available'

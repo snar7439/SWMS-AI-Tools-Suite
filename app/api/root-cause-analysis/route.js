@@ -344,17 +344,19 @@ ${prompt}
   }
 }
 
+
+// SAGE API configuration
+const SAGE_API_URL = "https://sage.paastry.sysco.net/api/sysco-gen-ai-platform/agents/v1/content/rag/answer";
+const SAGE_AGENT_ID = "68aea0abb52288d30e349dbe";
+const SAGE_FALLBACK_AGENT_ID = "68bfc7067bff2d63326a67c9"; // Fallback agent (no logs) id
+const SAGE_ENV = "DEV";
+
 // Call SAGE API
-async function callSAGEAPI(prompt, additionalData = {}) {
+async function callSAGEAPI(prompt, additionalData = {}, options = {}) {
   // Save query to file for debugging purposes
   if (additionalData.sessionId) {
     await saveQueryToFile(prompt, additionalData.sessionId);
   }
-
-  // SAGE API configuration
-  const SAGE_API_URL = "https://sage.paastry.sysco.net/api/sysco-gen-ai-platform/agents/v1/content/rag/answer";
-  const SAGE_AGENT_ID = "68aea0abb52288d30e349dbe";
-  const SAGE_ENV = "DEV";
 
   if (!SAGE_API_URL || !SAGE_AGENT_ID) {
     throw new Error('SAGE API not configured - missing SAGE_API_URL or SAGE_AGENT_ID');
@@ -363,8 +365,18 @@ async function callSAGEAPI(prompt, additionalData = {}) {
   try {
     console.log(`[DEBUG] Calling SAGE API for unified RCA analysis...`);
     
+    const agentToUse = options.agentId || SAGE_AGENT_ID;
+
+    // Add logging to show which agent is being used
+    console.log(`[DEBUG] Using agent ID: ${agentToUse}`);
+    if (agentToUse === SAGE_FALLBACK_AGENT_ID) {
+      console.log('[DEBUG] ** USING FALLBACK AGENT (NO LOGS) **');
+    } else {
+      console.log('[DEBUG] ** USING PRIMARY AGENT (WITH LOGS) **');
+    }
+    
     const requestBody = {
-      ai_agent_id: SAGE_AGENT_ID,
+      ai_agent_id: agentToUse,
       user_query: prompt,
       configuration_environment: SAGE_ENV
     };
@@ -612,7 +624,8 @@ async function callSAGEAPI(prompt, additionalData = {}) {
     console.log('[DEBUG] Final extracted response (first 200 chars):', generatedText.substring(0, 200) + '...');
 
     return {
-      response: generatedText
+      response: generatedText,
+      hasInsufficientInfo
     };
   } catch (error) {
     console.error(`[ERROR] SAGE API call failed:`, error.message);
@@ -781,14 +794,47 @@ export async function POST(request) {
     console.log(`[DEBUG] - sshLogs available: ${!!sshLogs}`);
     console.log(`[DEBUG] - logSummary:`, logSummary);
     
-    // Single call to SAGE API for both RCA and Solution
+    // Build the primary unified prompt (original flow remains unchanged)
     const unifiedPrompt = createUnifiedRCAPrompt(promptData);
-    const unifiedResult = await callSAGEAPI(
-      unifiedPrompt, 
-      { issueDescription, timeOccurred, environment, sessionId }
-    );
+
+    // Decide whether client requested to use fallback agent (no logs)
+    const useFallbackAgent = formData.get('useFallbackAgent') === 'true';
+
+    // Prepare a separate fallback prompt builder (minimal) when requested
+    const createFallbackRCAPrompt = (data) => {
+      const { issueDescription, imageDescriptions } = data || {};
+      return `
+**Issue Details:**
+- **Issue Description:** ${issueDescription}
+
+**Attached Images:**
+${imageDescriptions || 'No images provided'}
+
+Please provide root cause analysis and remediation recommendations based only on the issue description and screenshots. Do not assume or request database or system logs.`;
+    };
+
+    // Call SAGE API - primary flow or fallback flow
+    let unifiedResult;
+    if (useFallbackAgent) {
+      console.log('[DEBUG] Using fallback agent (logs-less) as requested by client');
+      const fallbackPrompt = createFallbackRCAPrompt({ issueDescription, imageDescriptions });
+      unifiedResult = await callSAGEAPI(fallbackPrompt, { issueDescription, timeOccurred, environment, sessionId }, { agentId: SAGE_FALLBACK_AGENT_ID });
+    } else {
+      unifiedResult = await callSAGEAPI(unifiedPrompt, { issueDescription, timeOccurred, environment, sessionId });
+    }
     
     console.log('[DEBUG] Unified analysis completed');
+
+    // If primary agent indicated insufficient info and we didn't already use fallback, signal client
+    if (unifiedResult.hasInsufficientInfo && !useFallbackAgent) {
+      console.log('[DEBUG] Primary agent didn\'t return meaningful analysis. Suggesting fallback agent.');
+      return NextResponse.json({
+        success: false,
+        agentFallbackNeeded: true,
+        reason: 'no_logs',
+        message: 'Primary agent could not produce a meaningful analysis from available logs. Confirm to continue without logs.'
+      }, { status: 200 });
+    }
 
     // Parse the unified response into RCA and Solution parts
     const { rootCauseAnalysis, solutionAnalysis } = parseUnifiedResponse(unifiedResult.response);

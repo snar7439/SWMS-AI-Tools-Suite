@@ -102,7 +102,7 @@ export default function ReportTestingPage() {
               </button>
               <div className="border-l border-gray-600 pl-2 sm:pl-4 min-w-0 flex-1">
                 <h1 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-white truncate">
-                  SWMS Report Verification
+                  ReportSure.AI
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-400 truncate">
                   Validate SWMS reports

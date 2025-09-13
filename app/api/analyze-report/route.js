@@ -78,6 +78,7 @@ export async function POST(request) {
         name: reportName,
         content: reportText
       },
+      separation: "\n--- End of Report / Start of Analysis ---\n",
       analysis: {
         name: analysisName,
         content: analysisText

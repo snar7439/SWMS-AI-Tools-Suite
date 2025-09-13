@@ -77,7 +77,7 @@ export default function ReportTestingModal({ isOpen, onClose, onSelect }) {
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    Report Test Automation
+                    ReportSure.AI
                   </h2>
                   <p className="text-gray-600">
                     Choose your testing approach to get started
